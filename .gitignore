@@ -1,0 +1,10 @@
+__init__.py
+*.pyc
+*.log
+*.pdf
+*.png
+*.out
+.*.swp
+.#*
+#*#
+*~

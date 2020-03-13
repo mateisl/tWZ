@@ -1,7 +1,7 @@
 import ROOT
 import os
-from TopEFT.Tools.helpers import getObjFromFile
-from TopEFT.Tools.u_float import u_float
+from tWZ.Tools.helpers import getObjFromFile
+from Analysis.Tools.u_float import u_float
 from math import sqrt
 
 ## maps for electrons ##

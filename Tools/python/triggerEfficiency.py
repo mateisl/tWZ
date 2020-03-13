@@ -17,7 +17,7 @@ class triggerEfficiency:
             self.inflUnc = max( [1 - self.SF, self.unc] )
 
     def getSF(self, leptons):
-        if len(leptons)==0 : return 1
+        if len(leptons)==0 : return 1, 0
         if leptons[0]['pt'] < self.maxPt:
             return (self.SF, self.inflUnc)
         else:

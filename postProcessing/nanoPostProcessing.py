@@ -102,8 +102,6 @@ def fill_vector_collection( event, collection_name, collection_varnames, objects
                     obj[var] = int(obj[var])
                 getattr(event, collection_name+"_"+var)[i_obj] = obj[var]
 
-#_logger.   add_fileHandler( user.data_output_directory + '/logs/%s_%s_debug.txt'%(options.samples[0], options.job), options.logLevel )
-
 # Flags 
 isDiLep         = options.skim.lower().startswith('dilep')
 isTriLep        = options.skim.lower().startswith('trilep')
@@ -248,16 +246,64 @@ if options.LHEHTCut>0:
     logger.info( "Adding upper LHE cut at %f", options.LHEHTCut )
     skimConds.append( "LHE_HTIncoming<%f"%options.LHEHTCut )
 
-# User specific
-from tWZ.Tools.user import postprocessing_output_directory as user_directory
-directory = os.path.join( options.targetDir, options.processingEra ) 
-output_directory = os.path.join( directory, options.skim, sample.name )
+# final output directory 
+storage_directory = os.path.join( options.targetDir, options.processingEra, options.skim, sample.name )
+try:    #Avoid trouble with race conditions in multithreading
+    os.makedirs(storage_directory)
+    logger.info( "Created output directory %s.", storage_directory )
+except:
+    pass
 
 ## sort the list of files?
 len_orig = len(sample.files)
 sample = sample.split( n=options.nJobs, nSub=options.job)
 logger.info( "fileBasedSplitting: Run over %i/%i files for job %i/%i."%(len(sample.files), len_orig, options.job, options.nJobs))
 logger.debug("fileBasedSplitting: Files to be run over:\n%s", "\n".join(sample.files) )
+
+# systematic variations
+addSystematicVariations = (not isData) and (not options.skipSystematicVariations)
+
+# B tagging SF
+from Analysis.Tools.BTagEfficiency import BTagEfficiency
+btagEff = BTagEfficiency( fastSim = False, year=options.year, tagger='DeepJet' )
+
+# tmp_output_directory
+tmp_output_directory  = os.path.join( user.postprocessing_tmp_directory, "%s_%s_%s_%s"%(options.processingEra, options.skim, sample.name, str(uuid.uuid4())))  
+
+if os.path.exists(tmp_output_directory) and options.overwrite:
+    if options.nJobs > 1:
+        logger.warning( "NOT removing directory %s because nJobs = %i", tmp_output_directory, options.nJobs )
+    else:
+        logger.info( "Output directory %s exists. Deleting.", tmp_output_directory )
+        shutil.rmtree(tmp_output_directory)
+
+try:    #Avoid trouble with race conditions in multithreading
+    os.makedirs(tmp_output_directory)
+    logger.info( "Created output directory %s.", tmp_output_directory )
+except:
+    pass
+
+filename, ext = os.path.splitext( os.path.join(tmp_output_directory, sample.name + '.root') )
+outfilename   = filename+ext
+
+if not options.overwrite:
+    if os.path.isfile(outfilename):
+        logger.info( "Output file %s found.", outfilename)
+        if checkRootFile( outfilename, checkForObjects=["Events"] ) and deepCheckRootFile( outfilename ) and deepCheckWeight( outfilename ):
+            logger.info( "File already processed. Source: File check ok! Skipping." ) # Everything is fine, no overwriting
+            sys.exit(0)
+        else:
+            logger.info( "File corrupt. Removing file from target." )
+            os.remove( outfilename )
+            logger.info( "Reprocessing." )
+    else:
+        logger.info( "Sample not processed yet." )
+        logger.info( "Processing." )
+else:
+    logger.info( "Overwriting.")
+
+# relocate original
+sample.copy_files( os.path.join(tmp_output_directory, "input") )
 
 # top pt reweighting
 from tWZ.Tools.topPtReweighting import getUnscaledTopPairPtReweightungFunction, getTopPtDrawString, getTopPtsForReweighting
@@ -301,47 +347,6 @@ else:
     CRScaleF = 1
     logger.info( "Sample will NOT have CR reweighting. CRScaleF=%f",CRScaleF )
 
-# systematic variations
-addSystematicVariations = (not isData) and (not options.skipSystematicVariations)
-
-# B tagging SF
-from Analysis.Tools.BTagEfficiency import BTagEfficiency
-btagEff = BTagEfficiency( fastSim = False, year=options.year, tagger='DeepJet' )
-
-if os.path.exists(output_directory) and options.overwrite:
-    if options.nJobs > 1:
-        logger.warning( "NOT removing directory %s because nJobs = %i", output_directory, options.nJobs )
-    else:
-        logger.info( "Output directory %s exists. Deleting.", output_directory )
-        shutil.rmtree(output_directory)
-
-try:    #Avoid trouble with race conditions in multithreading
-    os.makedirs(output_directory)
-    logger.info( "Created output directory %s.", output_directory )
-except:
-    pass
-
-filename, ext = os.path.splitext( os.path.join(output_directory, sample.name + '.root') )
-fileNumber = options.job if options.job is not None else 0
-outfilename = filename+ext
-
-if not options.overwrite:
-    if os.path.isfile(outfilename):
-        logger.info( "Output file %s found.", outfilename)
-        if checkRootFile( outfilename, checkForObjects=["Events"] ) and deepCheckRootFile( outfilename ) and deepCheckWeight( outfilename ):
-            logger.info( "File already processed. Source: File check ok! Skipping." ) # Everything is fine, no overwriting
-            sys.exit(0)
-        else:
-            logger.info( "File corrupt. Removing file from target." )
-            os.remove( outfilename )
-            logger.info( "Reprocessing." )
-    else:
-        logger.info( "Sample not processed yet." )
-        logger.info( "Processing." )
-
-else:
-    logger.info( "Overwriting.")
-
 #branches to be kept for data and MC
 branchKeepStrings_DATAMC = [\
     "run", "luminosityBlock", "event", "fixedGridRhoFastjetAll", "PV_npvs", "PV_npvsGood",
@@ -356,9 +361,7 @@ branchKeepStrings_DATAMC = [\
 branchKeepStrings_DATAMC += ["HLT_*"]
 
 if options.year == 2017:
-    branchKeepStrings_DATAMC += [\
-        "METFixEE2017_*",
-    ]
+    branchKeepStrings_DATAMC += [ "METFixEE2017_*" ]
 
 #branches to be kept for MC samples only
 branchKeepStrings_MC = [ "Generator_*", "GenPart_*", "nGenPart", "genWeight", "Pileup_nTrueInt","GenMET_*", "nISR", "nGenJet", "GenJet_*"]
@@ -431,8 +434,7 @@ read_variables += [\
     TreeVariable.fromString('nMuon/I'),
     VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,dxy/F,dz/F,charge/I]'),
     TreeVariable.fromString('nJet/I'),
-    VectorTreeVariable.fromString('Jet[%s]'% ( ','.join(jetVars) ) ),
-]
+    VectorTreeVariable.fromString('Jet[%s]'% ( ','.join(jetVars) ) ) ]
 
 new_variables += [\
     'overlapRemoval/I','nlep/I',
@@ -474,11 +476,11 @@ if options.checkTTGJetsOverlap:
     new_variables.extend( ['TTGJetsEventType/I'] )
 
 if addSystematicVariations:
-
     for var in ['jesTotalUp', 'jesTotalDown', 'jerUp', 'jer', 'jerDown', 'unclustEnUp', 'unclustEnDown']:
         if not var.startswith('unclust'):
             new_variables.extend( ['nJetGood_'+var+'/I', 'nBTag_'+var+'/I'] )
         new_variables.extend( ['met_pt_'+var+'/F', 'met_phi_'+var+'/F'] )
+
 # Btag weights Method 1a
 for var in btagEff.btagWeightNames:
     if var!='MC':
@@ -497,7 +499,7 @@ if not options.skipNanoTools:
     from PhysicsTools.NanoAODTools.postprocessing.modules.common.ISRcounter        import ISRcounter
     
     logger.info("Preparing nanoAOD postprocessing")
-    logger.info("Will put files into directory %s", output_directory)
+    logger.info("Will put files into directory %s", tmp_output_directory)
     cut = '&&'.join(skimConds)
     # year specific JECs 
     if options.year == 2016:
@@ -509,7 +511,7 @@ if not options.skipNanoTools:
         JERera              = "Fall17_V3"
 
     elif options.year == 2018:
-        JER                 = "Autumn18_V1_MC"                if not sample.isData else "Autumn18_V1_DATA"
+        JER                 = "Autumn18_V1_MC"              if not sample.isData else "Autumn18_V1_DATA"
         JERera              = "Autumn18_V1"
 
     if options.overwriteJEC is not None:
@@ -528,22 +530,36 @@ if not options.skipNanoTools:
     # remove empty files. this is necessary in 2018 because empty miniAOD files exist.
     sample.files = [ f for f in sample.files if nonEmptyFile(f) ]
     newFileList = []
+
+    runPeriod = None
+    if sample.isData: 
+        runString = sample.name.split('_')[1]
+        assert str(options.year) in runString, "Could not obtain run period from sample name %s" % sample.name
+        runPeriod = runString[-1]
+ 
     logger.info("Starting nanoAOD postprocessing")
     for f in sample.files:
-        JMECorrector = createJMECorrector(isMC=(not sample.isData), dataYear=options.year, runPeriod=str(options.year), jesUncert="Total", jetType = "AK4PFchs", metBranchName=METBranchName, isFastSim=False, applySmearing=False)
-        modules = [
-            JMECorrector()
-        ]
+        JMECorrector = createJMECorrector( 
+            isMC        = (not sample.isData), 
+            dataYear    = options.year, 
+            runPeriod   = runPeriod, 
+            jesUncert   = "Total", 
+            jetType     = "AK4PFchs", 
+            metBranchName = METBranchName, 
+            isFastSim   = False, 
+            applySmearing = False)
+
+        modules = [ JMECorrector() ]
         
         if not sample.isData:
             modules.append( ISRcounter() )
 
         # need a hash to avoid data loss
         file_hash = str(hash(f))
-        p = PostProcessor(output_directory, [f], cut=cut, modules=modules, postfix="_for_%s_%s"%(sample.name, file_hash))
+        p = PostProcessor(tmp_output_directory, [f], cut=cut, modules=modules, postfix="_for_%s_%s"%(sample.name, file_hash))
         if not options.reuseNanoAOD:
             p.run()
-        newFileList += [output_directory + '/' + f.split('/')[-1].replace('.root', '_for_%s_%s.root'%(sample.name, file_hash))]
+        newFileList += [tmp_output_directory + '/' + f.split('/')[-1].replace('.root', '_for_%s_%s.root'%(sample.name, file_hash))]
     logger.info("Done. Replacing input files for further processing.")
     
     sample.files = newFileList
@@ -948,7 +964,7 @@ logger.info( "Splitting into %i ranges of %i events on average. FileBasedSplitti
 #Define all jobs
 jobs = [(i, eventRanges[i]) for i in range(len(eventRanges))]
 
-filename, ext = os.path.splitext( os.path.join(output_directory, sample.name + '.root') )
+filename, ext = os.path.splitext( os.path.join(tmp_output_directory, sample.name + '.root') )
 
 if len(eventRanges)>1:
     raise RuntimeError("Using fileBasedSplitting but have more than one event range!")
@@ -963,9 +979,9 @@ for ievtRange, eventRange in enumerate( eventRanges ):
     _logger.   add_fileHandler( outfilename.replace('.root', '.log'), options.logLevel )
     _logger_rt.add_fileHandler( outfilename.replace('.root', '_rt.log'), options.logLevel )
     
-    tmp_directory = ROOT.gDirectory
+    tmp_gdirectory = ROOT.gDirectory
     outputfile = ROOT.TFile.Open(outfilename, 'recreate')
-    tmp_directory.cd()
+    tmp_gdirectory.cd()
 
     if options.small: 
         logger.info("Running 'small'. Not more than 10000 events") 
@@ -1025,10 +1041,10 @@ if not options.keepNanoAOD and not options.skipNanoTools:
         except OSError:
             logger.info("nanoAOD file %s seems to be not there", f)
 
-logger.info("Copying log file to %s", output_directory )
-copyLog = subprocess.call(['cp', logFile, output_directory] )
+logger.info("Copying log file to %s", storage_directory )
+copyLog = subprocess.call(['cp', logFile, storage_directory] )
 if copyLog:
-    logger.info( "Copying log from %s to %s failed", logFile, output_directory)
+    logger.info( "Copying log from %s to %s failed", logFile, storage_directory)
 else:
     logger.info( "Successfully copied log file" )
     os.remove(logFile)
@@ -1038,8 +1054,22 @@ if checkRootFile( outfilename, checkForObjects=["Events"] ) and deepCheckRootFil
     logger.info( "Target: File check ok!" )
 else:
     logger.info( "Corrupt rootfile! Removing file: %s"%outfilename )
-    #os.remove( outfilename )
-    #raise Exception("Corrupt rootfile! File not copied: %s"%source )
+    os.remove( outfilename )
+
+for item in os.listdir(tmp_output_directory):
+    s = os.path.join(tmp_output_directory, item)
+    if not os.path.isdir(s):
+        shutil.copy(s, storage_directory)
+
+# close all log files before deleting the tmp directory
+for logger_ in [logger, logger_rt]:
+    for handler in logger_.handlers:
+        handler.close()
+        logger_.removeHandler(handler)
+
+if os.path.exists(tmp_output_directory):
+    shutil.rmtree(tmp_output_directory)
+    logger.info( "Cleaned tmp directory %s", tmp_output_directory )
 
 # There is a double free corruption due to stupid ROOT memory management which leads to a non-zero exit code
 # Thus the job is resubmitted on condor even if the output is ok

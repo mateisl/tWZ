@@ -1,4 +1,7 @@
 class triggerSelector:
+    # ttH multilepton AN Run II
+    # http://cms.cern.ch/iCMS/jsp/openfile.jsp?tp=draft&files=AN2019_111_v6.pdf
+
     def __init__(self, year):
         if year == 2016:
             self.mmm    = ["HLT_TripleMu_12_10_5"]
@@ -38,11 +41,11 @@ class triggerSelector:
             raise NotImplementedError("Trigger selection %r not implemented"%year)
 
         # define which triggers should be used for which dataset
-        self.DoubleMuon     = "(%s)"%"||".join(self.mmm + self.mm)
-        self.DoubleEG       = "(%s)"%"||".join(self.eee + self.ee)
-        self.MuonEG         = "(%s)"%"||".join(self.em + self.eem + self.emm)
-        self.SingleMuon     = "(%s)"%"||".join(self.m)
-        self.SingleElectron = "(%s)"%"||".join(self.e)
+        self.DoubleMuon     = "(%s)"%"||".join(["Alt$(%s,0)"%trigger for trigger in self.mmm + self.mm])
+        self.DoubleEG       = "(%s)"%"||".join(["Alt$(%s,0)"%trigger for trigger in self.eee + self.ee])
+        self.MuonEG         = "(%s)"%"||".join(["Alt$(%s,0)"%trigger for trigger in self.em + self.eem + self.emm])
+        self.SingleMuon     = "(%s)"%"||".join(["Alt$(%s,0)"%trigger for trigger in self.m])
+        self.SingleElectron = "(%s)"%"||".join(["Alt$(%s,0)"%trigger for trigger in self.e])
 
         # define an arbitrary hierarchy
         self.PDHierarchy = [ "DoubleMuon", "DoubleEG", "MuonEG", "SingleMuon", "SingleElectron" ]

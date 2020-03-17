@@ -80,7 +80,7 @@ def getMinDLMass(leptons):
     for i, v in enumerate(vecs):
         v.SetPtEtaPhiM(leptons[i]['pt'], leptons[i]['eta'], leptons[i]['phi'], 0.)
     dlMasses = [((vecs[comb[0]] + vecs[comb[1]]).M(), comb[0], comb[1])  for comb in itertools.combinations(inds, 2) ]
-    return min(dlMasses), dlMasses
+    return min(dlMasses)[0] if len(dlMasses)>0 else -1.
 
 # Returns (closest mass, index1, index2)
 def closestOSDLMassToMZ(leptons):

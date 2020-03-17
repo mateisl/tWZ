@@ -54,7 +54,7 @@ TWZ  = Sample.fromDirectory(name="TWZ", treeName="Events", isData=False, color=c
 dirs['TTZToLLNuNu']     = ['TTZToLLNuNu_ext2_comb', 'TTZToLLNuNu_m1to10']
 dirs['TTZToQQ']         = ['TTZToQQ']
 dirs['TTZ']             = ['TTZToLLNuNu_ext2_comb', 'TTZToLLNuNu_m1to10', "TTZToQQ"]
-TTZ = Sample.fromDirectory(name="TTZ", treeName="Events", isData=False, color=color.TTZ, texName="ttZ", directory=make_dirs( dirs['TTZ']))
+TTZ = Sample.fromDirectory(name="TTZ", treeName="Events", isData=False, color=color.TTZ, texName="t#bar{t}Z", directory=make_dirs( dirs['TTZ']))
 
 # TTX
 dirs['TZQ']             = ['tZq_ll_ext', 'tZq_nunu'] 
@@ -66,18 +66,21 @@ TZQ = Sample.fromDirectory(name="TZQ", treeName="Events", isData=False, color=co
 dirs['TTW']             = ['TTWToLNu_ext2', 'TTWToQQ']
 dirs['TTVV']            = ['TTWW', 'TTWZ','TTZZ']
 dirs['TTX_rare']        = ["TTTT", "TTHbb", "TTHnobb_pow", "THW", "THQ"] + dirs['TTW'] + dirs['TTVV'] # same as TTX_rare but without tZq_ll_ext
-TTX_rare = Sample.fromDirectory(name="TTX_rare", treeName="Events", isData=False, color=color.TTX_rare, texName="t/tt+(tt/H/W/VV)", directory=make_dirs( dirs['TTX_rare']))
+TTX_rare = Sample.fromDirectory(name="TTX_rare", treeName="Events", isData=False, color=color.TTX_rare, texName="t/t#bar{t}+(t#bar{t}/H/W/VV)", directory=make_dirs( dirs['TTX_rare']))
 
 # TT
 dirs['TTLep']           = ['TTLep_pow']
 dirs['singleTop']       = ['TBar_tch_pow', 'TBar_tWch_ext', 'T_tch_pow', 'T_tWch_ext']
+dirs['Top']             = dirs['TTLep'] + dirs['singleTop']
+Top  = Sample.fromDirectory(name="Top", treeName="Events", isData=False, color=color.TTJets, texName="t/t#bar{t}", directory=make_dirs(dirs['Top']))
 
 # DY
 #dirs['DY_HT_LO']        = ['DYJetsToLL_M50_LO_ext_comb_lheHT70','DYJetsToLL_M50_HT70to100', 'DYJetsToLL_M50_HT100to200_comb', 'DYJetsToLL_M50_HT200to400_comb', 'DYJetsToLL_M50_HT400to600_comb', 'DYJetsToLL_M50_HT600to800', 'DYJetsToLL_M50_HT800to1200', 'DYJetsToLL_M50_HT1200to2500', 'DYJetsToLL_M50_HT2500toInf']
 dirs['DY_LO']              = ['DYJetsToLL_M50_LO_ext1_comb'] #,'DYJetsToLL_M10to50_LO']
+DY_LO  = Sample.fromDirectory(name="DY", treeName="Events", isData=False, color=color.DY, texName="DY(LO)+Jets", directory=make_dirs(dirs['DY_LO']))
 
-dirs['nonprompt_3l']    = dirs['WW'] + dirs['VVTo2L2Nu'] + dirs['TTLep'] + dirs['DY_LO'] + dirs['singleTop']
-dirs['nonprompt_4l']    = dirs['WW'] + dirs['VVTo2L2Nu'] + dirs['TTLep'] + dirs['DY_LO'] + dirs['singleTop'] + dirs['TZQ'] + dirs["WZ"] 
+dirs['nonprompt_3l']    = dirs['WW'] + dirs['VVTo2L2Nu'] + dirs['singleTop']
+dirs['nonprompt_4l']    = dirs['WW'] + dirs['VVTo2L2Nu'] + dirs['singleTop'] + dirs['TZQ'] + dirs["WZ"] 
 nonprompt_3l = Sample.fromDirectory(name="nonprompt_3l", treeName="Events", isData=False, color=color.nonprompt, texName="nonprompt_3l", directory=make_dirs( dirs['nonprompt_3l']))
 nonprompt_4l = Sample.fromDirectory(name="nonprompt_4l", treeName="Events", isData=False, color=color.nonprompt, texName="nonprompt_4l", directory=make_dirs( dirs['nonprompt_4l']))
 

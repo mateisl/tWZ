@@ -14,7 +14,7 @@ if os.environ["USER"] in ["schoef", "rschoefbeck", "schoefbeck"]:
 if os.environ["USER"] in ["robert.schoefbeck"]:
     postprocessing_output_directory = "/mnt/hephy/cms/robert.schoefbeck/tWZ/nanoTuples"
     postprocessing_tmp_directory    = "/scratch/hephy/cms/robert.schoefbeck/tWZ/tmp/"
-    plot_directory                  = "/mnt/hephy/cms/robert.schoefbeck/tWZ/plots"
+    plot_directory                  = "/mnt/hephy/cms/robert.schoefbeck/www/tWZ/plots"
     cache_dir                       = "/mnt/hephy/cms/robert.schoefbeck/tWZ/caches"
     # Analysis result files
     analysis_results                = "/mnt/hephy/cms/robert.schoefbeck/tWZ/results/v1"

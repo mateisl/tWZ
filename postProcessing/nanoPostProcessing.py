@@ -20,7 +20,7 @@ from RootTools.core.standard import *
 import tWZ.Tools.user as user
 
 # Tools for systematics
-from tWZ.Tools.helpers             import closestOSDLMassToMZ, deltaR, deltaPhi, bestDRMatchInCollection, nonEmptyFile, getSortedZCandidates, cosThetaStar
+from tWZ.Tools.helpers             import closestOSDLMassToMZ, deltaR, deltaPhi, bestDRMatchInCollection, nonEmptyFile, getSortedZCandidates, cosThetaStar, m3, getMinDLMass
 from tWZ.Tools.objectSelection     import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons,  getGoodJets, isBJet, jetId, isBJet, getGoodPhotons, getGenPartsAll, getJets, getPhotons, getAllJets, filterGenPhotons, genPhotonSelector, genLepFromZ
 from tWZ.Tools.objectSelection     import getGenZs, getGenPhoton
 
@@ -264,8 +264,9 @@ logger.debug("fileBasedSplitting: Files to be run over:\n%s", "\n".join(sample.f
 addSystematicVariations = (not isData) and (not options.skipSystematicVariations)
 
 # B tagging SF
+b_tagger = "DeepCSV"
 from Analysis.Tools.BTagEfficiency import BTagEfficiency
-btagEff = BTagEfficiency( fastSim = False, year=options.year, tagger='DeepJet' )
+btagEff = BTagEfficiency( fastSim = False, year=options.year, tagger=b_tagger )
 
 # tmp_output_directory
 tmp_output_directory  = os.path.join( user.postprocessing_tmp_directory, "%s_%s_%s_%s"%(options.processingEra, options.skim, sample.name, str(uuid.uuid4())))  
@@ -443,7 +444,7 @@ new_variables += [\
 ]
 
 if sample.isData: new_variables.extend( ['jsonPassed/I','isData/I'] )
-new_variables.extend( ['nBTag/I', 'ht/F'] )
+new_variables.extend( ['nBTag/I', 'ht/F', 'm3/F', 'minDLmass/F'] )
 
 new_variables.append( 'lep[%s]'% ( ','.join(lepVars) ) )
 
@@ -572,7 +573,7 @@ reader = sample.treeReader( \
     )
 
 # using miniRelIso 0.2 as baseline 
-eleSelector_ = eleSelector( "WP90", year = options.year )
+eleSelector_ = eleSelector( "CBtight", year = options.year )
 muSelector_  = muonSelector("medium", year = options.year )
 
 genPhotonSel_TTG_OR = genPhotonSelector( 'overlapTTGamma' )
@@ -690,18 +691,20 @@ def filler( event ):
     fill_vector_collection( event, "lep", lepVarNames, leptons)
     event.nlep = len(leptons)
 
+    event.minDLmass = getMinDLMass(leptons)
+
     # now get jets, cleaned against good leptons
 
     jetPtVar = 'pt_nom' # see comment below
 
     # with the latest change, getAllJets calculates the correct jet pt (removing JER) and stores it as Jet_pt again. No need for Jet_pt_nom anymore
     allJetsNotClean = getAllJets(r, [], ptCut=0, absEtaCut=99, jetVars=jetVarNames, jetCollections=["Jet"], idVar=None)
-    reallyAllJets= getAllJets(r, leptons, ptCut=0, absEtaCut=99, jetVars=jetVarNames, jetCollections=["Jet"], idVar='jetId') # keeping robert's comment: ... yeah, I know.
+    reallyAllJets   = getAllJets(r, leptons, ptCut=0, absEtaCut=99, jetVars=jetVarNames, jetCollections=["Jet"], idVar='jetId') # keeping robert's comment: ... yeah, I know.
     allJets      = filter(lambda j:abs(j['eta'])<jetAbsEtaCut, reallyAllJets)
     jets         = filter(lambda j:jetId(j, ptCut=30, absEtaCut=jetAbsEtaCut, ptVar=jetPtVar), allJets)
     soft_jets    = filter(lambda j:jetId(j, ptCut=0,  absEtaCut=jetAbsEtaCut) and j['pt']<30., allJets) if options.keepAllJets else []
-    bJets        = filter(lambda j:isBJet(j, tagger="DeepJet", year=options.year) and abs(j['eta'])<=2.4    , jets)
-    nonBJets     = filter(lambda j:not ( isBJet(j, tagger="DeepJet", year=options.year) and abs(j['eta'])<=2.4 ), jets)
+    bJets        = filter(lambda j:isBJet(j, tagger=b_tagger, year=options.year) and abs(j['eta'])<=2.4    , jets)
+    nonBJets     = filter(lambda j:not ( isBJet(j, tagger=b_tagger, year=options.year) and abs(j['eta'])<=2.4 ), jets)
 
     # store the correct MET (EE Fix for 2017, MET_min as backup in 2017)
     
@@ -742,6 +745,7 @@ def filler( event ):
 
     event.ht         = sum([j[jetPtVar] for j in jets])
     event.nBTag      = len(bJets)
+    event.m3, _,_,_ = m3( jets )
 
     alljets_sys   = {}
     jets_sys      = {}
@@ -879,7 +883,7 @@ def filler( event ):
 
                     Z_vectors.append(Z)
 
-            # take the leptons that are not from the leading Z candidate and assign them as nonZ, ignorant about if they actually form a Z candidate
+            # take the leptons that are not from the leading Z candidate and assign them as nonZ, ignorant about if they actually from a Z candidate
             # As a start, take the leading two leptons as non-Z. To be overwritten as soon as we have a Z candidate, otherwise one lepton can be both from Z and non-Z
             if len(leptons)>0:
                 event.nonZ1_l1_index = leptons[0]['index']
@@ -889,10 +893,10 @@ def filler( event ):
                 # reset nonZ1_leptons
                 event.nonZ1_l1_index = -1
                 event.nonZ1_l2_index = -1
-                nonZ_tightLepton_indices = [ i for i in range(len(leptons)) if i not in [allZCands[0][1], allZCands[0][2]] ]
+                nonZ1_tightLepton_indices = [ i for i in range(len(leptons)) if i not in [allZCands[0][1], allZCands[0][2]] ]
 
-                event.nonZ1_l1_index = nonZ_tightLepton_indices[0] if len(nonZ_tightLepton_indices)>0 else -1
-                event.nonZ1_l2_index = nonZ_tightLepton_indices[1] if len(nonZ_tightLepton_indices)>1 else -1
+                event.nonZ11_l1_index = nonZ1_tightLepton_indices[0] if len(nonZ1_tightLepton_indices)>0 else -1
+                event.nonZ11_l2_index = nonZ1_tightLepton_indices[1] if len(nonZ1_tightLepton_indices)>1 else -1
 
         if len(leptons)>=3:
             event.l3_pt         = leptons[1]['pt']

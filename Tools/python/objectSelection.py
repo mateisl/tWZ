@@ -36,7 +36,7 @@ def getAllJets(c, leptons, ptCut=30, absEtaCut=2.4, jetVars=jetVars, jetCollecti
 
     return res
 
-def isBJet(j, tagger = 'DeepFlavor', year = 2016):
+def isBJet(j, tagger = 'DeepCSV', year = 2016):
     if tagger == 'CSVv2':
         if year == 2016:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco
@@ -208,9 +208,18 @@ def cbEleSelector( quality, removeCuts = [] ):
         return all(map( lambda x: operator.ge(*x), zip( cutBasedEleBitmap(integer), thresholds ) ))
     return _selector
 
+def cbEleIdFlagGetter( flag ):
+
+    position = vidNestedWPBitMapNamingList.index( flag )
+
+    def getter( integer ):
+        return int( textwrap.wrap("{0:030b}".format(integer),3)[position] ,2)
+
+    return getter
+
 def eleSelector( lepton_selection, year, ptCut = 10):
     # tigher isolation applied on analysis level. cutBased corresponds to Fall17V2 ID for all 2016-2018.
-    if lepton_selection == 'CBTight':
+    if lepton_selection == 'CBtight':
         def func(l):
             return \
                 l["pt"]                 >= ptCut \
@@ -222,7 +231,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and l["sip3d"]          < 4.0 \
                 and abs(l["dxy"])       < 0.05 \
                 and abs(l["dz"])        < 0.1
-    elif lepton_selection == 'CBTightMiniIso02':
+    elif lepton_selection == 'CBtightMiniIso02':
         cbEleSelector_ = cbEleSelector( 'tight', removeCuts = ['GsfEleRelPFIsoScaledCut'] )
         def func(l):
             return \
@@ -232,7 +241,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and l["miniPFRelIso_all"] < 0.2 \
                 and l["sip3d"]          < 4.0 \
                 and ord(l["lostHits"])  == 0 
-    elif lepton_selection == 'CBTightNoIso':
+    elif lepton_selection == 'CBtightNoIso':
         cbEleSelector_ = cbEleSelector( 'tight', removeCuts = ['GsfEleRelPFIsoScaledCut'] )
         def func(l):
             return \
@@ -241,7 +250,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and l["sip3d"]          < 4.0 \
                 and ord(l["lostHits"])  == 0 \
                 and cbEleSelector_(l['vidNestedWPBitmap']) 
-    elif lepton_selection == 'WP90':
+    elif lepton_selection == 'WP80':
         def func(l):
             return \
                 l["pt"]                 >= ptCut \

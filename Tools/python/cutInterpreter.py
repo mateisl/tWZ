@@ -9,13 +9,16 @@ bJetSelectionM  = "nBTag"
 
 mIsoWP = { "VT":5, "T":4, "M":3 , "L":2 , "VL":1, 0:"None" }
 
+from tWZ.Tools.objectSelection import lep_string
+
 special_cuts = {
-    "trilep" : "nlep==3&&Sum$(lep_pt>40)>0 && Sum$(lep_pt>20)>1 && Sum$(lep_pt>10)>2",
+    "trilep" :         "Sum$(lep_pt>40&&{lep_string})>=1 && Sum$(lep_pt>20&&{lep_string})>=2&&Sum$(lep_pt>10&&{lep_string})==3".format(lep_string=lep_string),
+    "trilepMini0p12" : "Sum$(lep_pt>40&&lep_miniPFRelIso_all<0.12&&{lep_string})>=1 && Sum$(lep_pt>20&&lep_miniPFRelIso_all<0.12&&{lep_string})>=2&&Sum$(lep_pt>10&&lep_miniPFRelIso_all<0.12&&{lep_string})==3".format(lep_string=lep_string),
     "onZ1"   : "abs(Z1_mass-91.2)<10",
     "offZ2"  : "(!(abs(Z2_mass-91.2)<20))",
   }
 
-continous_variables = [ ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1mass", "Z1_mass") ]
+continous_variables = [ ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1mass", "Z1_mass"), ("minDLmass", "minDLmass")]
 discrete_variables  = [ ("njet", "nJetGood"), ("btag", "nBTag")]
 
 class cutInterpreter:
@@ -30,7 +33,7 @@ class cutInterpreter:
             return "l1_mIsoWP>%i&&l2_mIsoWP>%i" % (str_, str_)
         elif string.startswith("relIso"):
            iso = float( string.replace('relIso','') )
-           #raise ValueError("We do not want to use relIso for our analysis anymore!")
+           raise ValueError("We do not want to use relIso for our analysis anymore!")
            return "l1_relIso03<%3.2f&&l2_relIso03<%3.2f"%( iso, iso )
         elif string.startswith("miniIso"):
            iso = float( string.replace('miniIso','') )

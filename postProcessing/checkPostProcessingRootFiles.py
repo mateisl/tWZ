@@ -10,7 +10,7 @@ from RootTools.core.standard                     import *
 from Analysis.Tools.helpers import deepCheckRootFile, checkRootFile
 
 # User specific
-from StopsDilepton.tools.user import postprocessing_output_directory
+from tWZ.Tools.user import postprocessing_output_directory
 
 def get_parser():
     ''' Argument parser for post-processing module.
@@ -77,7 +77,7 @@ def getDataDictList( filepath ):
 
 # Load File
 logger.info( "Now running on pp file %s and checking in directory %s", args.file, args.data_directory)
-file          = os.path.expandvars( "$CMSSW_BASE/src/StopsDilepton/postProcessing/%s.sh" % args.file )
+file          = os.path.expandvars( "$CMSSW_BASE/src/tWZ/postProcessing/%s.sh" % args.file )
 dictList      = getDataDictList( file )
 isData        = "Run" in args.file
 execCommand   = []
@@ -93,20 +93,14 @@ for ppEntry in dictList:
     # check whether we have an LHE HT cut:
     if "--LHEHTCut" in ppEntry["command"]:
         postfix += "_lheHT%i" % int(ppEntry["command"].split('--LHEHTCut')[1].lstrip().split(' ')[0]) 
-    dirPath = os.path.join( args.data_directory, ppEntry["dir"], ppEntry["skim"], sample+postfix  )
+    dirPath = os.path.join( args.data_directory, ppEntry["dir"], str(ppEntry["year"]), ppEntry["skim"], sample+postfix  )
 
     # find all root files in subdirectory
 
-    if dirPath.startswith('/dpm/'):
-        p = subprocess.Popen( ["dpns-ls %s" %dirPath], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
-        allRootFiles = [ line.rstrip() for line in p.stdout.readlines() if line.endswith(".root\n") and not line.startswith("nanoAOD") ]
-        nanoAODFiles = [ line.rstrip() for line in p.stdout.readlines() if line.endswith(".root\n") and line.startswith("nanoAOD") ]
-        prefix = 'root://hephyse.oeaw.ac.at/'
-    else:
-        allFiles = os.listdir(dirPath) if os.path.exists( dirPath ) else []
-        allRootFiles = filter( lambda f: f.endswith('.root') and not f.startswith('nanoAOD'), allFiles )
-        nanoAODFiles = filter( lambda f: f.endswith('.root') and f.startswith('nanoAOD'), allFiles )
-        prefix = ''
+    allFiles = os.listdir(dirPath) if os.path.exists( dirPath ) else []
+    allRootFiles = filter( lambda f: f.endswith('.root') and not f.startswith('nanoAOD'), allFiles )
+    nanoAODFiles = filter( lambda f: f.endswith('.root') and f.startswith('nanoAOD'), allFiles )
+    prefix = ''
 
     nanoAOD_list = []
     if len( nanoAODFiles )>0:

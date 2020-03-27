@@ -124,6 +124,11 @@ def get_index_str( index ):
         raise ValueError( "Don't know what to do with index %r" % index )
     return index_str
 
+# string based
+lep_string = "lep_pt>10&&abs(lep_eta)<2.5&&lep_mvaTTH>0.6"
+mu_string  = "lep_pt>10&&abs(lep_eta)<2.5&&lep_mvaTTH>0.6&&abs(lep_pdgId)==13"
+ele_string = "lep_pt>10&&abs(lep_eta)<2.5&&lep_mvaTTH>0.6&&abs(lep_pdgId)==11"
+
 ## MUONS ##
 def muonSelector( lepton_selection, year, ptCut = 10):
     # tigher isolation applied on analysis level
@@ -142,6 +147,16 @@ def muonSelector( lepton_selection, year, ptCut = 10):
                 l["pt"]                 >= ptCut \
                 and abs(l["eta"])       < 2.4 \
                 and l['pfRelIso03_all'] < 0.20 \
+                and l["sip3d"]          < 4.0 \
+                and abs(l["dxy"])       < 0.05 \
+                and abs(l["dz"])        < 0.1 \
+                and l["mediumId"]
+    elif lepton_selection == 'tightMiniIso02':
+        def func(l):
+            return \
+                l["pt"]                 >= ptCut \
+                and abs(l["eta"])       < 2.4 \
+                and l['miniPFRelIso_all'] < 0.20 \
                 and l["sip3d"]          < 4.0 \
                 and abs(l["dxy"])       < 0.05 \
                 and abs(l["dz"])        < 0.1 \
@@ -227,11 +242,11 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and l['cutBased']       >= 4 \
                 and l['pfRelIso03_all'] < 0.20 \
                 and l["convVeto"] \
-                and ord(l["lostHits"])  == 0 \
-                and l["sip3d"]          < 4.0 \
                 and abs(l["dxy"])       < 0.05 \
                 and abs(l["dz"])        < 0.1
-    elif lepton_selection == 'CBtightMiniIso02':
+                #and ord(l["lostHits"])  == 0 
+                #and l["sip3d"]          < 4.0
+    elif lepton_selection == 'tightMiniIso02':
         cbEleSelector_ = cbEleSelector( 'tight', removeCuts = ['GsfEleRelPFIsoScaledCut'] )
         def func(l):
             return \
@@ -297,10 +312,10 @@ def eleSelector( lepton_selection, year, ptCut = 10):
 #        return '&&'.join(string)
 
 
-electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','lostHits','convVeto','dxy','dz','charge','deltaEtaSC', 'mvaFall17V2Iso_WP80', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap']
+electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','lostHits','convVeto','dxy','dz','charge','deltaEtaSC', 'mvaFall17V2Iso_WP80', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap','mvaTTH']
 electronVars = electronVars_data + []
 
-muonVars_data = ['pt','eta','phi','pdgId','mediumId','miniPFRelIso_all','pfRelIso03_all','sip3d','dxy','dz','charge']
+muonVars_data = ['pt','eta','phi','pdgId','mediumId','miniPFRelIso_all','pfRelIso03_all','sip3d','dxy','dz','charge','mvaTTH']
 muonVars = muonVars_data + []
 
 def getMuons(c, collVars=muonVars):

@@ -64,7 +64,7 @@ def get_parser():
     argParser.add_argument('--flagTTBar',   action='store_true',                                                                        help="Is ttbar?" )
     argParser.add_argument('--doCRReweighting',             action='store_true',                                                        help="color reconnection reweighting?")
     argParser.add_argument('--triggerSelection',            action='store_true',                                                        help="Trigger selection?" ) 
-    argParser.add_argument('--skipGenLepMatching',          action='store_true',                                                        help="skip matched genleps??" )
+    #argParser.add_argument('--skipGenLepMatching',          action='store_true',                                                        help="skip matched genleps??" )
     argParser.add_argument('--checkTTGJetsOverlap',         action='store_true',                                                        help="Keep TTGJetsEventType which can be used to clean TTG events from TTJets samples" )
     argParser.add_argument('--skipSystematicVariations',    action='store_true',                                                        help="Don't calulcate BTag, JES and JER variations.")
     argParser.add_argument('--noTopPtReweighting',          action='store_true',                                                        help="Skip top pt reweighting.")
@@ -175,6 +175,7 @@ from tWZ.Tools.triggerSelector import triggerSelector
 ts           = triggerSelector(options.year)
 triggerCond  = ts.getSelection(options.samples[0] if isData else "MC")
 treeFormulas = {"triggerDecision": {'string':triggerCond} }
+
 if isData and options.triggerSelection:
     logger.info("Sample will have the following trigger skim: %s"%triggerCond)
     skimConds.append( triggerCond )
@@ -247,7 +248,7 @@ if options.LHEHTCut>0:
     skimConds.append( "LHE_HTIncoming<%f"%options.LHEHTCut )
 
 # final output directory 
-storage_directory = os.path.join( options.targetDir, options.processingEra, options.skim, sample.name )
+storage_directory = os.path.join( options.targetDir, options.processingEra, str(options.year), options.skim, sample.name )
 try:    #Avoid trouble with race conditions in multithreading
     os.makedirs(storage_directory)
     logger.info( "Created output directory %s.", storage_directory )
@@ -269,7 +270,7 @@ from Analysis.Tools.BTagEfficiency import BTagEfficiency
 btagEff = BTagEfficiency( fastSim = False, year=options.year, tagger=b_tagger )
 
 # tmp_output_directory
-tmp_output_directory  = os.path.join( user.postprocessing_tmp_directory, "%s_%s_%s_%s"%(options.processingEra, options.skim, sample.name, str(uuid.uuid4())))  
+tmp_output_directory  = os.path.join( user.postprocessing_tmp_directory, "%s_%i_%s_%s_%s"%(options.processingEra, options.year, options.skim, sample.name, str(uuid.uuid3(uuid.NAMESPACE_OID, sample.name))))  
 
 if os.path.exists(tmp_output_directory) and options.overwrite:
     if options.nJobs > 1:
@@ -394,7 +395,7 @@ jetVarNames     = [x.split('/')[0] for x in jetVars]
 genLepVars      = ['pt/F', 'phi/F', 'eta/F', 'pdgId/I', 'genPartIdxMother/I', 'status/I', 'statusFlags/I'] # some might have different types
 genLepVarNames  = [x.split('/')[0] for x in genLepVars]
 # those are for writing leptons
-lepVars         = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F','mvaFall17V2Iso_WP90/O', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','eleIndex/I','muIndex/I']
+lepVars         = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F','mvaFall17V2Iso_WP90/O', 'mvaTTH/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','eleIndex/I','muIndex/I']
 lepVarNames     = [x.split('/')[0] for x in lepVars]
 
 read_variables = map(TreeVariable.fromString, [ 'MET_pt/F', 'MET_phi/F', 'run/I', 'luminosityBlock/I', 'event/l', 'PV_npvs/I', 'PV_npvsGood/I'] )
@@ -423,17 +424,17 @@ if isMC:
     read_variables.append( TreeVariable.fromString('nGenJet/I') )
     read_variables.append( VectorTreeVariable.fromString('GenJet[pt/F,eta/F,phi/F]' ) )
     new_variables.extend([ 'reweightTopPt/F', 'reweight_nISR/F', 'reweight_nISRUp/F', 'reweight_nISRDown/F', 'reweightPU/F','reweightPUUp/F','reweightPUDown/F', 'reweightPUVUp/F','reweightPUVVUp/F', 'reweightPUVDown/F', 'reweightL1Prefire/F', 'reweightL1PrefireUp/F', 'reweightL1PrefireDown/F'])
-    if not options.skipGenLepMatching:
-        new_variables.append( TreeVariable.fromString( 'nGenLep/I' ) )
-        new_variables.append( 'GenLep[%s]'% ( ','.join(genLepVars) ) )
+#    if not options.skipGenLepMatching:
+#        new_variables.append( TreeVariable.fromString( 'nGenLep/I' ) )
+#        new_variables.append( 'GenLep[%s]'% ( ','.join(genLepVars) ) )
     if options.doCRReweighting:
         new_variables.append('reweightCR/F')
 
 read_variables += [\
     TreeVariable.fromString('nElectron/I'),
-    VectorTreeVariable.fromString('Electron[pt/F,eta/F,phi/F,pdgId/I,cutBased/I,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,lostHits/b,mvaFall17V2Iso_WP80/O,mvaFall17V2Iso_WP90/O,convVeto/O,dxy/F,dz/F,charge/I,deltaEtaSC/F,vidNestedWPBitmap/I]'),
+    VectorTreeVariable.fromString('Electron[pt/F,eta/F,phi/F,pdgId/I,cutBased/I,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,lostHits/b,mvaFall17V2Iso_WP80/O,mvaFall17V2Iso_WP90/O,convVeto/O,dxy/F,dz/F,charge/I,deltaEtaSC/F,vidNestedWPBitmap/I,mvaTTH/F]'),
     TreeVariable.fromString('nMuon/I'),
-    VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,dxy/F,dz/F,charge/I]'),
+    VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,dxy/F,dz/F,charge/I,mvaTTH/F]'),
     TreeVariable.fromString('nJet/I'),
     VectorTreeVariable.fromString('Jet[%s]'% ( ','.join(jetVars) ) ) ]
 
@@ -573,8 +574,10 @@ reader = sample.treeReader( \
     )
 
 # using miniRelIso 0.2 as baseline 
-eleSelector_ = eleSelector( "CBtight", year = options.year )
-muSelector_  = muonSelector("medium", year = options.year )
+#eleSelector_ = eleSelector( "CBtight", year = options.year )
+#muSelector_  = muonSelector("medium",  year = options.year )
+eleSelector_ = eleSelector( "tightMiniIso02", year = options.year )
+muSelector_  = muonSelector("tightMiniIso02", year = options.year )
 
 genPhotonSel_TTG_OR = genPhotonSelector( 'overlapTTGamma' )
 
@@ -895,21 +898,21 @@ def filler( event ):
                 event.nonZ1_l2_index = -1
                 nonZ1_tightLepton_indices = [ i for i in range(len(leptons)) if i not in [allZCands[0][1], allZCands[0][2]] ]
 
-                event.nonZ11_l1_index = nonZ1_tightLepton_indices[0] if len(nonZ1_tightLepton_indices)>0 else -1
-                event.nonZ11_l2_index = nonZ1_tightLepton_indices[1] if len(nonZ1_tightLepton_indices)>1 else -1
+                event.nonZ1_l1_index = nonZ1_tightLepton_indices[0] if len(nonZ1_tightLepton_indices)>0 else -1
+                event.nonZ1_l2_index = nonZ1_tightLepton_indices[1] if len(nonZ1_tightLepton_indices)>1 else -1
 
         if len(leptons)>=3:
-            event.l3_pt         = leptons[1]['pt']
-            event.l3_eta        = leptons[1]['eta']
-            event.l3_phi        = leptons[1]['phi']
-            event.l3_pdgId      = leptons[1]['pdgId']
-            event.l3_index      = leptons[1]['index']
-            event.l3_miniRelIso = leptons[1]['miniPFRelIso_all']
-            event.l3_relIso03   = leptons[1]['pfRelIso03_all']
-            event.l3_dxy        = leptons[1]['dxy']
-            event.l3_dz         = leptons[1]['dz']
-            event.l3_eleIndex   = leptons[1]['eleIndex']
-            event.l3_muIndex    = leptons[1]['muIndex']
+            event.l3_pt         = leptons[2]['pt']
+            event.l3_eta        = leptons[2]['eta']
+            event.l3_phi        = leptons[2]['phi']
+            event.l3_pdgId      = leptons[2]['pdgId']
+            event.l3_index      = leptons[2]['index']
+            event.l3_miniRelIso = leptons[2]['miniPFRelIso_all']
+            event.l3_relIso03   = leptons[2]['pfRelIso03_all']
+            event.l3_dxy        = leptons[2]['dxy']
+            event.l3_dz         = leptons[2]['dz']
+            event.l3_eleIndex   = leptons[2]['eleIndex']
+            event.l3_muIndex    = leptons[2]['muIndex']
 
     #if addSystematicVariations:
     # B tagging weights method 1a
@@ -919,40 +922,11 @@ def filler( event ):
         for var in btagEff.btagWeightNames:
             if var!='MC':
                 setattr(event, 'reweightBTag_'+var, btagEff.getBTagSF_1a( var, bJets, filter( lambda j: abs(j['eta'])<2.4, nonBJets ) ) )
-    # gen information on extra leptons
-    if isMC and not options.skipGenLepMatching:
-        genSearch.init( gPart )
-        # Start with status 1 gen leptons in acceptance
-        gLep = filter( lambda p:abs(p['pdgId']) in [11, 13] and p['status']==1 and p['pt']>20 and abs(p['eta'])<2.5, gPart )
-        for l in gLep:
-            ancestry = [ gPart[x]['pdgId'] for x in genSearch.ancestry( l ) ]
-            l["n_D"]   =  sum([ancestry.count(p) for p in D_mesons])
-            l["n_B"]   =  sum([ancestry.count(p) for p in B_mesons])
-            l["n_W"]   =  sum([ancestry.count(p) for p in [24, -24]])
-            l["n_t"]   =  sum([ancestry.count(p) for p in [6, -6]])
-            l["n_tau"] =  sum([ancestry.count(p) for p in [15, -15]])
-            matched_lep = bestDRMatchInCollection(l, leptons)
-            if matched_lep:
-                l["lepGoodMatchIndex"] = matched_lep['index']
-                if isSingleLep:
-                    l["matchesPromptGoodLepton"] = l["lepGoodMatchIndex"] in [event.l1_index]
-                elif isTriLep or isDiLep:
-                    l["matchesPromptGoodLepton"] = l["lepGoodMatchIndex"] in [event.l1_index, event.l2_index]
-                else:
-                    l["matchesPromptGoodLepton"] = 0
-            else:
-                l["lepGoodMatchIndex"] = -1
-                l["matchesPromptGoodLepton"] = 0
-        gLep = gLep[:100]
-        event.nGenLep   = len(gLep)
-        for iLep, lep in enumerate(gLep):
-            for b in genLepVarNames:
-                getattr(event, "GenLep_"+b)[iLep] = lep[b]
 
 # Create a maker. Maker class will be compiled. This instance will be used as a parent in the loop
 treeMaker_parent = TreeMaker(
     sequence  = [ filler ],
-    variables = [ TreeVariable.fromString(x) for x in new_variables ],
+    variables = [ TreeVariable.fromString(x) if type(x)==type("") else x for x in new_variables ],
     treeName = "Events"
     )
 
@@ -1064,7 +1038,7 @@ for item in os.listdir(tmp_output_directory):
     s = os.path.join(tmp_output_directory, item)
     if not os.path.isdir(s):
         shutil.copy(s, storage_directory)
-
+    logger.info( "Done copying to storage directory %s", storage_directory)
 # close all log files before deleting the tmp directory
 for logger_ in [logger, logger_rt]:
     for handler in logger_.handlers:

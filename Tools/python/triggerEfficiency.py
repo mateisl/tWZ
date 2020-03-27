@@ -11,7 +11,7 @@ class triggerEfficiency:
             self.maxPt   = 120.
             self.SF      = 0.985
             self.inflUnc = max( [ 1- self.SF, self.unc] )
-        if year == 2017:
+        if year == 2017 or year == 2018: #FIXME! 2018 has not been evaluated!
             self.maxPt   = 80.
             self.SF      = 0.966
             self.inflUnc = max( [1 - self.SF, self.unc] )

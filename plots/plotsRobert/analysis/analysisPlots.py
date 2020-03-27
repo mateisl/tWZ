@@ -19,6 +19,7 @@ from RootTools.core.standard             import *
 from tWZ.Tools.user                      import plot_directory
 from tWZ.Tools.cutInterpreter            import cutInterpreter
 from tWZ.Tools.objectSelection           import cbEleIdFlagGetter, vidNestedWPBitMapNamingList
+from tWZ.Tools.objectSelection           import mu_string, ele_string 
 # Analysis
 from Analysis.Tools.helpers              import deltaPhi, deltaR
 from Analysis.Tools.metFilters           import getFilterCut
@@ -33,9 +34,9 @@ argParser.add_argument('--noData',         action='store_true', default=False, h
 argParser.add_argument('--small',                             action='store_true', help='Run only on a small subset of the data?', )
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
-argParser.add_argument('--plot_directory', action='store', default='tWZ_v0')
+argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
 argParser.add_argument('--era',            action='store', type=str, default="2016")
-argParser.add_argument('--selection',      action='store', default='trilep-onZ1-njet2p-btag1p')
+argParser.add_argument('--selection',      action='store', default='trilepMini0p12-minDLmass12-onZ1-njet4p-btag2p')
 args = argParser.parse_args()
 
 # Logger
@@ -61,7 +62,8 @@ logger.info( "Working in year %i", year )
 if year == 2016:
     from tWZ.samples.nanoTuples_Run2016_postProcessed import *
     from tWZ.samples.nanoTuples_Summer16_postProcessed import *
-    mc             = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l, DY_LO, Top]
+    mc             = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
+    #mc             = [TTZToLLNuNu]
 elif year == 2017:
     from tWZ.samples.nanoTuples_Fall17_postProcessed import *
     from tWZ.samples.nanoTuples_Run2017_31Mar2018_postProcessed import *
@@ -95,6 +97,9 @@ tex = ROOT.TLatex()
 tex.SetNDC()
 tex.SetTextSize(0.04)
 tex.SetTextAlign(11) # align right
+
+def charge(pdgId):
+    return -pdgId/abs(pdgId)
 
 def drawObjects( plotData, dataMCScale, lumi_scale ):
     lines = [
@@ -159,6 +164,16 @@ def getWpt( event, sample):
 
 sequence.append( getWpt )
 
+def getM3l( event, sample ):
+    # get the invariant mass of the 3l system
+    l = []
+    for i in range(3):
+        l.append(ROOT.TLorentzVector())
+        l[i].SetPtEtaPhiM(event.lep_pt[i], event.lep_eta[i], event.lep_phi[i],0)
+    event.M3l = (l[0] + l[1] + l[2]).M()
+
+sequence.append( getM3l )
+
 read_variables = [
     "weight/F", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l2_eta/F", "l2_phi/F", 
@@ -173,8 +188,6 @@ read_variables = [
 read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F']
 # define 3l selections
 
-mu_string  = "lep_pt>10&&abs(lep_eta)<2.5&&abs(lep_pdgId)==13"
-ele_string = "lep_pt>10&&abs(lep_eta)<2.5&&abs(lep_pdgId)==11"
 def getLeptonSelection( mode ):
     if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
     elif mode=="mumue":  return "Sum$({mu_string})==2&&Sum$({ele_string})==1".format(mu_string=mu_string,ele_string=ele_string)
@@ -183,15 +196,55 @@ def getLeptonSelection( mode ):
     elif mode=='all':    return "Sum$({mu_string})+Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
 
 # Getter functor for lepton quantities
-def lep_getter( branch, index, abs_pdg = None, functor = lambda x:x):
-    if abs_pdg == 13:
-        def func_( event, sample ):
-            #return functor(getattr( event, "lep_%s"%branch )[index])
-            return functor(getattr( event, "Muon_%s"%branch )[event.lep_muIndex[index]]) if abs(event.lep_pdgId[index])==abs_pdg else float('nan')
+def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
+    if functor is not None:
+        if abs_pdg == 13:
+            def func_( event, sample ):
+                if debug:
+                    print "Returning", "Muon_%s"%branch, index, abs_pdg, "functor", functor, "result",
+                    print functor(getattr( event, "Muon_%s"%branch )[event.lep_muIndex[index]]) if abs(event.lep_pdgId[index])==abs_pdg else float('nan')
+                return functor(getattr( event, "Muon_%s"%branch )[event.lep_muIndex[index]]) if abs(event.lep_pdgId[index])==abs_pdg else float('nan')
+        else:
+            def func_( event, sample ):
+                return functor(getattr( event, "Electron_%s"%branch )[event.lep_eleIndex[index]]) if abs(event.lep_pdgId[index])==abs_pdg else float('nan')
     else:
-        def func_( event, sample ):
-            return functor(getattr( event, "Electron_%s"%branch )[event.lep_eleIndex[index]]) if abs(event.lep_pdgId[index])==abs_pdg else float('nan')
+        if abs_pdg == 13:
+            def func_( event, sample ):
+                if debug:
+                    print "Returning", "Muon_%s"%branch, index, abs_pdg, "functor", functor, "result",
+                    print getattr( event, "Muon_%s"%branch )[event.lep_muIndex[index]] if abs(event.lep_pdgId[index])==abs_pdg else float('nan')
+                return getattr( event, "Muon_%s"%branch )[event.lep_muIndex[index]] if abs(event.lep_pdgId[index])==abs_pdg else float('nan')
+        else:
+            def func_( event, sample ):
+                return getattr( event, "Electron_%s"%branch )[event.lep_eleIndex[index]] if abs(event.lep_pdgId[index])==abs_pdg else float('nan')
     return func_
+
+#mu0_charge   = lep_getter("pdgId", 0, 13, functor = charge)
+#ele0_charge = lep_getter("pdgId", 0, 11, functor = charge)
+#mu1_charge   = lep_getter("pdgId", 1, 13, functor = charge)
+#ele1_charge = lep_getter("pdgId", 1, 11, functor = charge)
+#def test(event, sample):
+#    mu0_ch  = mu0_charge(event, sample)
+#    ele0_ch = ele0_charge(event, sample)
+#    mu1_ch  = mu1_charge(event, sample)
+#    ele1_ch = ele1_charge(event, sample)
+#    print "mu0_ch",mu0_ch, "ele0_ch",ele0_ch, "mu1_ch",mu1_ch, "ele1_ch",ele1_ch
+#
+#sequence.append( test )
+
+# 3l trainign variables
+
+def make_training_observables_3l(event, sample):
+
+    event.nonZ1l1_Z1_deltaPhi = deltaPhi(event.lep_phi[event.nonZ1_l1_index], event.Z1_phi)
+    event.nonZ1l1_Z1_deltaEta = abs(event.lep_eta[event.nonZ1_l1_index] - event.Z1_eta)
+    event.nonZ1l1_Z1_deltaR   = deltaR({'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    event.jet0_Z1_deltaR      = deltaR({'eta':event.JetGood_eta[0], 'phi':event.JetGood_phi[0]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    event.jet0_nonZ1l1_deltaR = deltaR({'eta':event.JetGood_eta[0], 'phi':event.JetGood_phi[0]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+    event.jet1_Z1_deltaR      = deltaR({'eta':event.JetGood_eta[1], 'phi':event.JetGood_phi[1]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    event.jet1_nonZ1l1_deltaR = deltaR({'eta':event.JetGood_eta[1], 'phi':event.JetGood_phi[1]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+
+sequence.append( make_training_observables_3l )
 
 yields     = {}
 allPlots   = {}
@@ -201,7 +254,7 @@ for i_mode, mode in enumerate(allModes):
     if not args.noData:
         data_sample = Run2016
         data_sample.texName = "data (legacy)"
-        data_sample.setSelectionString(["triggerDecision", getFilterCut(year, isData=True), getLeptonSelection(mode)])
+        data_sample.setSelectionString([ getFilterCut(year, isData=True), getLeptonSelection(mode)])
         data_sample.name           = "data"
         data_sample.style          = styles.errorStyle(ROOT.kBlack)
         lumi_scale                 = data_sample.lumi/1000
@@ -213,7 +266,7 @@ for i_mode, mode in enumerate(allModes):
     for sample in mc:
       sample.scale          = lumi_scale
       sample.read_variables = read_variables_MC 
-      sample.setSelectionString(["triggerDecision", getFilterCut(year, isData=False), getLeptonSelection(mode)])
+      sample.setSelectionString([ getFilterCut(year, isData=False), getLeptonSelection(mode)])
       sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
 
     #yt_TWZ_filter.scale = lumi_scale * 1.07314
@@ -281,6 +334,25 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
+        name = 'Z1_pt_coarse', texX = 'p_{T}(Z_{1}) (GeV)', texY = 'Number of Events / 50 GeV',
+        attribute = TreeVariable.fromString( "Z1_pt/F" ),
+        binning=[16,0,800],
+    ))
+
+    plots.append(Plot(
+        name = 'Z1_pt_superCoarse', texX = 'p_{T}(Z_{1}) (GeV)', texY = 'Number of Events',
+        attribute = TreeVariable.fromString( "Z1_pt/F" ),
+        binning=[3,0,600],
+    ))
+
+    plots.append(Plot(
+        name = "M3l",
+        texX = 'M(3l) (GeV)', texY = 'Number of Events',
+        attribute = lambda event, sample:event.M3l,
+        binning=[25,0,500],
+    ))
+
+    plots.append(Plot(
         name = "dPhiZJet",
         texX = '#Delta#phi(Z,j1)', texY = 'Number of Events',
         attribute = lambda event, sample: deltaPhi(event.Z1_phi, event.JetGood_phi[0]),
@@ -316,6 +388,24 @@ for i_mode, mode in enumerate(allModes):
         attribute = lambda event, sample:event.lep_pt[event.Z1_l2_index],
         binning=[20,0,200],
         addOverFlowBin='upper',
+    ))
+
+    plots.append(Plot(
+      texX = 'p_{T}(leading l) (GeV)', texY = 'Number of Events / 20 GeV',
+      name = 'lep1_pt', attribute = lambda event, sample: event.lep_pt[0],
+      binning=[400/20,0,400],
+    ))
+
+    plots.append(Plot(
+      texX = 'p_{T}(subleading l) (GeV)', texY = 'Number of Events / 10 GeV',
+      name = 'lep2_pt', attribute = lambda event, sample: event.lep_pt[1],
+      binning=[200/10,0,200],
+    ))
+
+    plots.append(Plot(
+      texX = 'p_{T}(trailing l) (GeV)', texY = 'Number of Events / 10 GeV',
+      name = 'lep3_pt', attribute = lambda event, sample: event.lep_pt[2],
+      binning=[150/10,0,150],
     ))
 
     plots.append(Plot(
@@ -384,6 +474,35 @@ for i_mode, mode in enumerate(allModes):
         attribute = lambda event, sample:event.Z1_cosThetaStar,
         binning=[10,-1,1],
     ))
+
+    plots.append(Plot(
+        name = "Z2_mass_wide",
+        texX = 'M(ll) of 2nd OSDL pair', texY = 'Number of Events / 2 GeV',
+        attribute = TreeVariable.fromString( "Z2_mass/F" ),
+        binning=[60,0,120],
+        addOverFlowBin='upper',
+    )) 
+
+    plots.append(Plot(
+        name = "minDLmass",
+        texX = 'min mass of all DL pairs', texY = 'Number of Events / 2 GeV',
+        attribute = TreeVariable.fromString( "minDLmass/F" ),
+        binning=[60,0,120],
+        addOverFlowBin='upper',
+    )) 
+
+    plots.append(Plot(
+        texX = '#Delta#phi(Z_{1}(ll))', texY = 'Number of Events',
+        attribute = TreeVariable.fromString( "Z1_lldPhi/F" ),
+        binning=[10,0,pi],
+    ))
+
+    plots.append(Plot(
+        texX = '#Delta R(Z_{1}(ll))', texY = 'Number of Events',
+        attribute = TreeVariable.fromString( "Z1_lldR/F" ),
+        binning=[10,0,6],
+    ))
+
     plots.append(Plot(
       texX = 'N_{jets}', texY = 'Number of Events',
       attribute = TreeVariable.fromString( "nJetGood/I" ), #nJetSelected
@@ -408,6 +527,52 @@ for i_mode, mode in enumerate(allModes):
       binning=[600/30,0,600],
     ))
 
+    plots.append(Plot(
+        name = "W_pt",
+        texX = 'p_{T}(W) (GeV)', texY = 'Number of Events / 20 GeV',
+        attribute = lambda event, sample:event.W_pt,
+        binning=[20,0,400],
+    ))
+
+    # 3l training variables
+
+    plots.append(Plot(
+      texX = '#Delta\#phi(nonZ-l_{1}, Z_{1})', texY = 'Number of Events',
+      name = 'nonZ1l1_Z1_deltaPhi', attribute = lambda event, sample: event.nonZ1l1_Z1_deltaPhi,
+      binning=[20,0,pi],
+    ))
+    plots.append(Plot(
+      texX = '#Delta#eta(nonZ-l_{1}, Z_{1})', texY = 'Number of Events',
+      name = 'nonZ1l1_Z1_deltaEta', attribute = lambda event, sample: event.nonZ1l1_Z1_deltaEta,
+      binning=[20,0,6],
+    ))
+    plots.append(Plot(
+      texX = '#Delta R(nonZ-l_{1}, Z_{1})', texY = 'Number of Event',
+      name = 'nonZ1l1_Z1_deltaR', attribute = lambda event, sample: event.nonZ1l1_Z1_deltaR,
+      binning=[20,0,6],
+    ))
+
+    plots.append(Plot(
+      texX = '#Delta R(jet_{0}, Z_{1})', texY = 'Number of Events',
+      name = 'jet0_Z1_deltaR', attribute = lambda event, sample: event.jet0_Z1_deltaR,
+      binning=[20,0,6],
+    ))
+    plots.append(Plot(
+      texX = '#Delta R(jet_{0}, nonZ-l_{1})', texY = 'Number of Events',
+      name = 'jet0_nonZ1l1_deltaR', attribute = lambda event, sample: event.jet0_nonZ1l1_deltaR,
+      binning=[20,0,6],
+    ))
+    plots.append(Plot(
+      texX = '#Delta R(jet_{1}, Z_{1})', texY = 'Number of Events',
+      name = 'jet1_Z1_deltaR', attribute = lambda event, sample: event.jet1_Z1_deltaR,
+      binning=[20,0,6],
+    ))
+    plots.append(Plot(
+      texX = '#Delta R(jet_{1}, nonZ-l_{1})', texY = 'Number of Events',
+      name = 'jet1_nonZ1l1', attribute = lambda event, sample: event.jet1_nonZ1l1_deltaR,
+      binning=[20,0,6],
+    ))
+    
     for index in range(3):
         for abs_pdg in [11, 13]:
             lep_name = "mu" if abs_pdg==13 else "ele"
@@ -427,12 +592,12 @@ for i_mode, mode in enumerate(allModes):
               binning=[30,-pi,pi],
             ))
             plots.append(Plot(
-              texX = '#dxy(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+              texX = 'dxy(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
               name = '%s%i_dxy'%(lep_name, index), attribute = lep_getter("dxy", index, abs_pdg, functor = lambda x: abs(x)),
               binning=[50,0,0.05],
             ))
             plots.append(Plot(
-              texX = '#dz(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+              texX = 'dz(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
               name = '%s%i_dz'%(lep_name, index), attribute = lep_getter("dz", index, abs_pdg, functor = lambda x: abs(x)),
               binning=[50,0,0.05],
             ))
@@ -464,12 +629,12 @@ for i_mode, mode in enumerate(allModes):
             plots.append(Plot(
               texX = 'mvaTTH(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
               name = '%s%i_mvaTTH'%(lep_name, index), attribute = lep_getter("mvaTTH", index, abs_pdg),
-              binning=[50,-1,1],
+              binning=[24,-1.2,1.2],
             ))
             plots.append(Plot(
               texX = 'charge(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_charge'%(lep_name, index), attribute = lep_getter("pdgId", index, abs_pdg, functor = lambda x:-x/abs(x)),
-              binning=[2,-1,1],
+              name = '%s%i_charge'%(lep_name, index), attribute = lep_getter("pdgId", index, abs_pdg, functor = charge),
+              binning=[3,-1,2],
             ))
             if lep_name == "mu":
                 plots.append(Plot(
@@ -480,7 +645,7 @@ for i_mode, mode in enumerate(allModes):
                 plots.append(Plot(
                   texX = 'nStations(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
                   name = '%s%i_nStations'%(lep_name, index), attribute = lep_getter("nStations", index, abs_pdg),
-                  binning=[20,0,20],
+                  binning=[10,0,10],
                 ))
                 plots.append(Plot(
                   texX = 'nTrackerLayers(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',

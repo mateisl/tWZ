@@ -51,10 +51,11 @@ dirs['TWZ']             = ['tWnunu', 'tWll']
 TWZ  = Sample.fromDirectory(name="TWZ", treeName="Events", isData=False, color=color.TWZ, texName="tWZ", directory=make_dirs( dirs['TWZ']))
 
 # TTZ
-dirs['TTZToLLNuNu']     = ['TTZToLLNuNu_ext2_comb', 'TTZToLLNuNu_m1to10']
+dirs['TTZToLLNuNu']     = ['TTZToLLNuNu_ext2_comb']#, 'TTZToLLNuNu_m1to10'] # FIXME
 dirs['TTZToQQ']         = ['TTZToQQ']
 dirs['TTZ']             = ['TTZToLLNuNu_ext2_comb', 'TTZToLLNuNu_m1to10', "TTZToQQ"]
-TTZ = Sample.fromDirectory(name="TTZ", treeName="Events", isData=False, color=color.TTZ, texName="t#bar{t}Z", directory=make_dirs( dirs['TTZ']))
+TTZToLLNuNu = Sample.fromDirectory(name="ToLLNuNu", treeName="Events", isData=False, color=color.TTZ, texName="t#bar{t}Z #rightarrow ll#nu#nu", directory=make_dirs( dirs['TTZToLLNuNu']))
+TTZ         = Sample.fromDirectory(name="TTZ",      treeName="Events", isData=False, color=color.TTZ, texName="t#bar{t}Z", directory=make_dirs( dirs['TTZ']))
 
 # TTX
 dirs['TZQ']             = ['tZq_ll_ext', 'tZq_nunu'] 
@@ -79,8 +80,8 @@ Top  = Sample.fromDirectory(name="Top", treeName="Events", isData=False, color=c
 dirs['DY_LO']              = ['DYJetsToLL_M50_LO_ext1_comb'] #,'DYJetsToLL_M10to50_LO']
 DY_LO  = Sample.fromDirectory(name="DY", treeName="Events", isData=False, color=color.DY, texName="DY(LO)+Jets", directory=make_dirs(dirs['DY_LO']))
 
-dirs['nonprompt_3l']    = dirs['WW'] + dirs['VVTo2L2Nu'] + dirs['singleTop']
-dirs['nonprompt_4l']    = dirs['WW'] + dirs['VVTo2L2Nu'] + dirs['singleTop'] + dirs['TZQ'] + dirs["WZ"] 
+dirs['nonprompt_3l']    = dirs['WW'] + dirs['VVTo2L2Nu'] + dirs['singleTop'] + dirs['DY_LO'] + dirs['TTLep']
+dirs['nonprompt_4l']    = dirs['WW'] + dirs['VVTo2L2Nu'] + dirs['singleTop'] + dirs['TZQ'] + dirs["WZ"] + dirs['DY_LO'] + dirs['TTLep'] 
 nonprompt_3l = Sample.fromDirectory(name="nonprompt_3l", treeName="Events", isData=False, color=color.nonprompt, texName="nonprompt_3l", directory=make_dirs( dirs['nonprompt_3l']))
 nonprompt_4l = Sample.fromDirectory(name="nonprompt_4l", treeName="Events", isData=False, color=color.nonprompt, texName="nonprompt_4l", directory=make_dirs( dirs['nonprompt_4l']))
 

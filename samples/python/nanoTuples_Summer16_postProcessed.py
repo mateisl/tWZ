@@ -58,7 +58,7 @@ TTZToLLNuNu = Sample.fromDirectory(name="ToLLNuNu", treeName="Events", isData=Fa
 TTZ         = Sample.fromDirectory(name="TTZ",      treeName="Events", isData=False, color=color.TTZ, texName="t#bar{t}Z", directory=make_dirs( dirs['TTZ']))
 
 # TTX
-dirs['TZQ']             = ['tZq_ll_ext', 'tZq_nunu'] 
+dirs['TZQ']             = ['tZq_ll_ext']#, 'tZq_nunu'] 
 TZQ = Sample.fromDirectory(name="TZQ", treeName="Events", isData=False, color=color.TZQ, texName="tZQ", directory=make_dirs( dirs['TZQ']))
 
 #dirs['TTH']             = ['TTHbb', 'TTHnobb_pow']

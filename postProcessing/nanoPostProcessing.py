@@ -60,6 +60,7 @@ def get_parser():
     argParser.add_argument('--overwrite',   action='store_true',                                                                        help="Overwrite existing output files, bool flag set to True  if used" )
     argParser.add_argument('--keepAllJets', action='store_true',                                                                        help="Keep also forward jets?" )
     argParser.add_argument('--small',       action='store_true',                                                                        help="Run the file on a small sample (for test purpose), bool flag set to True if used" )
+    argParser.add_argument('--nanoAODv4',   action='store_true',                                                                        help="Run on nanoAODv4?" )
     argParser.add_argument('--flagTTGamma', action='store_true',                                                                        help="Is ttgamma?" )
     argParser.add_argument('--flagTTBar',   action='store_true',                                                                        help="Is ttbar?" )
     argParser.add_argument('--doCRReweighting',             action='store_true',                                                        help="color reconnection reweighting?")
@@ -134,20 +135,36 @@ if options.small:
     options.job = 0
     options.nJobs = 10000 # set high to just run over 1 input file
 
-if options.year == 2016:
-    from Samples.nanoAOD.Summer16_private_legacy_v1 import allSamples as mcSamples
-    from Samples.nanoAOD.Run2016_17Jul2018_private  import allSamples as dataSamples
-    allSamples = mcSamples + dataSamples
-elif options.year == 2017:
-    from Samples.nanoAOD.Fall17_private_legacy_v1   import allSamples as mcSamples
-    from Samples.nanoAOD.Run2017_31Mar2018_private  import allSamples as dataSamples
-    allSamples = mcSamples + dataSamples
-elif options.year == 2018:
-    from Samples.nanoAOD.Autumn18_private_legacy_v1 import allSamples as mcSamples
-    from Samples.nanoAOD.Run2018_17Sep2018_private  import allSamples as dataSamples
-    allSamples = mcSamples + dataSamples
+if options.nanoAODv4:
+    if options.year == 2016:
+        from Samples.nanoAOD.Summer16_private_legacy_v1 import allSamples as mcSamples
+        from Samples.nanoAOD.Run2016_17Jul2018_private  import allSamples as dataSamples
+        allSamples = mcSamples + dataSamples
+    elif options.year == 2017:
+        from Samples.nanoAOD.Fall17_private_legacy_v1   import allSamples as mcSamples
+        from Samples.nanoAOD.Run2017_31Mar2018_private  import allSamples as dataSamples
+        allSamples = mcSamples + dataSamples
+    elif options.year == 2018:
+        from Samples.nanoAOD.Autumn18_private_legacy_v1 import allSamples as mcSamples
+        from Samples.nanoAOD.Run2018_17Sep2018_private  import allSamples as dataSamples
+        allSamples = mcSamples + dataSamples
+    else:
+        raise NotImplementedError
 else:
-    raise NotImplementedError
+    if options.year == 2016:
+        from Samples.nanoAOD.Summer16_nanoAODv6         import allSamples as mcSamples
+        from Samples.nanoAOD.Run2016_nanoAODv6          import allSamples as dataSamples
+        allSamples = mcSamples + dataSamples
+    elif options.year == 2017:
+        from Samples.nanoAOD.Fall17_nanoAODv6           import allSamples as mcSamples
+        from Samples.nanoAOD.Run2017_nanoAODv6          import allSamples as dataSamples
+        allSamples = mcSamples + dataSamples
+    elif options.year == 2018:
+        from Samples.nanoAOD.Autumn18_nanoAODv6         import allSamples as mcSamples
+        from Samples.nanoAOD.Run2018_nanoAODv6          import allSamples as dataSamples
+        allSamples = mcSamples + dataSamples
+    else:
+        raise NotImplementedError
 
 samples = []
 for selectedSamples in options.samples:
@@ -1038,7 +1055,8 @@ for item in os.listdir(tmp_output_directory):
     s = os.path.join(tmp_output_directory, item)
     if not os.path.isdir(s):
         shutil.copy(s, storage_directory)
-    logger.info( "Done copying to storage directory %s", storage_directory)
+logger.info( "Done copying to storage directory %s", storage_directory)
+
 # close all log files before deleting the tmp directory
 for logger_ in [logger, logger_rt]:
     for handler in logger_.handlers:

@@ -125,9 +125,9 @@ def get_index_str( index ):
     return index_str
 
 # string based
-lep_string = "lep_pt>10&&abs(lep_eta)<2.5&&lep_mvaTTH>0.6"
+lep_string = "lep_pt>10&&abs(lep_eta)<2.5&&((lep_mvaTTH>0.6&&abs(lep_pdgId)==13)||(lep_mvaTTH>0.5&&abs(lep_pdgId)==11))"
 mu_string  = "lep_pt>10&&abs(lep_eta)<2.5&&lep_mvaTTH>0.6&&abs(lep_pdgId)==13"
-ele_string = "lep_pt>10&&abs(lep_eta)<2.5&&lep_mvaTTH>0.6&&abs(lep_pdgId)==11"
+ele_string = "lep_pt>10&&abs(lep_eta)<2.5&&lep_mvaTTH>0.5&&abs(lep_pdgId)==11"
 
 ## MUONS ##
 def muonSelector( lepton_selection, year, ptCut = 10):

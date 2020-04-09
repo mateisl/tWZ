@@ -12,8 +12,8 @@ from tWZ.samples.color import color
 try:
     directory_ = sys.modules['__main__'].directory_
 except:
-    from tWZ.samples.default_locations import default_locations
-    directory_ = default_locations.mc_2016
+    import tWZ.samples.nanoAODv4_locations as locations
+    directory_ = locations.mc_2016
 
 logger.info("Loading MC samples from directory %s", directory_)
 

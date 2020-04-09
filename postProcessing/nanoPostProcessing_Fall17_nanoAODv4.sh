@@ -56,7 +56,8 @@ python nanoPostProcessing.py  --forceProxy --skim trilep --nanoAODv4  --year 201
 python nanoPostProcessing.py  --forceProxy --skim trilep --nanoAODv4  --year 2017 --processingEra tWZ_nAODv4 --sample WZTo1L1Nu2Q #SPLIT20
 python nanoPostProcessing.py  --forceProxy --skim trilep --nanoAODv4  --year 2017 --processingEra tWZ_nAODv4 --sample WZTo2L2Q #SPLIT20
 python nanoPostProcessing.py  --forceProxy --skim trilep --nanoAODv4  --year 2017 --processingEra tWZ_nAODv4 --sample WZTo1L3Nu #SPLIT20
-python nanoPostProcessing.py  --forceProxy --skim trilep --nanoAODv4  --year 2017 --processingEra tWZ_nAODv4 --sample WZTo3LNu_amcatnlo #SPLIT20
+#python nanoPostProcessing.py  --forceProxy --skim trilep --nanoAODv4  --year 2017 --processingEra tWZ_nAODv4 --sample WZTo3LNu_amcatnlo #SPLIT20
+python nanoPostProcessing.py  --forceProxy --skim trilep --nanoAODv4  --year 2017 --processingEra tWZ_nAODv4 --sample WZTo3LNu_ext #SPLIT20
 python nanoPostProcessing.py  --forceProxy --skim trilep --nanoAODv4  --year 2017 --processingEra tWZ_nAODv4 --sample TTTT #SPLIT12
 #
 python nanoPostProcessing.py  --forceProxy --skim trilep --nanoAODv4  --year 2017 --processingEra tWZ_nAODv4 --sample WWTo2L2Nu #SPLIT10

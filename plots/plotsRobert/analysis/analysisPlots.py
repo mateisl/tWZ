@@ -60,18 +60,17 @@ logger.info( "Working in year %i", year )
 #tWZ_sample = TWZ if args.nominalSignal else yt_TWZ_filter
 
 if year == 2016:
-    from tWZ.samples.nanoTuples_Run2016_postProcessed import *
-    from tWZ.samples.nanoTuples_Summer16_postProcessed import *
+    from tWZ.samples.nanoTuples_Run2016_nanoAODv4_postProcessed import *
+    from tWZ.samples.nanoTuples_Summer16_nanoAODv4_postProcessed import *
     mc             = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
-    #mc             = [TTZToLLNuNu]
 elif year == 2017:
-    from tWZ.samples.nanoTuples_Fall17_postProcessed import *
-    from tWZ.samples.nanoTuples_Run2017_31Mar2018_postProcessed import *
-    mc             = [ Top_pow_17, TTXNoZ_17, TTZ_17, multiBoson_17, DY_HT_LO_17]
+    from tWZ.samples.nanoTuples_Run2017_nanoAODv4_postProcessed import *
+    from tWZ.samples.nanoTuples_Fall17_nanoAODv4_postProcessed import *
+    mc             = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 elif year == 2018:
-    from tWZ.samples.nanoTuples_Run2018_PromptReco_postProcessed import *
-    from tWZ.samples.nanoTuples_Autumn18_postProcessed import *
-    mc             = [ Top_pow_18, TTXNoZ_18, TTZ_18, multiBoson_18, DY_HT_LO_18]
+    from tWZ.samples.nanoTuples_Run2018_nanoAODv4_postProcessed import *
+    from tWZ.samples.nanoTuples_Autumn18_nanoAODv4_postProcessed import *
+    mc             = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
 # data sample
 try:
@@ -252,7 +251,7 @@ allModes   = ['mumumu','mumue','muee', 'eee']
 for i_mode, mode in enumerate(allModes):
     yields[mode] = {}
     if not args.noData:
-        data_sample = Run2016
+        data_sample = eval("Run%s"%args.era)
         data_sample.texName = "data (legacy)"
         data_sample.setSelectionString([ getFilterCut(year, isData=True), getLeptonSelection(mode)])
         data_sample.name           = "data"

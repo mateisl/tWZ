@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 try:
     directory_ = sys.modules['__main__'].directory_
 except:
-    from tWZ.samples.default_locations import default_locations
-    directory_ = default_locations.data_2016
+    import tWZ.samples.nanoAODv4_locations as locations
+    directory_ = locations.data_2016
 
 logger.info("Loading data samples from directory %s", directory_)
 
 dirs = {}
 for (run, version) in [('B','_ver2'),('C',''),('D',''),('E',''),('F',''),('G',''),('H','')]: # no event that passes json in B_ver1
-    runTag = 'Run2016' + run + '_25Oct2019' + version
+    runTag = 'Run2016' + run + '_17Jul2018' + version
     dirs["DoubleEG_Run2016"         + run + version ] = ["DoubleEG_"          + runTag ]
     dirs["DoubleMuon_Run2016"       + run + version ] = ["DoubleMuon_"        + runTag ]
     dirs["SingleElectron_Run2016"   + run + version ] = ["SingleElectron_"    + runTag ]

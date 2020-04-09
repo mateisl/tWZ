@@ -18,7 +18,7 @@ cd $CMSSW_BASE/src
 git clone https://github.com/HephyAnalysisSW/Analysis.git
 cd $CMSSW_BASE/src
 
-scram b -j9
+#scram b -j9
 
 ## Get combine
 ## Latest recommendations at https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/#setting-up-the-environment-and-installation

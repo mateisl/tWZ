@@ -39,4 +39,5 @@ cd $CMSSW_BASE/src/tWZ
 #git checkout -b 101X origin/101X
 
 #compile
+eval `scram runtime -sh`
 cd $CMSSW_BASE/src && scram b -j 8 

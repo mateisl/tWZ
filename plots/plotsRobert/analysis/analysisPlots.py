@@ -253,7 +253,7 @@ for i_mode, mode in enumerate(allModes):
     if not args.noData:
         data_sample = eval("Run%s"%args.era)
         data_sample.texName = "data (legacy)"
-        data_sample.setSelectionString([ getFilterCut(year, isData=True), getLeptonSelection(mode)])
+        data_sample.setSelectionString([ getFilterCut(year, isData=True, skipVertexFilter=True), getLeptonSelection(mode)])
         data_sample.name           = "data"
         data_sample.style          = styles.errorStyle(ROOT.kBlack)
         lumi_scale                 = data_sample.lumi/1000
@@ -265,7 +265,7 @@ for i_mode, mode in enumerate(allModes):
     for sample in mc:
       sample.scale          = lumi_scale
       sample.read_variables = read_variables_MC 
-      sample.setSelectionString([ getFilterCut(year, isData=False), getLeptonSelection(mode)])
+      sample.setSelectionString([ getFilterCut(year, isData=False, skipVertexFilter=True), getLeptonSelection(mode)])
       sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
 
     #yt_TWZ_filter.scale = lumi_scale * 1.07314

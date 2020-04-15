@@ -21,7 +21,7 @@ import tWZ.Tools.user as user
 
 # Tools for systematics
 from tWZ.Tools.helpers             import closestOSDLMassToMZ, deltaR, deltaPhi, bestDRMatchInCollection, nonEmptyFile, getSortedZCandidates, cosThetaStar, m3, getMinDLMass
-from tWZ.Tools.objectSelection     import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons,  getGoodJets, isBJet, jetId, isBJet, getGoodPhotons, getGenPartsAll, getJets, getPhotons, getAllJets, filterGenPhotons, genPhotonSelector, genLepFromZ
+from tWZ.Tools.objectSelection     import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons, isBJet, getGoodPhotons, getGenPartsAll, getJets, getPhotons, filterGenPhotons, genPhotonSelector, genLepFromZ
 from tWZ.Tools.objectSelection     import getGenZs, getGenPhoton
 
 from tWZ.Tools.triggerEfficiency   import triggerEfficiency
@@ -35,7 +35,7 @@ from Analysis.Tools.L1PrefireWeight          import L1PrefireWeight
 from Analysis.Tools.LeptonTrackingEfficiency import LeptonTrackingEfficiency
 from Analysis.Tools.isrWeight                import ISRweight
 from Analysis.Tools.helpers                  import checkRootFile, deepCheckRootFile, deepCheckWeight
-
+from Analysis.Tools.leptonJetArbitration     import cleanJetsAndLeptons
 # central configuration
 targetLumi = 1000 #pb-1 Which lumi to normalize to
 
@@ -58,7 +58,6 @@ def get_parser():
     argParser.add_argument('--year',        action='store',                     type=int,                                               help="Which year?" )
     argParser.add_argument('--overwriteJEC',action='store',                               default=None,                                 help="Overwrite JEC?" )
     argParser.add_argument('--overwrite',   action='store_true',                                                                        help="Overwrite existing output files, bool flag set to True  if used" )
-    argParser.add_argument('--keepAllJets', action='store_true',                                                                        help="Keep also forward jets?" )
     argParser.add_argument('--small',       action='store_true',                                                                        help="Run the file on a small sample (for test purpose), bool flag set to True if used" )
     argParser.add_argument('--nanoAODv4',   action='store_true',                                                                        help="Run on nanoAODv4?" )
     argParser.add_argument('--flagTTGamma', action='store_true',                                                                        help="Is ttgamma?" )
@@ -377,7 +376,7 @@ branchKeepStrings_DATAMC = [\
     "nElectron", "Electron_*",
     "nMuon", "Muon_*",
 ]
-branchKeepStrings_DATAMC += ["HLT_*"]
+branchKeepStrings_DATAMC += ["HLT_*", "PV_*"]
 
 if options.year == 2017:
     branchKeepStrings_DATAMC += [ "METFixEE2017_*" ]
@@ -462,7 +461,7 @@ new_variables += [\
 ]
 
 if sample.isData: new_variables.extend( ['jsonPassed/I','isData/I'] )
-new_variables.extend( ['nBTag/I', 'ht/F', 'm3/F', 'minDLmass/F'] )
+new_variables.extend( ['nBTag/I', 'm3/F', 'minDLmass/F'] )
 
 new_variables.append( 'lep[%s]'% ( ','.join(lepVars) ) )
 
@@ -676,11 +675,6 @@ def filler( event ):
     # Trigger Decision
     event.triggerDecision = int(treeFormulas['triggerDecision']['TTreeFormula'].EvalInstance())
 
-    if options.keepAllJets:
-        jetAbsEtaCut = 99.
-    else:
-        jetAbsEtaCut = 2.4
-    
     allSlimmedJets      = getJets(r)
     allSlimmedPhotons   = getPhotons(r, year=options.year)
     if options.year == 2018:
@@ -714,15 +708,11 @@ def filler( event ):
     event.minDLmass = getMinDLMass(leptons)
 
     # now get jets, cleaned against good leptons
+    all_jets     = getJets(r, jetVars=jetVarNames)
+    clean_jets,_ = cleanJetsAndLeptons( all_jets, leptons ) 
 
-    jetPtVar = 'pt_nom' # see comment below
-
-    # with the latest change, getAllJets calculates the correct jet pt (removing JER) and stores it as Jet_pt again. No need for Jet_pt_nom anymore
-    allJetsNotClean = getAllJets(r, [], ptCut=0, absEtaCut=99, jetVars=jetVarNames, jetCollections=["Jet"], idVar=None)
-    reallyAllJets   = getAllJets(r, leptons, ptCut=0, absEtaCut=99, jetVars=jetVarNames, jetCollections=["Jet"], idVar='jetId') # keeping robert's comment: ... yeah, I know.
-    allJets      = filter(lambda j:abs(j['eta'])<jetAbsEtaCut, reallyAllJets)
-    jets         = filter(lambda j:jetId(j, ptCut=30, absEtaCut=jetAbsEtaCut, ptVar=jetPtVar), allJets)
-    soft_jets    = filter(lambda j:jetId(j, ptCut=0,  absEtaCut=jetAbsEtaCut) and j['pt']<30., allJets) if options.keepAllJets else []
+    clean_jets_acc = filter(lambda j:abs(j['eta'])<2.4, clean_jets)
+    jets         = filter(lambda j:j['pt']>30, clean_jets_acc)
     bJets        = filter(lambda j:isBJet(j, tagger=b_tagger, year=options.year) and abs(j['eta'])<=2.4    , jets)
     nonBJets     = filter(lambda j:not ( isBJet(j, tagger=b_tagger, year=options.year) and abs(j['eta'])<=2.4 ), jets)
 
@@ -741,9 +731,9 @@ def filler( event ):
 
     # Filling jets
     maxNJet = 100
-    store_jets = jets if not options.keepAllJets else soft_jets + jets
+    store_jets = jets #if not options.keepAllJets else soft_jets + jets
     store_jets = store_jets[:maxNJet]
-    store_jets.sort( key = lambda j:-j[jetPtVar])
+    store_jets.sort( key = lambda j:-j['pt'])
     event.nJetGood   = len(store_jets)
     for iJet, jet in enumerate(store_jets):
         event.JetGood_index[iJet] = jet['index']
@@ -763,11 +753,9 @@ def filler( event ):
     if isMC and options.doCRReweighting:
         event.reweightCR = getCRWeight(event.nJetGood)
 
-    event.ht         = sum([j[jetPtVar] for j in jets])
     event.nBTag      = len(bJets)
-    event.m3, _,_,_ = m3( jets )
+    event.m3, _,_,_  = m3(jets)
 
-    alljets_sys   = {}
     jets_sys      = {}
     bjets_sys     = {}
     nonBjets_sys  = {}
@@ -794,16 +782,11 @@ def filler( event ):
             setattr(event, 'met_phi_'+var, getattr(r, 'METFixEE2017_phi_'+var) if options.year == 2017 else getattr(r, 'MET_phi_'+var) )
             if not var.startswith('unclust'):
                 corrFactor = 'corr_JER' if var == 'jer' else None
-                alljets_sys[var]    = allJetsNotClean
-                jets_sys[var]       = filter(lambda j: jetId(j, ptCut=30, absEtaCut=jetAbsEtaCut, ptVar='pt_'+var if not var=='jer' else 'pt_nom', corrFactor=corrFactor), allJets)
+                jets_sys[var]       = filter(lambda j:j['pt_'+var]>30, clean_jets_acc)
                 bjets_sys[var]      = filter(lambda j: isBJet(j) and abs(j['eta'])<2.4, jets_sys[var])
                 nonBjets_sys[var]   = filter(lambda j: not ( isBJet(j) and abs(j['eta'])<2.4), jets_sys[var])
                 
-                # calculate ht
-                ht = sum([j['pt_nom']*j['corr_JER'] for j in jets_sys[var]]) if var == 'jer' else sum([j['pt_'+var] for j in jets_sys[var]])
-
                 setattr(event, "nJetGood_"+var, len(jets_sys[var]))
-                setattr(event, "ht_"+var,       ht)
                 setattr(event, "nBTag_"+var,    len(bjets_sys[var]))
 
     if isSingleLep or isTriLep or isDiLep:
@@ -1028,7 +1011,7 @@ if sample.isData and convertedEvents>0: # avoid json to be overwritten in cases 
     LumiList( runsAndLumis = outputLumiList ).writeJSON(jsonFile)
     logger.info( "Written JSON file %s", jsonFile )
 
-if not options.keepNanoAOD and not options.skipNanoTools:
+if not ( options.keepNanoAOD or options.reuseNanoAOD) and not options.skipNanoTools:
     for f in sample.files:
         try:
             os.remove(f)

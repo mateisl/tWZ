@@ -11,30 +11,9 @@ jetVars = ['eta','pt','phi','btagDeepB', 'btagDeepFlavB', 'btagCSVV2', 'jetId', 
 def getJets(c, jetVars=jetVars, jetColl="Jet"):
     return [getObjDict(c, jetColl+'_', jetVars, i) for i in range(int(getVarValue(c, 'n'+jetColl)))]
 
-def jetId(j, ptCut=30, absEtaCut=2.4, ptVar='pt', idVar='jetId', corrFactor=None):
+def isAnalysisJet(j, ptCut=30, absEtaCut=2.4, ptVar='pt', idVar='jetId', corrFactor=None):
   j_pt = j[ptVar] if not corrFactor else j[ptVar]*j[corrFactor]
   return j_pt>ptCut and abs(j['eta'])<absEtaCut and ( j[idVar] > 0 if idVar is not None else True )
-
-def getGoodJets(c, ptCut=30, absEtaCut=2.4, jetVars=jetVars, jetColl="Jet", ptVar='pt'):
-    return filter(lambda j:jetId(j, ptCut=ptCut, absEtaCut=absEtaCut, ptVar='pt'), getJets(c, jetVars, jetColl=jetColl))
-
-def getAllJets(c, leptons, ptCut=30, absEtaCut=2.4, jetVars=jetVars, jetCollections=[ "Jet"], idVar='jetId'):
-
-    jets = sum( [ filter(lambda j:jetId(j, ptCut=ptCut, absEtaCut=absEtaCut, idVar=idVar), getJets(c, jetVars, jetColl=coll)) for coll in jetCollections], [] )
-    res  = []
-
-    for jet in jets:
-        clean = True
-        for lepton in leptons:
-            if deltaR(lepton, jet) < 0.4:
-                clean = False
-                break
-        if clean:
-            res.append(jet)
-
-    res.sort( key = lambda j:-j['pt'] )
-
-    return res
 
 def isBJet(j, tagger = 'DeepCSV', year = 2016):
     if tagger == 'CSVv2':

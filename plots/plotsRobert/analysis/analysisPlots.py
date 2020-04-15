@@ -55,6 +55,7 @@ elif "2017" in args.era:
 elif "2018" in args.era:
     year = 2018
 
+
 logger.info( "Working in year %i", year )
 
 #tWZ_sample = TWZ if args.nominalSignal else yt_TWZ_filter

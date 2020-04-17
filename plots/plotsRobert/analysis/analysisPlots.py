@@ -22,7 +22,6 @@ from tWZ.Tools.objectSelection           import cbEleIdFlagGetter, vidNestedWPBi
 from tWZ.Tools.objectSelection           import mu_string, ele_string 
 # Analysis
 from Analysis.Tools.helpers              import deltaPhi, deltaR
-from Analysis.Tools.metFilters           import getFilterCut
 from Analysis.Tools.puProfileCache       import *
 from Analysis.Tools.puReweighting        import getReweightingFunction
 
@@ -48,34 +47,24 @@ logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 if args.small:                        args.plot_directory += "_small"
 if args.noData:                       args.plot_directory += "_noData"
 
-if "2016" in args.era:
-    year = 2016
-elif "2017" in args.era:
-    year = 2017
-elif "2018" in args.era:
-    year = 2018
-
-
-logger.info( "Working in year %i", year )
+logger.info( "Working in era %s", args.era)
 
 #tWZ_sample = TWZ if args.nominalSignal else yt_TWZ_filter
 
-if year == 2016:
-    from tWZ.samples.nanoTuples_Run2016_nanoAODv4_postProcessed import *
-    from tWZ.samples.nanoTuples_Summer16_nanoAODv4_postProcessed import *
-    mc             = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
-elif year == 2017:
-    from tWZ.samples.nanoTuples_Run2017_nanoAODv4_postProcessed import *
-    from tWZ.samples.nanoTuples_Fall17_nanoAODv4_postProcessed import *
-    mc             = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
-elif year == 2018:
-    from tWZ.samples.nanoTuples_Run2018_nanoAODv4_postProcessed import *
-    from tWZ.samples.nanoTuples_Autumn18_nanoAODv4_postProcessed import *
-    mc             = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
+from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
+
+if args.era == "Run2016":
+    mc = [Summer16.TWZ, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
+elif args.era == "Run2017":
+    mc = [Fall17.TWZ, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
+elif args.era == "Run2018":
+    mc = [Autumn18.TWZ, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
+elif args.era == "RunII":
+    mc = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
 # data sample
 try:
-  data_sample = eval("Run"+args.era)
+  data_sample = eval(args.era)
 except Exception as e:
   logger.error( "Didn't find %s", args.era )
   raise e
@@ -83,7 +72,7 @@ except Exception as e:
 lumi_scale                 = data_sample.lumi/1000
 data_sample.scale          = 1.
 for sample in mc:
-    sample.scale          = lumi_scale
+    sample.scale           = 1 # Scale MCs individually with lumi
 
 if args.small:
     for sample in mc + [data_sample]:
@@ -120,19 +109,6 @@ def drawPlots(plots, mode, dataMCScale):
 
       _drawObjects = []
 
-      if ("u_para" in plot.name or "u_perp" in plot.name) and not args.noData:
-          h_mc   = plot.histos_added[0][0].Clone()
-          h_data = plot.histos_added[1][0].Clone()
-          if h_mc.Integral()>0:
-              h_mc.Scale(h_data.Integral()/h_mc.Integral())
-          q_mc   = tuple(get_quantiles( h_mc ))
-          q_data = tuple(get_quantiles( h_data ))
-          median_shift = q_data[2]-q_mc[2]
-          sigma1_ratio = (q_data[3]-q_data[1])/(q_mc[3]-q_mc[1]) if q_mc[3]-q_mc[1]!=0 else 0
-          sigma2_ratio = (q_data[4]-q_data[0])/(q_mc[4]-q_mc[0]) if q_mc[4]-q_mc[0]!=0 else 0
-
-          _drawObjects.append( tex.DrawLatex(0.22, 0.62, '#Delta(med): %+3.1f   1#sigma: %4.3f  2#sigma  %4.3f' % ( median_shift, sigma1_ratio, sigma2_ratio) ) )
-
       if isinstance( plot, Plot):
           plotting.draw(plot,
             plot_directory = plot_directory_,
@@ -142,7 +118,7 @@ def drawPlots(plots, mode, dataMCScale):
             scaling = {0:1} if args.dataMCScaling else {},
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
-            copyIndexPHP = True, extensions = ["png", "pdf"],
+            copyIndexPHP = True, extensions = ["png"],
           )
             
 #
@@ -175,7 +151,7 @@ def getM3l( event, sample ):
 sequence.append( getM3l )
 
 read_variables = [
-    "weight/F", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
+    "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l2_eta/F", "l2_phi/F", 
     "JetGood[pt/F,eta/F,phi/F]",
     "lep[pt/F,eta/F,phi/F,pdgId/I,muIndex/I,eleIndex/I]",
@@ -252,21 +228,19 @@ allModes   = ['mumumu','mumue','muee', 'eee']
 for i_mode, mode in enumerate(allModes):
     yields[mode] = {}
     if not args.noData:
-        data_sample = eval("Run%s"%args.era)
-        data_sample.texName = "data (legacy)"
-        data_sample.setSelectionString([ getFilterCut(year, isData=True, skipVertexFilter=True), getLeptonSelection(mode)])
+        data_sample.texName = "data"
+        data_sample.setSelectionString([getLeptonSelection(mode)])
         data_sample.name           = "data"
         data_sample.style          = styles.errorStyle(ROOT.kBlack)
         lumi_scale                 = data_sample.lumi/1000
 
-    weight_ = lambda event, sample: event.weight
+    weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
 
     for sample in mc: sample.style = styles.fillStyle(sample.color)
     
     for sample in mc:
-      sample.scale          = lumi_scale
       sample.read_variables = read_variables_MC 
-      sample.setSelectionString([ getFilterCut(year, isData=False, skipVertexFilter=True), getLeptonSelection(mode)])
+      sample.setSelectionString([getLeptonSelection(mode)])
       sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
 
     #yt_TWZ_filter.scale = lumi_scale * 1.07314
@@ -275,10 +249,6 @@ for i_mode, mode in enumerate(allModes):
       stack = Stack(mc, data_sample)
     else:
       stack = Stack(mc)
-
-    if args.small:
-        for sample in stack.samples:
-            sample.reduceFiles( to = 5 )
 
     # Use some defaults
     Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString = cutInterpreter.cutString(args.selection))

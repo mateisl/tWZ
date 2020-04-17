@@ -29,8 +29,9 @@ from tWZ.Tools.leptonSF            import leptonSF as leptonSF_
 from tWZ.Tools.mcTools import pdgToName, GenSearch, B_mesons, D_mesons, B_mesons_abs, D_mesons_abs
 genSearch = GenSearch()
 
+from Analysis.Tools.metFilters               import getFilterCut
 from Analysis.Tools.overlapRemovalTTG        import photonFromTopDecay, hasMesonMother, getParentIds, isIsolatedPhoton, getPhotonCategory
-from Analysis.Tools.puProfileCache           import *
+from Analysis.Tools.puProfileDirDB           import puProfile
 from Analysis.Tools.L1PrefireWeight          import L1PrefireWeight
 from Analysis.Tools.LeptonTrackingEfficiency import LeptonTrackingEfficiency
 from Analysis.Tools.isrWeight                import ISRweight
@@ -196,6 +197,9 @@ if isData and options.triggerSelection:
     logger.info("Sample will have the following trigger skim: %s"%triggerCond)
     skimConds.append( triggerCond )
 
+# apply MET filter
+skimConds.append( getFilterCut(options.year, isData=isData, ignoreJSON=True, skipWeight=True) )
+
 triggerEff          = triggerEfficiency(options.year)
 isr                 = ISRweight()
 
@@ -276,6 +280,9 @@ len_orig = len(sample.files)
 sample = sample.split( n=options.nJobs, nSub=options.job)
 logger.info( "fileBasedSplitting: Run over %i/%i files for job %i/%i."%(len(sample.files), len_orig, options.job, options.nJobs))
 logger.debug("fileBasedSplitting: Files to be run over:\n%s", "\n".join(sample.files) )
+
+# turn on all branches to be flexible for filter cut in skimCond etc.
+sample.chain.SetBranchStatus("*",1)
 
 # systematic variations
 addSystematicVariations = (not isData) and (not options.skipSystematicVariations)
@@ -429,7 +436,7 @@ if isMC:
 read_variables += [ TreeVariable.fromString('nPhoton/I'),
                     VectorTreeVariable.fromString('Photon[pt/F,eta/F,phi/F,mass/F,cutBased/I,pdgId/I]') if (options.year == 2016) else VectorTreeVariable.fromString('Photon[pt/F,eta/F,phi/F,mass/F,cutBasedBitmap/I,pdgId/I]') ]
 
-new_variables = [ 'weight/F', 'triggerDecision/I']
+new_variables = [ 'weight/F', 'triggerDecision/I', 'year/I']
 if isMC:
     read_variables += [ TreeVariable.fromString('Pileup_nTrueInt/F') ]
     # reading gen particles for top pt reweighting
@@ -585,7 +592,7 @@ if not options.skipNanoTools:
 # Define a reader
 
 reader = sample.treeReader( \
-    variables = read_variables ,
+    variables = read_variables,
     selectionString = "&&".join(skimConds)
     )
 
@@ -606,6 +613,7 @@ def filler( event ):
     r = reader.event
     #workaround  = (r.run, r.luminosityBlock, r.event) # some fastsim files seem to have issues, apparently solved by this.
     event.isData = s.isData
+    event.year   = options.year
     event.overlapRemoval = 1 
     
     if isMC:
@@ -657,6 +665,8 @@ def filler( event ):
     if sample.isData:
         #event.vetoPassed  = vetoList.passesVeto(r.run, r.lumi, r.evt)
         event.jsonPassed  = lumiList.contains(r.run, r.luminosityBlock)
+        # apply JSON to data via event weight
+        if not event.jsonPassed: event.weight=0
         # store decision to use after filler has been executed
         event.jsonPassed_ = event.jsonPassed
 

@@ -38,7 +38,7 @@ argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC sc
 argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
 argParser.add_argument('--era',            action='store', type=str, default="2016")
 argParser.add_argument('--selection',      action='store', default='trilepMini0p12-minDLmass12-onZ1-njet4p-btag2p')
-argParser.add_argument('--nanoAODv4',   action='store_true',                                                                        help="Run on nanoAODv4?" )
+argParser.add_argument('--nanoAODv4',   default=True, action='store_true',                                                                        help="Run on nanoAODv4?" )
 argParser.add_argument('--year',        action='store',                     type=int,                                               help="Which year?" )
 argParser.add_argument('--samples',     action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
 
@@ -139,50 +139,16 @@ if options.small:
     options.job = 0
     options.nJobs = 10000 # set high to just run over 1 input file
 
-if options.nanoAODv4:
-    if options.year == 2016:
-        from Samples.nanoAOD.Summer16_private_legacy_v1 import allSamples as mcSamples
-        from Samples.nanoAOD.Run2016_17Jul2018_private  import allSamples as dataSamples
-        allSamples = mcSamples + dataSamples
-    elif options.year == 2017:
-        from Samples.nanoAOD.Fall17_private_legacy_v1   import allSamples as mcSamples
-        from Samples.nanoAOD.Run2017_31Mar2018_private  import allSamples as dataSamples
-        allSamples = mcSamples + dataSamples
-    elif options.year == 2018:
-        from Samples.nanoAOD.Autumn18_private_legacy_v1 import allSamples as mcSamples
-        from Samples.nanoAOD.Run2018_17Sep2018_private  import allSamples as dataSamples
-        allSamples = mcSamples + dataSamples
-    else:
-        raise NotImplementedError
-else:
-    if options.year == 2016:
-        from Samples.nanoAOD.Summer16_nanoAODv6         import allSamples as mcSamples
-        from Samples.nanoAOD.Run2016_nanoAODv6          import allSamples as dataSamples
-        allSamples = mcSamples + dataSamples
-    elif options.year == 2017:
-        from Samples.nanoAOD.Fall17_nanoAODv6           import allSamples as mcSamples
-        from Samples.nanoAOD.Run2017_nanoAODv6          import allSamples as dataSamples
-        allSamples = mcSamples + dataSamples
-    elif options.year == 2018:
-        from Samples.nanoAOD.Autumn18_nanoAODv6         import allSamples as mcSamples
-        from Samples.nanoAOD.Run2018_nanoAODv6          import allSamples as dataSamples
-        allSamples = mcSamples + dataSamples
-    else:
-        raise NotImplementedError
+from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
 
-samples = []
-for selectedSamples in options.samples:
-    for sample in allSamples:
-        if selectedSamples == sample.name:
-            samples.append(sample)
-
-#if len(samples)==0:
- #   logger.info( "No samples found. Was looking for %s. Exiting" % options.samples )
-  #  sys.exit(-1)
-
-isData = False not in [s.isData for s in samples]
-isMC   =  True not in [s.isData for s in samples]
-
+if args.era == "Run2016":
+    mc = [Summer16.TWZ, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
+elif args.era == "Run2017":
+    mc = [Fall17.TWZ, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
+elif args.era == "Run2018":
+    mc = [Autumn18.TWZ, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
+elif args.era == "RunII":
+    mc = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
 sequence       = []
 
@@ -211,47 +177,18 @@ def getM3l( event, sample ):
 sequence.append( getM3l )
 
 #jets without eta cut
-jetMCInfo        = ['genJetIdx/I','hadronFlavour/I']
-jetVars          = ['pt/F', 'chEmEF/F', 'chHEF/F', 'neEmEF/F', 'neHEF/F', 'rawFactor/F', 'eta/F', 'phi/F', 'jetId/I', 'btagDeepB/F', 'btagDeepFlavB/F', 'btagCSVV2/F', 'area/F', 'pt_nom/F', 'corr_JER/F'] 
-if isMC:
-    jetVars     += jetMCInfo
-    jetVars     += ['pt_jesTotalUp/F', 'pt_jesTotalDown/F', 'pt_jerUp/F', 'pt_jerDown/F', 'corr_JER/F', 'corr_JEC/F']
+jetVars          = ['pt/F', 'chEmEF/F', 'chHEF/F', 'neEmEF/F', 'neHEF/F', 'rawFactor/F', 'eta/F', 'phi/F', 'jetId/I', 'btagDeepB/F', 'btagDeepFlavB/F', 'btagCSVV2/F', 'area/F'] 
 jetVarNames      = [x.split('/')[0] for x in jetVars]
 
 lepVars         = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F','mvaFall17V2Iso_WP90/O', 'mvaTTH/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','eleIndex/I','muIndex/I']
 lepVarNames     = [x.split('/')[0] for x in lepVars]
 
-def getjetswoetacut( event,sample ):
-    #jets einlesen
-    alljets   = getCollection( event, 'Jet', jetVarNames, 'nJet')  
-    electrons  = getCollection( event, 'Electron', lepVarNames,'nElectron')
-    muons      = getCollection( event, 'Muon', lepVarNames, 'nMuon')
-    leptons    = electrons + muons 
-    #clean against good leptons
-    clean_jets,_ = cleanJetsAndLeptons( alljets, leptons )
-    
-    jets         = filter(lambda j:j['pt']>30, clean_jets)
-    
-    # Filling jets
-    maxNJet = 100
-    store_jets = jets #if not options.keepAllJets else soft_jets + jets
-    store_jets = store_jets[:maxNJet]
-    store_jets.sort( key = lambda j:-j['pt'])
-    event.nJetGood   = len(store_jets)
-    
-    for iJet, jet in enumerate(store_jets):
-        event.JetGoodwoetacut_index[iJet] = jet['index']
-        for b in jetVarNames:
-            getattr(event, "JetGoodwoetacut_"+b)[iJet] = jet[b]
-        getattr(event, "abseta")[iJet]    = abs( jet['eta'] )
-
-sequence.append( getjetswoetacut )
-
 read_variables = [
     "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l2_eta/F", "l2_phi/F", 
     "JetGood[pt/F,eta/F,phi/F]",
-    "lep[pt/F,eta/F,phi/F,pdgId/I,muIndex/I,eleIndex/I]",
+    "nJet/I", "Jet[%s]"%(",".join(jetVars)),
+    "nlep/I", "lep[%s]"%(",".join(lepVars)),
     "Z1_l1_index/I", "Z1_l2_index/I", "nonZ1_l1_index/I", "nonZ1_l2_index/I", 
     "Z1_phi/F", "Z1_pt/F", "Z1_mass/F", "Z1_cosThetaStar/F", "Z1_eta/F", "Z1_lldPhi/F", "Z1_lldR/F",
     "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I]",
@@ -260,6 +197,24 @@ read_variables = [
 
 read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F']
 # define 3l selections
+
+def getjetswoetacut( event,sample ):
+    #jets einlesen
+    alljets   = getCollection( event, 'Jet', jetVarNames, 'nJet')  
+    alljets.sort( key = lambda j: -j['pt'] )
+    leptons    = getCollection(event, "lep", lepVarNames, 'nlep') 
+    #clean against good leptons
+    clean_jets,_ = cleanJetsAndLeptons( alljets, leptons )
+    
+    jets         = filter(lambda j:j['pt']>30, clean_jets)
+    #print jets   
+    event.maxEta_of_pt30jets  = max( [ abs(j['eta']) for j in jets ] )
+    #print event.maxEta_of_pt30jets
+
+
+#    raise NotImplementedError("Continue to work here") 
+
+sequence.append( getjetswoetacut )
 
 def getLeptonSelection( mode ):
     if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
@@ -353,19 +308,19 @@ for i_mode, mode in enumerate(allModes):
     plots = []
 
     plots.append(Plot(
-      name = 'abseta',
-      texX = 'abs(#eta)',
+      name = 'maxabs(eta)',
+      texX = 'abs(#eta)_max',
       texY = 'Number of Events',
-      attribute = lambda event, sample: event.abseta,
-      binning=[20, 0, 5],
+      attribute = lambda event, sample: event.maxEta_of_pt30jets, 
+      binning=[5, 0, 5],
     ))
 
-#    plots.append(Plot(
-#      name = 'yield', texX = '', texY = 'Number of Events',
-#      attribute = lambda event, sample: 0.5 + i_mode,
-#      binning=[4, 0, 4],
-#    ))
-#
+    plots.append(Plot(
+      name = 'yield', texX = '', texY = 'Number of Events',
+      attribute = lambda event, sample: 0.5 + i_mode,
+      binning=[4, 0, 4],
+    ))
+
 #    plots.append(Plot(
 #      name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',
 #      attribute = TreeVariable.fromString( "PV_npvsGood/I" ),

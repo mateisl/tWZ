@@ -39,7 +39,6 @@ argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
 argParser.add_argument('--era',            action='store', type=str, default="2016")
 argParser.add_argument('--selection',      action='store', default='trilepMini0p12-minDLmass12-onZ1-njet4p-btag2p')
 argParser.add_argument('--nanoAODv4',   default=True, action='store_true',                                                                        help="Run on nanoAODv4?" )
-argParser.add_argument('--year',        action='store',                     type=int,                                               help="Which year?" )
 argParser.add_argument('--samples',     action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
 
 
@@ -86,7 +85,7 @@ if args.small:
     for sample in mc + [data_sample]:
         sample.normalization = 1.
         #sample.reduceFiles( factor = 40 )
-        sample.reduceFiles( to=1)
+        sample.reduceFiles( to=10)
         sample.scale /= sample.normalization
 
 # Text on the plots
@@ -132,23 +131,6 @@ def drawPlots(plots, mode, dataMCScale):
 #
 # Read variables and sequences
 #
-
-#Samples: Load samples
-maxN = 1 if options.small else None
-if options.small:
-    options.job = 0
-    options.nJobs = 10000 # set high to just run over 1 input file
-
-from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
-
-if args.era == "Run2016":
-    mc = [Summer16.TWZ, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
-elif args.era == "Run2017":
-    mc = [Fall17.TWZ, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
-elif args.era == "Run2018":
-    mc = [Autumn18.TWZ, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
-elif args.era == "RunII":
-    mc = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
 sequence       = []
 
@@ -201,29 +183,18 @@ read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F',
 def getjetswoetacut( event,sample ):
     #jets einlesen
     alljets   = getCollection( event, 'Jet', jetVarNames, 'nJet')  
-<<<<<<< HEAD
     alljets.sort( key = lambda j: -j['pt'] )
-=======
-    #electrons  = getCollection( event, 'Electron', lepVarNames,'nElectron')
-    #muons      = getCollection( event, 'Muon', lepVarNames, 'nMuon')
->>>>>>> 8e4004d3fc8536cb0a49d345e09bb1ef97273440
     leptons    = getCollection(event, "lep", lepVarNames, 'nlep') 
     #clean against good leptons
     clean_jets,_ = cleanJetsAndLeptons( alljets, leptons )
     
     jets         = filter(lambda j:j['pt']>30, clean_jets)
-<<<<<<< HEAD
     #print jets   
     event.maxEta_of_pt30jets  = max( [ abs(j['eta']) for j in jets ] )
     #print event.maxEta_of_pt30jets
 
 
 #    raise NotImplementedError("Continue to work here") 
-=======
-    print leptons 
-    print jets   
-    raise NotImplementedError("Continue to work here") 
->>>>>>> 8e4004d3fc8536cb0a49d345e09bb1ef97273440
 
 sequence.append( getjetswoetacut )
 
@@ -325,6 +296,15 @@ for i_mode, mode in enumerate(allModes):
       attribute = lambda event, sample: event.maxEta_of_pt30jets, 
       binning=[5, 0, 5],
     ))
+
+    plots.append(Plot(
+      name = 'maxabseta',
+      texX = 'abs(#eta)_max',
+      texY = 'Number of Events',
+      attribute = lambda event, sample: event.maxEta_of_pt30jets,
+      binning=[20, 0, 5],
+    ))
+
 
     plots.append(Plot(
       name = 'yield', texX = '', texY = 'Number of Events',

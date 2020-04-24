@@ -49,6 +49,9 @@ triBoson = Sample.fromDirectory(name="triBoson", treeName="Events", isData=False
 # TWZ (nominal)
 dirs['TWZ']             = ['tWnunu', 'tWll']
 TWZ  = Sample.fromDirectory(name="TWZ", treeName="Events", isData=False, color=color.TWZ, texName="tWZ", directory=make_dirs( dirs['TWZ']))
+# TWZ yt
+yt_tWZ01j_filter = Sample.fromDirectory(name="yt_TWZ01j_filter", treeName="Events", isData=False, color=ROOT.kRed, texName="TWZ", directory= make_dirs(['yt_tWZ01j_filter']))
+yt_tWZ01j        = Sample.fromDirectory(name="yt_TWZ01j", treeName="Events", isData=False, color=ROOT.kRed, texName="TWZ", directory= make_dirs(['yt_tWZ01j']))
 
 # TTZ
 dirs['TTZToLLNuNu']     = ['TTZToLLNuNu_ext2_comb']#, 'TTZToLLNuNu_m1to10'] # FIXME
@@ -90,15 +93,3 @@ nonprompt_4l = Sample.fromDirectory(name="nonprompt_4l", treeName="Events", isDa
 #dirs['pseudoDataPriv']  = dirs['ewkDM_ttZ_ll_noH'] + dirs["WZ"] + dirs['TTW'] + dirs['TTX'] + dirs['TZQ'] + dirs['rare'] + dirs['nonprompt']
 #dirs['background']      = dirs["WZ_amcatnlo"] + dirs['TTW'] + dirs['TTX'] + dirs['TZQ'] + dirs['rare']
 
-
-#yt_TWZ_filter   = Sample.fromDirectory(name="yt_TWZ_filter",    treeName="Events", isData=False, color=ROOT.kRed,               texName="TWZ",                                  directory="/afs/hephy.at/data/rschoefbeck01/cmgTuples/TopEFT_PP_2016_mva_v21/dilepTiny/yt_tWZ_filter/")
-#yt_TWZ          = Sample.fromDirectory(name="yt_TWZ",           treeName="Events", isData=False, color=ROOT.kRed,               texName="TWZ",                                  directory="/afs/hephy.at/data/rschoefbeck01/cmgTuples/TopEFT_PP_2016_mva_v21/dilepTiny/yt_tWZ/")
-#yt_TZZ          = Sample.fromDirectory(name="yt_TZZ",           treeName="Events", isData=False, color=ROOT.kRed,               texName="TZZ",                                  directory="/afs/hephy.at/data/rschoefbeck01/cmgTuples/TopEFT_PP_2016_mva_v22/dilepTiny/yt_tZZ/")
-##yt_TWW          = Sample.fromDirectory(name="yt_TWW",           treeName="Events", isData=False, color=ROOT.kRed,               texName="TWW",                                  directory="/afs/hephy.at/data/rschoefbeck01/cmgTuples/TopEFT_PP_2016_mva_v22/dilepTiny/yt_tWW_0/")
-#yt_TWW          = Sample.fromDirectory(name="yt_TWW",           treeName="Events", isData=False, color=ROOT.kRed,               texName="TWW",                                  directory="/afs/hephy.at/data/cms04/ttschida/cmgTuples/yt_tWW")
-#dim6top_TTW     = Sample.fromDirectory(name="dim6top_TTW",      treeName="Events", isData=False, color=ROOT.kYellow,            texName="TTW",                                  directory="/afs/hephy.at/data/rschoefbeck01/cmgTuples/TopEFT_PP_2016_mva_v21/dilepTiny/dim6top_ttW/")
-#yt_TWZ_filter.reweight_pkl = "/afs/hephy.at/data/cms04/ttschida/gridpacks/tWZ01j_new/tWZ01j_rwgt_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.pkl"
-
-## set sample selection strings for the nonprompt and Zgamma sample
-#nonpromptMC.setSelectionString('nLeptons_FO_3l_genPrompt<=2')
-#ZGTo2LG.setSelectionString('nLeptons_FO_3l_genPrompt>2')

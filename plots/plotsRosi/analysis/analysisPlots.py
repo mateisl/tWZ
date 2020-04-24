@@ -82,11 +82,13 @@ for sample in mc:
     sample.scale           = 1 # Scale MCs individually with lumi
 
 if args.small:
-    for sample in mc + [data_sample]:
+    for sample in mc:# + [data_sample]:
         sample.normalization = 1.
         #sample.reduceFiles( factor = 40 )
-        sample.reduceFiles( to=10)
+        sample.reduceFiles( to=1)
         sample.scale /= sample.normalization
+
+
 
 # Text on the plots
 tex = ROOT.TLatex()

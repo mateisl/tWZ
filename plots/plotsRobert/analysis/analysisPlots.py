@@ -121,9 +121,7 @@ def drawPlots(plots, mode, dataMCScale):
             copyIndexPHP = True, extensions = ["png"],
           )
             
-#
 # Read variables and sequences
-#
 sequence       = []
 
 def getWpt( event, sample):

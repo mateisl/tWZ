@@ -21,7 +21,7 @@ from tWZ.Tools.cutInterpreter            import cutInterpreter
 from tWZ.Tools.objectSelection           import cbEleIdFlagGetter, vidNestedWPBitMapNamingList
 from tWZ.Tools.objectSelection           import mu_string, ele_string 
 # Analysis
-from Analysis.Tools.helpers              import deltaPhi, deltaR, getCollection
+from Analysis.Tools.helpers              import deltaPhi, deltaR, getCollection, getObjDict
 from Analysis.Tools.puProfileCache       import *
 from Analysis.Tools.puReweighting        import getReweightingFunction
 from Analysis.Tools.leptonJetArbitration     import cleanJetsAndLeptons
@@ -87,8 +87,6 @@ if args.small:
         #sample.reduceFiles( factor = 40 )
         sample.reduceFiles( to=1)
         sample.scale /= sample.normalization
-
-
 
 # Text on the plots
 tex = ROOT.TLatex()
@@ -171,7 +169,7 @@ read_variables = [
     "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l2_eta/F", "l2_phi/F", 
     "JetGood[pt/F,eta/F,phi/F]",
-    "nJet/I", "Jet[%s]"%(",".join(jetVars)),
+    "nJet/I", 
     "nlep/I", "lep[%s]"%(",".join(lepVars)),
     "Z1_l1_index/I", "Z1_l2_index/I", "nonZ1_l1_index/I", "nonZ1_l2_index/I", 
     "Z1_phi/F", "Z1_pt/F", "Z1_mass/F", "Z1_cosThetaStar/F", "Z1_eta/F", "Z1_lldPhi/F", "Z1_lldR/F",
@@ -179,26 +177,63 @@ read_variables = [
     "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
 ]
 
+# read only for data:
+read_variables_data = [ "Jet[%s]"%(",".join(jetVars))] 
+
+# read only for MC:
 read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F']
+read_variables_MC.append( "Jet[%s,genJetIdx/I]"%(",".join(jetVars)) )
+read_variables_MC.append( "GenJet[pt/F,eta/F,phi/F,hadronFlavour/b,partonFlavour/I]")
+
 # define 3l selections
 
-def getjetswoetacut( event,sample ):
-    #jets einlesen
-    alljets   = getCollection( event, 'Jet', jetVarNames, 'nJet')  
+def getjetswoetacut( event, sample ):
+    #jets einlesen (in case of MC also reat the index of the genjet)
+    alljets   = getCollection( event, 'Jet', jetVarNames + (['genJetIdx'] if not sample.isData else []), 'nJet')  
     alljets.sort( key = lambda j: -j['pt'] )
     leptons    = getCollection(event, "lep", lepVarNames, 'nlep') 
-    #clean against good leptons
+    # clean against good leptons
     clean_jets,_ = cleanJetsAndLeptons( alljets, leptons )
     
-    jets         = filter(lambda j:j['pt']>30, clean_jets)
-    #print jets   
-    event.maxEta_of_pt30jets  = max( [ abs(j['eta']) for j in jets ] )
-    #print event.maxEta_of_pt30jets
-
-
-#    raise NotImplementedError("Continue to work here") 
+    # filter pt, but not eta (I store the list of jets in the event because I want to use it in the next function)
+    event.jets_no_eta         = filter(lambda j:j['pt']>30, clean_jets)
+    # very nice, Rosmarie. Here are all the python built on functions, so you get an idea what you can do: https://docs.python.org/2.7/library/functions.html
+    event.maxEta_of_pt30jets  = max( [ abs(j['eta']) for j in event.jets_no_eta ] )
 
 sequence.append( getjetswoetacut )
+
+def genJetStuff( event, sample ):
+    # only do something in simulation
+    if sample.isData:
+        return
+    # let's now match jets with genjets. It's been done for us in the nanoAOD. 
+    # here you have all nanoAOD branches: https://cms-nanoaod-integration.web.cern.ch/integration/master-102X/mc102X_doc.html#Muon    
+    # Jet_genJetIdx is the index of the genjet that matches the jet. It only makes sense in simulation. 
+    # See above and below how I changed the logic of when we read this collection (look at the read_variables_MC/data).
+
+    # If you look up the max function you learn that you can give it a method that tells python how it should do the comparison. Let's use it to get the highest eta *jet* 
+    max_eta_jet = max( event.jets_no_eta, key = lambda j:abs(j['eta']) )
+    # Let's see if it has a gen match:
+    if max_eta_jet['genJetIdx']>=0:
+        # we have a gen jet index (negative number means nothing found). 
+        # Let's not read all the genjets, just the one we need. Looking up getCollection you'll find it only loops getObjDict, i.e. a method that makes a dictionary from event.Collection_branch
+        # the "prefix" argument of getObjDict needs an underscore ... we could have done that better. 
+        max_eta_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], max_eta_jet['genJetIdx'] )
+        # You'll find that GenJet_hadronFlavour is a UChar_t, i.e. to save disk space we're not using a 32 bit integer but an 8 bit character (it explains the /b above = Byte)
+        # We change the byte to a normal number (the function ord is in the link above)
+        max_eta_genjet['hadronFlavour'] = ord(max_eta_genjet['hadronFlavour'])
+        # Genjets are clustered from all stable particles after the shower (pythia) and hadronisation. Neutrinos are not taken into account. Look at the gen jet flavour: 
+        # partonFlavor: This flavor is obtained by including the generator partons (from the hard scatter) in the jet clustering but with infinitesimal momentum (otherwise the genjet would be changed)
+        #               The partonflavor is the pdgId of the genparton that gets clustered with the jet. E.g. 5 means b-jet. 
+        #               Negative numbers mean antiparticles.
+        #               The hadronFlavour is the same, but instead of partons, the generated hadrons are used (e.g. after shower+hadronisation). The most important difference is gluon splitting:
+        #               For strongly interacting particles, we can radiate a gluon and gluon can produce a b/bbar pair. Such b quarks from the shower are not what we want to use when we decide
+        #               whether a jet was originally a b-jet because they don't originate from the top but are rather produced inside jets. 
+        #               Thus, we mostly use partonFlavour (i.e. hard scatter) while e.g. the performance measurements of b-tagging are done with the hadronFlavor (after all, it's a true b)
+        # Look at the numbers. Here is the dictionary: http://pdg.lbl.gov/2007/reviews/montecarlorpp.pdf
+        print max_eta_jet['genJetIdx'], max_eta_genjet
+
+sequence.append( genJetStuff )
 
 def getLeptonSelection( mode ):
     if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
@@ -268,6 +303,7 @@ for i_mode, mode in enumerate(allModes):
         data_sample.setSelectionString([getLeptonSelection(mode)])
         data_sample.name           = "data"
         data_sample.style          = styles.errorStyle(ROOT.kBlack)
+        data_sample.read_variables = read_variables_data
         lumi_scale                 = data_sample.lumi/1000
 
     weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.

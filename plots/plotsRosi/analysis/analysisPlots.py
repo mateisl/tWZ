@@ -33,6 +33,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--logLevel',       action='store',      default='INFO', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
 argParser.add_argument('--noData',         action='store_true', default=False, help='also plot data?')
 argParser.add_argument('--small',                             action='store_true', help='Run only on a small subset of the data?', )
+argParser.add_argument('--mcComp',                            action='store_true', help='make MC comparison?', )
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
 argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
@@ -52,6 +53,7 @@ logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 if args.small:                        args.plot_directory += "_small"
+if args.mcComp:                       args.plot_directory += "_mcComp"
 if args.noData:                       args.plot_directory += "_noData"
 
 logger.info( "Working in era %s", args.era)
@@ -317,10 +319,13 @@ for i_mode, mode in enumerate(allModes):
 
     #yt_TWZ_filter.scale = lumi_scale * 1.07314
 
-    if not args.noData:
-      stack = Stack(mc, data_sample)
+    if args.mcComp:
+        stack = Stack( [TWZ], [Summer16.yt_tWZ_filter] )
     else:
-      stack = Stack(mc)
+        if not args.noData:
+          stack = Stack(mc, data_sample)
+        else:
+          stack = Stack(mc)
 
     # Use some defaults
     Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString = cutInterpreter.cutString(args.selection))

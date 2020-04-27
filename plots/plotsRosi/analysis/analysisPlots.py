@@ -119,14 +119,18 @@ def drawPlots(plots, mode, dataMCScale):
 
       _drawObjects = []
 
+# for shape plots normalize each EFT shape to the SM shape
+#if args.normalize:
+#    scaling = { i+1:0 for i, _ in enumerate(params) }
+
       if isinstance( plot, Plot):
           plotting.draw(plot,
             plot_directory = plot_directory_,
             ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
-            scaling = {0:1} if args.dataMCScaling else {},
-            #scaling = {0:1} if args.mcComp else {},
+            #scaling = {0:1} if args.dataMCScaling else {},
+            scaling = {1:0} if args.mcComp else {},
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
             copyIndexPHP = True, extensions = ["png"],
@@ -241,7 +245,8 @@ def genJetStuff( event, sample ):
         print max_eta_genjet['partonFlavour']
         #in event schreiben 
         event.partonsinfwdjets =  max_eta_genjet['partonFlavour']
-
+    else: event.partonsinfwdjets = -8
+    
 sequence.append( genJetStuff )
 
 def getLeptonSelection( mode ):
@@ -320,6 +325,10 @@ for i_mode, mode in enumerate(allModes):
     #for sample in mc: sample.style = styles.fillStyle(sample.color)
     for sample in mc: sample.style = styles.lineStyle(sample.color)
     
+    for yt_tWZ01j_filter in mc: 
+        sample.style = styles.lineStyle(ROOT.kBlue)
+        sample.texName = "TWZ(private)"
+    
     for sample in mc:
       sample.read_variables = read_variables_MC 
       sample.setSelectionString([getLeptonSelection(mode)])
@@ -361,7 +370,7 @@ for i_mode, mode in enumerate(allModes):
       texX = 'partons in fwd jets',
       texY = 'Number of Events',
       attribute = lambda event, sample: event.partonsinfwdjets,
-      binning=[45, -22, 22],
+      binning=[28, -6, 22],
     ))
 
     plots.append(Plot(

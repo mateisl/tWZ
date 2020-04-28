@@ -442,7 +442,6 @@ if isMC:
     read_variables += [ TreeVariable.fromString('Pileup_nTrueInt/F') ]
     # reading gen particles for top pt reweighting
     read_variables.append( TreeVariable.fromString('nGenPart/I') )
-    read_variables.append( TreeVariable.fromString('nISR/I') )
     read_variables.append( VectorTreeVariable.fromString('GenPart[pt/F,mass/F,phi/F,eta/F,pdgId/I,genPartIdxMother/I,status/I,statusFlags/I]', nMax=200 )) # default nMax is 100, which would lead to corrupt values in this case
     read_variables.append( TreeVariable.fromString('genWeight/F') )
     read_variables.append( TreeVariable.fromString('nGenJet/I') )
@@ -589,9 +588,9 @@ if not options.skipNanoTools:
     logger.info("Done. Replacing input files for further processing.")
     
     sample.files = newFileList
+    sample.clear()
 
 # Define a reader
-
 reader = sample.treeReader( \
     variables = read_variables,
     selectionString = "&&".join(skimConds)
@@ -891,7 +890,7 @@ def filler( event ):
                     setattr(event, "Z%i_phi"%(i+1),        Z.Phi())
                     setattr(event, "Z%i_lldPhi"%(i+1),     deltaPhi(Z_l1.Phi(), Z_l2.Phi()))
                     setattr(event, "Z%i_lldR"%(i+1),       deltaR(leptons[Z_l1_index], leptons[Z_l2_index]) )
-                    if Z_l1_index>0:
+                    if Z_l1_index>=0:
                         lm_Z_index = Z_l1_index if event.lep_pdgId[Z_l1_index] > 0 else Z_l2_index
                         setattr(event, "Z%i_cosThetaStar"%(i+1), cosThetaStar(Z_mass, Z.Pt(), Z.Eta(), Z.Phi(), event.lep_pt[lm_Z_index], event.lep_eta[lm_Z_index], event.lep_phi[lm_Z_index]) )
 
@@ -933,6 +932,7 @@ def filler( event ):
         for var in btagEff.btagWeightNames:
             if var!='MC':
                 setattr(event, 'reweightBTag_'+var, btagEff.getBTagSF_1a( var, bJets, filter( lambda j: abs(j['eta'])<2.4, nonBJets ) ) )
+
 
 # Create a maker. Maker class will be compiled. This instance will be used as a parent in the loop
 treeMaker_parent = TreeMaker(

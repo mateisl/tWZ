@@ -119,10 +119,6 @@ def drawPlots(plots, mode, dataMCScale):
 
       _drawObjects = []
 
-# for shape plots normalize each EFT shape to the SM shape
-#if args.normalize:
-#    scaling = { i+1:0 for i, _ in enumerate(params) }
-
       if isinstance( plot, Plot):
           plotting.draw(plot,
             plot_directory = plot_directory_,
@@ -130,15 +126,13 @@ def drawPlots(plots, mode, dataMCScale):
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
             #scaling = {0:1} if args.dataMCScaling else {},
-            scaling = {1:0} if args.mcComp else {},
+            scaling = {0:1} if args.mcComp else {}, #sacling twz to private twz sample to see difference in shape
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
             copyIndexPHP = True, extensions = ["png"],
           )
-            
-#
+
 # Read variables and sequences
-#
 
 sequence       = []
 
@@ -242,7 +236,7 @@ def genJetStuff( event, sample ):
         #print max_eta_jet['genJetIdx'], max_eta_genjet
 
         # partonFlavour number 
-        print max_eta_genjet['partonFlavour']
+        #print max_eta_genjet['partonFlavour']
         #in event schreiben 
         event.partonsinfwdjets =  max_eta_genjet['partonFlavour']
     else: event.partonsinfwdjets = -8
@@ -336,8 +330,8 @@ for i_mode, mode in enumerate(allModes):
 
     #yt_TWZ_filter.scale = lumi_scale * 1.07314
 
-   # if args.mcComp:
-    #    stack = Stack( [Summer16.TWZ], [Summer16.yt_tWZ01j_filter] )
+    if args.mcComp:
+        stack = Stack( [Summer16.TWZ], [Summer16.yt_tWZ01j_filter] )
     else:
         if not args.noData:
           stack = Stack(mc, data_sample)

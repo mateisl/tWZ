@@ -18,6 +18,7 @@ if os.environ["USER"] in ["robert.schoefbeck"]:
     cache_dir                       = "/mnt/hephy/cms/robert.schoefbeck/tWZ/caches"
     # Analysis result files
     analysis_results                = "/mnt/hephy/cms/robert.schoefbeck/tWZ/results/v1"
+    mva_directory                   = "/mnt/hephy/cms/robert.schoefbeck/tWZ/MVA"
     cern_proxy_certificate          = "/users/robert.schoefbeck/.private/.proxy"
 
 if os.environ["USER"] in ["rosmarie.schoefbeck"]:
@@ -27,4 +28,5 @@ if os.environ["USER"] in ["rosmarie.schoefbeck"]:
     cache_dir                       = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/caches"
     # Analysis result files
     analysis_results                = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/results/v1"
+    mva_results                     = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/MVA"
     cern_proxy_certificate          = "/users/rosmarie.schoefbeck/.private/.proxy"

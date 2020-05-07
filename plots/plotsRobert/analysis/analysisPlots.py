@@ -162,6 +162,37 @@ read_variables = [
 read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F']
 # define 3l selections
 
+#MVA
+from Analysis.TMVA.Reader   import Reader
+from tWZ.MVA.MVA_TWZ_3l  import mva_variables, mlp
+from tWZ.MVA.MVA_TWZ_3l  import sequence as mva_sequence
+from tWZ.MVA.MVA_TWZ_3l  import read_variables as mva_read_variables
+from tWZ.Tools.user      import mva_directory
+
+sequence.extend( mva_sequence )
+read_variables.extend( mva_read_variables )
+
+mva_reader = Reader(
+    mva_variables     = mva_variables,
+    weight_directory  = os.path.join( mva_directory, "TWZ_3l" ),
+    label             = "TWZ_3l")
+
+def makeDiscriminator( mva ):
+    def _getDiscriminator( event, sample ):
+        kwargs = {name:func(event,None) for name, func in mva_variables.iteritems()}
+        setattr( event, mva['name'], mva_reader.evaluate(mva['name'], **kwargs))
+    return _getDiscriminator
+
+def discriminator_getter(name):
+    def _disc_getter( event, sample ):
+        return getattr( event, name )
+    return _disc_getter
+
+mvas = [mlp]
+for mva in mvas:
+    mva_reader.addMethod(method=mva)
+    sequence.append( makeDiscriminator(mva) )
+
 def getLeptonSelection( mode ):
     if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
     elif mode=="mumue":  return "Sum$({mu_string})==2&&Sum$({ele_string})==1".format(mu_string=mu_string,ele_string=ele_string)
@@ -258,6 +289,20 @@ for i_mode, mode in enumerate(allModes):
       attribute = lambda event, sample: 0.5 + i_mode,
       binning=[4, 0, 4],
     ))
+
+    for mva in mvas:
+        plots.append(Plot(
+            texX = 'MVA_{3l}', texY = 'Number of Events',
+            name = mva['name'], attribute = discriminator_getter(mva['name']),
+            binning=[25, 0, 1],
+        ))
+
+    for mva in mvas:
+        plots.append(Plot(
+            texX = 'MVA_{3l}', texY = 'Number of Events',
+            name = mva['name']+'_coarse', attribute = discriminator_getter(mva['name']),
+            binning=[10, 0, 1],
+        ))
 
     plots.append(Plot(
       name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',

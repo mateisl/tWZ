@@ -41,7 +41,8 @@ argParser.add_argument('--era',            action='store', type=str, default="20
 argParser.add_argument('--selection',      action='store', default='trilepMini0p12-minDLmass12-onZ1-njet4p-btag2p')
 argParser.add_argument('--nanoAODv4',   default=True, action='store_true',                                                                        help="Run on nanoAODv4?" )
 argParser.add_argument('--samples',     action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
-
+#flagg for parton selection
+argParser.add_argument('--partonweight',action='store_true', help='weight partons?', )
 
 args = argParser.parse_args()
 options = argParser.parse_args()
@@ -55,15 +56,29 @@ logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 if args.small:                        args.plot_directory += "_small"
 if args.mcComp:                       args.plot_directory += "_mcComp"
 if args.noData:                       args.plot_directory += "_noData"
-
+if args.partonweight:                 args.plot_directory += "_weightedpartons"
 logger.info( "Working in era %s", args.era)
 
 #tWZ_sample = TWZ if args.nominalSignal else yt_TWZ_filter
 
 from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
 
+#TWZ match samples 
+tWZ_ud_match = copy.deepcopy( Summer16.TWZ )
+tWZ_ud_match.name = "tWZ_ud_match"
+tWZ_ud_match.texName = "tWZ (fwd u/d)"
+
+tWZ_gluon_match = copy.deepcopy( Summer16.TWZ )
+tWZ_gluon_match.name = "tWZ_gluon_match"
+tWZ_gluon_match.texName = "tWZ (fwd gluon)"
+
+tWZ_other_match = copy.deepcopy( Summer16.TWZ )
+tWZ_other_match.name = "tWZ_other_match"
+tWZ_other_match.texName = "tWZ (fwd others)"
+
 if args.era == "Run2016":
     if args.mcComp: mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter]
+    elif args.partonweight: mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.TWZ]
     else: mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 elif args.era == "Run2017":
     mc = [Fall17.TWZ, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
@@ -126,7 +141,8 @@ def drawPlots(plots, mode, dataMCScale):
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
             #scaling = {0:1} if args.dataMCScaling else {},
-            scaling = {0:1} if args.mcComp else {}, #sacling twz to private twz sample to see difference in shape
+            #scaling = {0:1} if args.mcComp else {}, #sacling twz to private twz sample to see difference in shape
+            #scaling =  { i+1:0 for i in range(3) } if args.partonweight else {}, 
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
             copyIndexPHP = True, extensions = ["png"],
@@ -159,6 +175,16 @@ def getM3l( event, sample ):
     event.M3l = (l[0] + l[1] + l[2]).M()
 
 sequence.append( getM3l )
+
+def getM2l( event, sample ):
+    # get the invariant mass of the 2l system
+    l = []
+    for i in range(2):
+        l.append(ROOT.TLorentzVector())
+        l[i].SetPtEtaPhiM(event.lep_pt[i], event.lep_eta[i], event.lep_phi[i],0)
+    event.M2l = (l[0] + l[1]).M()
+
+sequence.append( getM2l )
 
 #jets without eta cut
 jetVars          = ['pt/F', 'chEmEF/F', 'chHEF/F', 'neEmEF/F', 'neHEF/F', 'rawFactor/F', 'eta/F', 'phi/F', 'jetId/I', 'btagDeepB/F', 'btagDeepFlavB/F', 'btagCSVV2/F', 'area/F'] 
@@ -216,6 +242,8 @@ def genJetStuff( event, sample ):
     # If you look up the max function you learn that you can give it a method that tells python how it should do the comparison. Let's use it to get the highest eta *jet* 
     max_eta_jet = max( event.jets_no_eta, key = lambda j:abs(j['eta']) )
     # Let's see if it has a gen match:
+    # Set default values
+    event.partonsinfwdjets = -8
     if max_eta_jet['genJetIdx']>=0:
         # we have a gen jet index (negative number means nothing found). 
         # Let's not read all the genjets, just the one we need. Looking up getCollection you'll find it only loops getObjDict, i.e. a method that makes a dictionary from event.Collection_branch
@@ -234,14 +262,53 @@ def genJetStuff( event, sample ):
         #               Thus, we mostly use partonFlavour (i.e. hard scatter) while e.g. the performance measurements of b-tagging are done with the hadronFlavor (after all, it's a true b)
         # Look at the numbers. Here is the dictionary: http://pdg.lbl.gov/2007/reviews/montecarlorpp.pdf
         #print max_eta_jet['genJetIdx'], max_eta_genjet
-
         # partonFlavour number 
         #print max_eta_genjet['partonFlavour']
         #in event schreiben 
         event.partonsinfwdjets =  max_eta_genjet['partonFlavour']
-    else: event.partonsinfwdjets = -8
-    
+
 sequence.append( genJetStuff )
+
+#do the same for min. eta
+def genjetmineta( event, sample ):    
+    if sample.isData:
+        return
+    min_eta_jet = min( event.jets_no_eta, key = lambda j:abs(j['eta']) )
+    event.partonsinfwdjetsmineta = -8
+    if min_eta_jet['genJetIdx']>=0:
+        min_eta_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], min_eta_jet['genJetIdx'] )
+        event.partonsinfwdjetsmineta =  min_eta_genjet['partonFlavour']
+
+sequence.append( genjetmineta )
+
+#DeltaR 
+def deltaRfwdjeteta(event, sample):
+    #get highest pt jet
+    event.max_pt_jet = max( event.jets_no_eta, key = lambda j:abs(j['pt']) )
+    #use deltaR function to get deltaR 
+    event.maxpt_Z_deltaR      = deltaR({'eta':event.max_pt_jet['eta'], 'phi':event.max_pt_jet['phi']}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    
+sequence.append( deltaRfwdjeteta )
+
+#genmatches and partonweights
+def twz_weight( event, sample) : 
+    for sample in mc:  
+        max_pt_jet = max( event.jets_no_eta, key = lambda j:abs(j['pt']) ) #get max pt jet 
+        event.max_pt_jet = max_pt_jet['pt'] #write in event  
+        event.ud_match = False   
+        event.gluon_match = False
+        event.other_match = False
+        if max_pt_jet['genJetIdx']>=0: 
+            max_pt_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], max_pt_jet['genJetIdx'] )
+            #check partonflavour matches for u/d,gluon,other 
+            if max_pt_genjet['partonFlavour'] == 1 or 2 or -1 or -2 : event.ud_match = True            
+            if max_pt_genjet['partonFlavour'] == 21: event.gluon_match = True
+            if max_pt_genjet['partonFlavour'] != 1 or 2 or -1 or -2 or 21: event.other_match = True
+        tWZ_ud_match.weight    =  lambda event, sample: event.ud_match
+        tWZ_gluon_match.weight =  lambda event, sample: event.gluon_match
+        tWZ_other_match.weight =  lambda event, sample: event.other_match
+    
+sequence.append( twz_weight )
 
 def getLeptonSelection( mode ):
     if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
@@ -319,19 +386,26 @@ for i_mode, mode in enumerate(allModes):
     #for sample in mc: sample.style = styles.fillStyle(sample.color)
     for sample in mc: sample.style = styles.lineStyle(sample.color)
     
-    for yt_tWZ01j_filter in mc: 
-        sample.style = styles.lineStyle(ROOT.kBlue)
-        sample.texName = "TWZ(private)"
+    if args.mcComp: 
+        yt_tWZ01j_filter.style   = styles.lineStyle(ROOT.kBlue)
+        yt_tWZ01j_filter.texName = "TWZ(private)"
     
+    if args.partonweight: 
+        tWZ_ud_match.style    = styles.lineStyle(ROOT.kBlue)
+        tWZ_gluon_match.style = styles.lineStyle(ROOT.kYellow)
+        tWZ_other_match.style = styles.lineStyle(ROOT.kGreen)
+
     for sample in mc:
       sample.read_variables = read_variables_MC 
       sample.setSelectionString([getLeptonSelection(mode)])
       sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
 
     #yt_TWZ_filter.scale = lumi_scale * 1.07314
-
-    if args.mcComp:
-        stack = Stack( [Summer16.TWZ], [Summer16.yt_tWZ01j_filter] )
+    
+    if args.partonweight: 
+        stack = Stack([Summer16.TWZ],[tWZ_ud_match],[tWZ_gluon_match],[tWZ_other_match])
+   # if args.mcComp:
+    #    stack = Stack( [Summer16.TWZ], [Summer16.yt_tWZ01j_filter] )
     else:
         if not args.noData:
           stack = Stack(mc, data_sample)
@@ -344,35 +418,79 @@ for i_mode, mode in enumerate(allModes):
     plots = []
 
     plots.append(Plot(
-      name = 'maxabs(eta)',
-      texX = 'abs(#eta)_max',
+      name = 'maxpt',
+      texX = 'maxpt',
       texY = 'Number of Events',
-      attribute = lambda event, sample: event.maxEta_of_pt30jets, 
-      binning=[5, 0, 5],
+      attribute = lambda event, sample: event.max_pt_jet, 
+      binning=[20, 0, 400],
     ))
-
-    plots.append(Plot(
-      name = 'maxabseta',
-      texX = 'abs(#eta)_max',
-      texY = 'Number of Events',
-      attribute = lambda event, sample: event.maxEta_of_pt30jets,
-      binning=[20, 0, 5],
-    ))
-
-    plots.append(Plot(
-      name = 'partons in fwd jets',
-      texX = 'partons in fwd jets',
-      texY = 'Number of Events',
-      attribute = lambda event, sample: event.partonsinfwdjets,
-      binning=[28, -6, 22],
-    ))
-
+#
+#    plots.append(Plot(
+#      name = 'maxabs(eta)',
+#      texX = 'abs(#eta)_max',
+#      texY = 'Number of Events',
+#      attribute = lambda event, sample: event.maxEta_of_pt30jets, 
+#      binning=[5, 0, 5],
+#    ))
+#
+#    plots.append(Plot(
+#      name = 'maxabseta',
+#      texX = 'abs(#eta)_max',
+#      texY = 'Number of Events',
+#      attribute = lambda event, sample: event.maxEta_of_pt30jets,
+#      binning=[20, 0, 5],
+#    ))
+#
+#    plots.append(Plot(
+#      name = 'partons in fwd jets (mineta)',
+#      texX = 'partons in fwd jets (mineta)',
+#      texY = 'Number of Events',
+#      attribute = lambda event, sample: event.partonsinfwdjetsmineta,
+#      binning=[28, -6, 22],
+#    ))
+#
+#    plots.append(Plot(
+#      name = 'partons in fwd jets (maxeta)',
+#      texX = 'partons in fwd jets (maxeta)',
+#      texY = 'Number of Events',
+#      attribute = lambda event, sample: event.partonsinfwdjets,
+#      binning=[28, -6, 22],
+#    ))
+#
     plots.append(Plot(
       name = 'yield', texX = '', texY = 'Number of Events',
       attribute = lambda event, sample: 0.5 + i_mode,
       binning=[4, 0, 4],
     ))
 
+#    plots.append(Plot(
+#      texX = '#Delta R(maxptjet, Z_{1})', texY = 'Number of Events',
+#      name = 'maxptjet_Z1_deltaR', attribute = lambda event, sample: event.maxpt_Z_deltaR,
+#      binning=[20,0,6],
+#    ))
+#
+#    plots.append(Plot(
+#        name = "M2l",
+#        texX = 'M(2l) (GeV)', texY = 'Number of Events',
+#        attribute = lambda event, sample:event.M2l,
+#        binning=[25,0,500],
+#    ))
+#
+#    plots.append(Plot(
+#        name = "m2l",
+#        texX = 'M(2l) (GeV)', texY = 'Number of Events',
+#        attribute = lambda event, sample:event.M2l,
+#        binning=[25,50,150],
+#    ))
+#
+#    plots.append(Plot(
+#        name = "M(2l)",
+#        texX = 'M(2l) (GeV)', texY = 'Number of Events',
+#        attribute = lambda event, sample:event.M2l,
+#        binning=[25,80,100],
+#    ))
+#
+#
 #    plots.append(Plot(
 #      name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',
 #      attribute = TreeVariable.fromString( "PV_npvsGood/I" ),

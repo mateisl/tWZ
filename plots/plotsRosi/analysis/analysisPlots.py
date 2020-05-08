@@ -381,15 +381,8 @@ for i_mode, mode in enumerate(allModes):
         data_sample.read_variables = read_variables_data
         lumi_scale                 = data_sample.lumi/1000
 
-<<<<<<< HEAD
     weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
-    for sample in mc: 
-        if sample.name == "tWZ_ud_match" : weight_ = lambda event, sample: event.ud_match*event.weight*lumi_year[event.year]/1000.
-        elif sample.name == "tWZ_gluon_match" : weight_  = lambda event, sample: event.gluon_match*event.weight*lumi_year[event.year]/1000.
-        elif sample.name == "tWZ_other_match" : weight_  = lambda event, sample: event.other_match*event.weight*lumi_year[event.year]/1000.
 
-=======
->>>>>>> 9eacf7af903b094061a8854020e2ab9889ad76f1
     #for sample in mc: sample.style = styles.fillStyle(sample.color)
     for sample in mc: sample.style = styles.lineStyle(sample.color)
     
@@ -403,11 +396,6 @@ for i_mode, mode in enumerate(allModes):
         tWZ_other_match.style = styles.lineStyle(ROOT.kGreen)
 
     for sample in mc:
-<<<<<<< HEAD
-        sample.read_variables = read_variables_MC 
-        sample.setSelectionString([getLeptonSelection(mode)])
-#        sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
-=======
       sample.read_variables = read_variables_MC 
       sample.setSelectionString([getLeptonSelection(mode)])
       # if you are going to use sample e.g. in sample.name, 'sample' must be the loop iterator or otherwise defined
@@ -415,7 +403,6 @@ for i_mode, mode in enumerate(allModes):
       elif sample.name == "tWZ_gluon_match" : sample.weight = lambda event, sample: event.gluon_match*event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger
       elif sample.name == "tWZ_other_match" : sample.weight = lambda event, sample: event.other_match*event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger
       else: sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger
->>>>>>> 9eacf7af903b094061a8854020e2ab9889ad76f1
 
     #yt_TWZ_filter.scale = lumi_scale * 1.07314
     

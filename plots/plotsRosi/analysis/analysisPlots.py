@@ -381,8 +381,6 @@ for i_mode, mode in enumerate(allModes):
         data_sample.read_variables = read_variables_data
         lumi_scale                 = data_sample.lumi/1000
 
-    weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
-
     #for sample in mc: sample.style = styles.fillStyle(sample.color)
     for sample in mc: sample.style = styles.lineStyle(sample.color)
     

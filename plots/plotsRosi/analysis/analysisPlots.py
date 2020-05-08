@@ -380,6 +380,9 @@ for i_mode, mode in enumerate(allModes):
         lumi_scale                 = data_sample.lumi/1000
 
     weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
+    if sample is tWZ_ud_match : weight_ = lambda event, sample: event.ud_match*event.weight*lumi_year[event.year]/1000.
+    if sample is tWZ_gluon_match : weight_  = lambda event, sample: event.gluon_match*event.weight*lumi_year[event.year]/1000.
+    if sample is tWZ_other_match : weight_  = lambda event, sample: event.other_match*event.weight*lumi_year[event.year]/1000.
     
     #for sample in mc: sample.style = styles.fillStyle(sample.color)
     for sample in mc: sample.style = styles.lineStyle(sample.color)

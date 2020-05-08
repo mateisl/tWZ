@@ -297,19 +297,16 @@ def twz_genmatch( event, sample) :
     if max_pt_jet['genJetIdx']>=0: 
         max_pt_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], max_pt_jet['genJetIdx'] )
         #check partonflavour matches for u/d,gluon,other 
+        print max_pt_genjet['partonFlavour']
         event.ud_match    =  max_pt_genjet['partonFlavour'] in [ 1, 2, -1, -2]
         event.gluon_match =  max_pt_genjet['partonFlavour'] in [ 21 ]
         event.other_match =  max_pt_genjet['partonFlavour'] not in [ 1, 2, -1, -2, 21 ]
 
 sequence.append( twz_genmatch )
 
-def twz_weight( event,sample ):
-#    TWZ.weight              = lambda event, sample: event.weight
-    if event.ud_match: tWZ_ud_match.weight     = lambda event, sample: event.ud_match#*event.weight
-    if event.gluon_match: tWZ_gluon_match.weight  = lambda event, sample: event.gluon_match#*event.weight
-    if event.other_match: tWZ_other_match.weight  = lambda event, sample: event.other_match#*event.weight
-
-sequence.append( twz_weight )
+tWZ_ud_match.weight     = lambda event, sample: event.ud_match
+tWZ_gluon_match.weight  = lambda event, sample: event.gluon_match
+tWZ_other_match.weight  = lambda event, sample: event.other_match
 
 def getLeptonSelection( mode ):
     if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)

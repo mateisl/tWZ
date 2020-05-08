@@ -380,10 +380,11 @@ for i_mode, mode in enumerate(allModes):
         lumi_scale                 = data_sample.lumi/1000
 
     weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
-    if sample.name == "tWZ_ud_match" : weight_ = lambda event, sample: event.ud_match*event.weight*lumi_year[event.year]/1000.
-    if sample.name == "tWZ_gluon_match" : weight_  = lambda event, sample: event.gluon_match*event.weight*lumi_year[event.year]/1000.
-    if sample.name == "tWZ_other_match" : weight_  = lambda event, sample: event.other_match*event.weight*lumi_year[event.year]/1000.
-    
+    for sample in mc: 
+        if sample.name == "tWZ_ud_match" : weight_ = lambda event, sample: event.ud_match*event.weight*lumi_year[event.year]/1000.
+        elif sample.name == "tWZ_gluon_match" : weight_  = lambda event, sample: event.gluon_match*event.weight*lumi_year[event.year]/1000.
+        elif sample.name == "tWZ_other_match" : weight_  = lambda event, sample: event.other_match*event.weight*lumi_year[event.year]/1000.
+
     #for sample in mc: sample.style = styles.fillStyle(sample.color)
     for sample in mc: sample.style = styles.lineStyle(sample.color)
     
@@ -397,9 +398,9 @@ for i_mode, mode in enumerate(allModes):
         tWZ_other_match.style = styles.lineStyle(ROOT.kGreen)
 
     for sample in mc:
-      sample.read_variables = read_variables_MC 
-      sample.setSelectionString([getLeptonSelection(mode)])
-      sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
+        sample.read_variables = read_variables_MC 
+        sample.setSelectionString([getLeptonSelection(mode)])
+#        sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
 
     #yt_TWZ_filter.scale = lumi_scale * 1.07314
     

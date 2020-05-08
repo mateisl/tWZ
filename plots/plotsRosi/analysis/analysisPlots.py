@@ -77,16 +77,18 @@ tWZ_other_match.name = "tWZ_other_match"
 tWZ_other_match.texName = "tWZ (fwd others)"
 
 if args.era == "Run2016":
-#    if args.mcComp: mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter]
-    if args.partonweight: mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.TWZ]
-    else: mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
+    if args.partonweight: 
+        # compare tWZ components
+        mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.TWZ]
+    else: 
+        mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 elif args.era == "Run2017":
     mc = [Fall17.TWZ, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
 elif args.era == "Run2018":
     mc = [Autumn18.TWZ, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
     mc = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
-print mc
+
 # data sample
 try:
   data_sample = eval(args.era)
@@ -297,16 +299,16 @@ def twz_genmatch( event, sample) :
     if max_pt_jet['genJetIdx']>=0: 
         max_pt_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], max_pt_jet['genJetIdx'] )
         #check partonflavour matches for u/d,gluon,other 
-        print max_pt_genjet['partonFlavour']
+        #print max_pt_genjet['partonFlavour']
         event.ud_match    =  max_pt_genjet['partonFlavour'] in [ 1, 2, -1, -2]
         event.gluon_match =  max_pt_genjet['partonFlavour'] in [ 21 ]
         event.other_match =  max_pt_genjet['partonFlavour'] not in [ 1, 2, -1, -2, 21 ]
+    else:
+        event.ud_match    = 0 
+        event.gluon_match = 0 
+        event.other_match = 1
 
 sequence.append( twz_genmatch )
-
-tWZ_ud_match.weight     = lambda event, sample: event.ud_match
-tWZ_gluon_match.weight  = lambda event, sample: event.gluon_match
-tWZ_other_match.weight  = lambda event, sample: event.other_match
 
 def getLeptonSelection( mode ):
     if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
@@ -379,12 +381,15 @@ for i_mode, mode in enumerate(allModes):
         data_sample.read_variables = read_variables_data
         lumi_scale                 = data_sample.lumi/1000
 
+<<<<<<< HEAD
     weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
     for sample in mc: 
         if sample.name == "tWZ_ud_match" : weight_ = lambda event, sample: event.ud_match*event.weight*lumi_year[event.year]/1000.
         elif sample.name == "tWZ_gluon_match" : weight_  = lambda event, sample: event.gluon_match*event.weight*lumi_year[event.year]/1000.
         elif sample.name == "tWZ_other_match" : weight_  = lambda event, sample: event.other_match*event.weight*lumi_year[event.year]/1000.
 
+=======
+>>>>>>> 9eacf7af903b094061a8854020e2ab9889ad76f1
     #for sample in mc: sample.style = styles.fillStyle(sample.color)
     for sample in mc: sample.style = styles.lineStyle(sample.color)
     
@@ -398,9 +403,19 @@ for i_mode, mode in enumerate(allModes):
         tWZ_other_match.style = styles.lineStyle(ROOT.kGreen)
 
     for sample in mc:
+<<<<<<< HEAD
         sample.read_variables = read_variables_MC 
         sample.setSelectionString([getLeptonSelection(mode)])
 #        sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
+=======
+      sample.read_variables = read_variables_MC 
+      sample.setSelectionString([getLeptonSelection(mode)])
+      # if you are going to use sample e.g. in sample.name, 'sample' must be the loop iterator or otherwise defined
+      if   sample.name == "tWZ_ud_match"    : sample.weight = lambda event, sample: event.ud_match*event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger
+      elif sample.name == "tWZ_gluon_match" : sample.weight = lambda event, sample: event.gluon_match*event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger
+      elif sample.name == "tWZ_other_match" : sample.weight = lambda event, sample: event.other_match*event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger
+      else: sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger
+>>>>>>> 9eacf7af903b094061a8854020e2ab9889ad76f1
 
     #yt_TWZ_filter.scale = lumi_scale * 1.07314
     
@@ -415,6 +430,7 @@ for i_mode, mode in enumerate(allModes):
           stack = Stack(mc)
 
     # Use some defaults
+    weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
     Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString = cutInterpreter.cutString(args.selection))
 
     plots = []

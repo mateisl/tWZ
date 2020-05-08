@@ -77,8 +77,8 @@ tWZ_other_match.name = "tWZ_other_match"
 tWZ_other_match.texName = "tWZ (fwd others)"
 
 if args.era == "Run2016":
-    if args.mcComp: mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter]
-    elif args.partonweight: mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.TWZ]
+#    if args.mcComp: mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter]
+    if args.partonweight: mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.TWZ]
     else: mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 elif args.era == "Run2017":
     mc = [Fall17.TWZ, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
@@ -86,7 +86,7 @@ elif args.era == "Run2018":
     mc = [Autumn18.TWZ, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
     mc = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
-
+print mc
 # data sample
 try:
   data_sample = eval(args.era)
@@ -291,23 +291,24 @@ def deltaRfwdjeteta(event, sample):
 sequence.append( deltaRfwdjeteta )
 
 #genmatches and partonweights
-def twz_weight( event, sample) : 
-    for sample in mc:  
-        max_pt_jet = max( event.jets_no_eta, key = lambda j:abs(j['pt']) ) #get max pt jet 
-        event.max_pt_jet = max_pt_jet['pt'] #write in event  
-        event.ud_match = False   
-        event.gluon_match = False
-        event.other_match = False
-        if max_pt_jet['genJetIdx']>=0: 
-            max_pt_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], max_pt_jet['genJetIdx'] )
-            #check partonflavour matches for u/d,gluon,other 
-            if max_pt_genjet['partonFlavour'] == 1 or 2 or -1 or -2 : event.ud_match = True            
-            if max_pt_genjet['partonFlavour'] == 21: event.gluon_match = True
-            if max_pt_genjet['partonFlavour'] != 1 or 2 or -1 or -2 or 21: event.other_match = True
-        tWZ_ud_match.weight    =  lambda event, sample: event.ud_match
-        tWZ_gluon_match.weight =  lambda event, sample: event.gluon_match
-        tWZ_other_match.weight =  lambda event, sample: event.other_match
-    
+def twz_genmatch( event, sample) : 
+    max_pt_jet = max( event.jets_no_eta, key = lambda j:abs(j['pt']) ) #get max pt jet 
+    event.max_pt_jet = max_pt_jet['pt'] #write in event  
+    if max_pt_jet['genJetIdx']>=0: 
+        max_pt_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], max_pt_jet['genJetIdx'] )
+        #check partonflavour matches for u/d,gluon,other 
+        event.ud_match    =  max_pt_genjet['partonFlavour'] in [ 1, 2, -1, -2]
+        event.gluon_match =  max_pt_genjet['partonFlavour'] in [ 21 ]
+        event.other_match =  max_pt_genjet['partonFlavour'] not in [ 1, 2, -1, -2, 21 ]
+
+sequence.append( twz_genmatch )
+
+def twz_weight( event,sample ):
+#    TWZ.weight              = lambda event, sample: event.weight
+    if event.ud_match: tWZ_ud_match.weight     = lambda event, sample: event.ud_match#*event.weight
+    if event.gluon_match: tWZ_gluon_match.weight  = lambda event, sample: event.gluon_match#*event.weight
+    if event.other_match: tWZ_other_match.weight  = lambda event, sample: event.other_match#*event.weight
+
 sequence.append( twz_weight )
 
 def getLeptonSelection( mode ):
@@ -382,7 +383,7 @@ for i_mode, mode in enumerate(allModes):
         lumi_scale                 = data_sample.lumi/1000
 
     weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
-
+    
     #for sample in mc: sample.style = styles.fillStyle(sample.color)
     for sample in mc: sample.style = styles.lineStyle(sample.color)
     

@@ -43,6 +43,7 @@ argParser.add_argument('--nanoAODv4',   default=True, action='store_true',      
 argParser.add_argument('--samples',     action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
 #flagg for parton selection
 argParser.add_argument('--partonweight',action='store_true', help='weight partons?', )
+argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize to 1" )
 
 args = argParser.parse_args()
 options = argParser.parse_args()
@@ -57,6 +58,7 @@ if args.small:                        args.plot_directory += "_small"
 if args.mcComp:                       args.plot_directory += "_mcComp"
 if args.noData:                       args.plot_directory += "_noData"
 if args.partonweight:                 args.plot_directory += "_weightedpartons"
+if args.normalize:                    args.plot_directory += "_normalize"
 logger.info( "Working in era %s", args.era)
 
 #tWZ_sample = TWZ if args.nominalSignal else yt_TWZ_filter
@@ -79,7 +81,7 @@ tWZ_other_match.texName = "tWZ (fwd others)"
 if args.era == "Run2016":
     if args.partonweight: 
         # compare tWZ components
-        mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.TWZ]
+        mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.TWZ, Summer16.TTZ]
     else: 
         mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 elif args.era == "Run2017":
@@ -135,12 +137,17 @@ def drawPlots(plots, mode, dataMCScale):
         if mode == "SF":  plot.histos[1][0].legendText = "Data (SF)"
 
       _drawObjects = []
-
+        
+      if args.normalize:
+        for comp in plot.histos:
+            for h in comp:
+                if h.Integral()!=0.: h.Scale(1./h.Integral())  
+      
       if isinstance( plot, Plot):
-          plotting.draw(plot,
+            plotting.draw(plot,
             plot_directory = plot_directory_,
             #ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
-            ratio = {'yRange': (0.3, 1.7), 'histos':[(1,0),(2,0),(3,0)], 'texY':'Ratio'} if args.partonweight else None,
+            ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0),(2,0),(3,0),(4,0)], 'texY':'Ratio'} if args.partonweight else None,
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
             #scaling = {0:1} if args.dataMCScaling else {},
@@ -293,30 +300,19 @@ sequence.append( genjetmineta )
 
 #DeltaR 
 def deltaRfwdjeteta(event, sample):
-    #get highest pt jet
-    event.max_pt_jet = max( event.jets_no_eta, key = lambda j:abs(j['pt']) )
+    #get highest eta jet(most fwd) 
+    event.max_eta_jet = max( event.jets_no_eta, key = lambda j:abs(j['eta']) )
     #use deltaR function to get deltaR 
-    event.maxpt_Z_deltaR      = deltaR({'eta':event.max_pt_jet['eta'], 'phi':event.max_pt_jet['phi']}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    event.maxeta_Z_deltaR      = deltaR({'eta':event.max_eta_jet['eta'], 'phi':event.max_eta_jet['phi']}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
     
 sequence.append( deltaRfwdjeteta )
 
-#genmatches and partonweights
-#def twz_genmatch( event, sample) : 
-#    max_pt_jet = max( event.jets_no_eta, key = lambda j:abs(j['pt']) ) #get max pt jet 
-#    event.max_pt_jet = max_pt_jet['pt'] #write in event  
-#    if max_pt_jet['genJetIdx']>=0: 
-#        max_pt_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], max_pt_jet['genJetIdx'] )
-#        #check partonflavour matches for u/d,gluon,other 
-#        #print max_pt_genjet['partonFlavour']
-#        event.ud_match    =  max_pt_genjet['partonFlavour'] in [ 1, 2, -1, -2]
-#        event.gluon_match =  max_pt_genjet['partonFlavour'] in [ 21 ]
-#        event.other_match =  max_pt_genjet['partonFlavour'] not in [ 1, 2, -1, -2, 21 ]
-#    else:
-#        event.ud_match    = 0 
-#        event.gluon_match = 0 
-#        event.other_match = 1
-#
-#sequence.append( twz_genmatch )
+#DeltaEta
+def deltaEtaZll( event,sample ):
+    event.Z1_lldEta =  event.lep_eta[event.Z1_l2_index] - event.lep_eta[event.Z1_l1_index]
+    print event.Z1_lldEta
+
+sequence.append( deltaEtaZll )
 
 def getLeptonSelection( mode ):
     if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
@@ -400,6 +396,7 @@ for i_mode, mode in enumerate(allModes):
         tWZ_ud_match.style    = styles.lineStyle(ROOT.kBlue)
         tWZ_gluon_match.style = styles.lineStyle(ROOT.kYellow)
         tWZ_other_match.style = styles.lineStyle(ROOT.kGreen)
+        TTZ.style             = styles.lineStyle(1)       
 
     for sample in mc:
       sample.read_variables = read_variables_MC 
@@ -413,7 +410,7 @@ for i_mode, mode in enumerate(allModes):
     #yt_TWZ_filter.scale = lumi_scale * 1.07314
     
     if args.partonweight: 
-        stack = Stack([Summer16.TWZ],[tWZ_ud_match],[tWZ_gluon_match],[tWZ_other_match])
+        stack = Stack([Summer16.TWZ],[tWZ_ud_match],[tWZ_gluon_match],[tWZ_other_match],[Summer16.TTZ])
    # if args.mcComp:
     #    stack = Stack( [Summer16.TWZ], [Summer16.yt_tWZ01j_filter] )
     else:
@@ -475,8 +472,8 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
-      texX = '#Delta R(maxptjet, Z_{1})', texY = 'Number of Events',
-      name = 'maxptjet_Z1_deltaR', attribute = lambda event, sample: event.maxpt_Z_deltaR,
+      texX = '#Delta R(maxetajet, Z_{1})', texY = 'Number of Events',
+      name = 'maxptjet_Z1_deltaR', attribute = lambda event, sample: event.maxeta_Z_deltaR,
       binning=[20,0,6],
     ))
 
@@ -715,6 +712,13 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
+        name = 'Deltaeta(Z1(ll))',
+        texX = '#Delta#eta(Z_{1}(ll))', texY = 'Number of Events',
+        attribute = lambda event, sample: event.Z1_lldEta,
+        binning=[10,-3,3],
+    ))
+
+    plots.append(Plot(
       texX = 'N_{jets}', texY = 'Number of Events',
       attribute = TreeVariable.fromString( "nJetGood/I" ), #nJetSelected
       binning=[8,-0.5,7.5],
@@ -752,11 +756,13 @@ for i_mode, mode in enumerate(allModes):
       name = 'nonZ1l1_Z1_deltaPhi', attribute = lambda event, sample: event.nonZ1l1_Z1_deltaPhi,
       binning=[20,0,pi],
     ))
+
     plots.append(Plot(
       texX = '#Delta#eta(nonZ-l_{1}, Z_{1})', texY = 'Number of Events',
       name = 'nonZ1l1_Z1_deltaEta', attribute = lambda event, sample: event.nonZ1l1_Z1_deltaEta,
       binning=[20,0,6],
     ))
+
     plots.append(Plot(
       texX = '#Delta R(nonZ-l_{1}, Z_{1})', texY = 'Number of Event',
       name = 'nonZ1l1_Z1_deltaR', attribute = lambda event, sample: event.nonZ1l1_Z1_deltaR,
@@ -768,108 +774,111 @@ for i_mode, mode in enumerate(allModes):
       name = 'jet0_Z1_deltaR', attribute = lambda event, sample: event.jet0_Z1_deltaR,
       binning=[20,0,6],
     ))
+
     plots.append(Plot(
       texX = '#Delta R(jet_{0}, nonZ-l_{1})', texY = 'Number of Events',
       name = 'jet0_nonZ1l1_deltaR', attribute = lambda event, sample: event.jet0_nonZ1l1_deltaR,
       binning=[20,0,6],
     ))
+
     plots.append(Plot(
       texX = '#Delta R(jet_{1}, Z_{1})', texY = 'Number of Events',
       name = 'jet1_Z1_deltaR', attribute = lambda event, sample: event.jet1_Z1_deltaR,
       binning=[20,0,6],
     ))
+
     plots.append(Plot(
       texX = '#Delta R(jet_{1}, nonZ-l_{1})', texY = 'Number of Events',
       name = 'jet1_nonZ1l1', attribute = lambda event, sample: event.jet1_nonZ1l1_deltaR,
       binning=[20,0,6],
     ))
     
-    for index in range(3):
-        for abs_pdg in [11, 13]:
-            lep_name = "mu" if abs_pdg==13 else "ele"
-            plots.append(Plot(
-              texX = 'p_{T}(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_pt'%(lep_name, index), attribute = lep_getter("pt", index, abs_pdg),
-              binning=[400/20,0,400],
-            ))
-            plots.append(Plot(
-              texX = '#eta(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_eta'%(lep_name, index), attribute = lep_getter("eta", index, abs_pdg),
-              binning=[30,-3,3],
-            ))
-            plots.append(Plot(
-              texX = '#phi(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_phi'%(lep_name, index), attribute = lep_getter("phi", index, abs_pdg),
-              binning=[30,-pi,pi],
-            ))
-            plots.append(Plot(
-              texX = 'dxy(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_dxy'%(lep_name, index), attribute = lep_getter("dxy", index, abs_pdg, functor = lambda x: abs(x)),
-              binning=[50,0,0.05],
-            ))
-            plots.append(Plot(
-              texX = 'dz(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_dz'%(lep_name, index), attribute = lep_getter("dz", index, abs_pdg, functor = lambda x: abs(x)),
-              binning=[50,0,0.05],
-            ))
-            plots.append(Plot(
-              texX = 'IP_{3D}(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_ip3d'%(lep_name, index), attribute = lep_getter("ip3d", index, abs_pdg, functor = lambda x: abs(x)),
-              binning=[50,0,0.05],
-            ))
-            plots.append(Plot(
-              texX = '#sigma(IP)_{3D}(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_sip3d'%(lep_name, index), attribute = lep_getter("sip3d", index, abs_pdg, functor = lambda x: abs(x)),
-              binning=[40,0,8],
-            ))
-            plots.append(Plot(
-              texX = 'jetRelIso(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_jetRelIso'%(lep_name, index), attribute = lep_getter("jetRelIso", index, abs_pdg),
-              binning=[50,-.15,0.5],
-            ))
-            plots.append(Plot(
-              texX = 'miniPFRelIso_all(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_miniPFRelIso_all'%(lep_name, index), attribute = lep_getter("miniPFRelIso_all", index, abs_pdg),
-              binning=[50,0,.5],
-            ))
-            plots.append(Plot(
-              texX = 'pfRelIso03_all(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_pfRelIso03_all'%(lep_name, index), attribute = lep_getter("pfRelIso03_all", index, abs_pdg),
-              binning=[50,0,.5],
-            ))
-            plots.append(Plot(
-              texX = 'mvaTTH(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_mvaTTH'%(lep_name, index), attribute = lep_getter("mvaTTH", index, abs_pdg),
-              binning=[24,-1.2,1.2],
-            ))
-            plots.append(Plot(
-              texX = 'charge(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-              name = '%s%i_charge'%(lep_name, index), attribute = lep_getter("pdgId", index, abs_pdg, functor = charge),
-              binning=[3,-1,2],
-            ))
-            if lep_name == "mu":
-                plots.append(Plot(
-                  texX = 'segmentComp(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-                  name = '%s%i_segmentComp'%(lep_name, index), attribute = lep_getter("segmentComp", index, abs_pdg),
-                  binning=[50,0,1],
-                ))
-                plots.append(Plot(
-                  texX = 'nStations(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-                  name = '%s%i_nStations'%(lep_name, index), attribute = lep_getter("nStations", index, abs_pdg),
-                  binning=[10,0,10],
-                ))
-                plots.append(Plot(
-                  texX = 'nTrackerLayers(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-                  name = '%s%i_nTrackerLayers'%(lep_name, index), attribute = lep_getter("nTrackerLayers", index, abs_pdg),
-                  binning=[20,0,20],
-                ))
-            if lep_name == "ele":
-                for cbIdFlag in vidNestedWPBitMapNamingList:
-                    plots.append(Plot(
-                      texX = '%s(%s_{%i}) (GeV)'%(cbIdFlag, lep_name, index), texY = 'Number of Events',
-                      name = '%s%i_%s_Flag'%(lep_name, index, cbIdFlag), attribute = lep_getter("vidNestedWPBitmap", index, abs_pdg, functor = cbEleIdFlagGetter(cbIdFlag)),
-                      binning=[5,0,5],
-                    ))
+  #  for index in range(3):
+  #      for abs_pdg in [11, 13]:
+  #          lep_name = "mu" if abs_pdg==13 else "ele"
+  #          plots.append(Plot(
+  #            texX = 'p_{T}(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_pt'%(lep_name, index), attribute = lep_getter("pt", index, abs_pdg),
+  #            binning=[400/20,0,400],
+  #          ))
+  #          plots.append(Plot(
+  #            texX = '#eta(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_eta'%(lep_name, index), attribute = lep_getter("eta", index, abs_pdg),
+  #            binning=[30,-3,3],
+  #          ))
+  #          plots.append(Plot(
+  #            texX = '#phi(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_phi'%(lep_name, index), attribute = lep_getter("phi", index, abs_pdg),
+  #            binning=[30,-pi,pi],
+  #          ))
+  #          plots.append(Plot(
+  #            texX = 'dxy(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_dxy'%(lep_name, index), attribute = lep_getter("dxy", index, abs_pdg, functor = lambda x: abs(x)),
+  #            binning=[50,0,0.05],
+  #          ))
+  #          plots.append(Plot(
+  #            texX = 'dz(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_dz'%(lep_name, index), attribute = lep_getter("dz", index, abs_pdg, functor = lambda x: abs(x)),
+  #            binning=[50,0,0.05],
+  #          ))
+  #          plots.append(Plot(
+  #            texX = 'IP_{3D}(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_ip3d'%(lep_name, index), attribute = lep_getter("ip3d", index, abs_pdg, functor = lambda x: abs(x)),
+  #            binning=[50,0,0.05],
+  #          ))
+  #          plots.append(Plot(
+  #            texX = '#sigma(IP)_{3D}(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_sip3d'%(lep_name, index), attribute = lep_getter("sip3d", index, abs_pdg, functor = lambda x: abs(x)),
+  #            binning=[40,0,8],
+  #          ))
+  #          plots.append(Plot(
+  #            texX = 'jetRelIso(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_jetRelIso'%(lep_name, index), attribute = lep_getter("jetRelIso", index, abs_pdg),
+  #            binning=[50,-.15,0.5],
+  #          ))
+  #          plots.append(Plot(
+  #            texX = 'miniPFRelIso_all(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_miniPFRelIso_all'%(lep_name, index), attribute = lep_getter("miniPFRelIso_all", index, abs_pdg),
+  #            binning=[50,0,.5],
+  #          ))
+  #          plots.append(Plot(
+  #            texX = 'pfRelIso03_all(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_pfRelIso03_all'%(lep_name, index), attribute = lep_getter("pfRelIso03_all", index, abs_pdg),
+  #            binning=[50,0,.5],
+  #          ))
+  #          plots.append(Plot(
+  #            texX = 'mvaTTH(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_mvaTTH'%(lep_name, index), attribute = lep_getter("mvaTTH", index, abs_pdg),
+  #            binning=[24,-1.2,1.2],
+  #          ))
+  #          plots.append(Plot(
+  #            texX = 'charge(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #            name = '%s%i_charge'%(lep_name, index), attribute = lep_getter("pdgId", index, abs_pdg, functor = charge),
+  #            binning=[3,-1,2],
+  #          ))
+  #          if lep_name == "mu":
+  #              plots.append(Plot(
+  #                texX = 'segmentComp(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #                name = '%s%i_segmentComp'%(lep_name, index), attribute = lep_getter("segmentComp", index, abs_pdg),
+  #                binning=[50,0,1],
+  #              ))
+  #              plots.append(Plot(
+  #                texX = 'nStations(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #                name = '%s%i_nStations'%(lep_name, index), attribute = lep_getter("nStations", index, abs_pdg),
+  #                binning=[10,0,10],
+  #              ))
+  #              plots.append(Plot(
+  #                texX = 'nTrackerLayers(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+  #                name = '%s%i_nTrackerLayers'%(lep_name, index), attribute = lep_getter("nTrackerLayers", index, abs_pdg),
+  #                binning=[20,0,20],
+  #              ))
+  #          if lep_name == "ele":
+  #              for cbIdFlag in vidNestedWPBitMapNamingList:
+  #                  plots.append(Plot(
+  #                    texX = '%s(%s_{%i}) (GeV)'%(cbIdFlag, lep_name, index), texY = 'Number of Events',
+  #                    name = '%s%i_%s_Flag'%(lep_name, index, cbIdFlag), attribute = lep_getter("vidNestedWPBitmap", index, abs_pdg, functor = cbEleIdFlagGetter(cbIdFlag)),
+  #                    binning=[5,0,5],
+  #                  ))
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 

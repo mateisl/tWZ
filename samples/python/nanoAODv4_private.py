@@ -46,7 +46,6 @@ logger.info("Using db file: %s", dbFile)
 yt_tWZ01j = Sample.nanoAODfromDAS("yt_tWZ01j", "/tWZ01j_rwgt/schoef-crab_ttschida-Summer16-mAOD949-bd3e7bcff6c9bcad356ea4ed7e4f08b4_legacy_nano_v4-b9659cf3bef5e21efe24288a402778f7/USER", dbFile=dbFile, redirector=redirector, instance="phys03", overwrite=ov, xSection=0.2279)
 yt_tWZ01j.reweight_pkl = '/afs/hephy.at/data/rschoefbeck01/gridpacks/Yt/tZZ1j_rwgt_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.pkl'
 
-
 tWZ01j_filter_efficiency = (601438./(30*10**6))*(10**6/363784.)
 
 yt_tWZ01j_filter = Sample.nanoAODfromDAS("yt_tWZ01j_filter", "/tWZ01j_rwgt_filter_2/schoef-crab_ttschida-Summer16-mAOD949-bd3e7bcff6c9bcad356ea4ed7e4f08b4_legacy_nano_v4-b9659cf3bef5e21efe24288a402778f7/USER", dbFile=dbFile, redirector=redirector, instance="phys03", overwrite=ov, xSection=0.2279*tWZ01j_filter_efficiency)

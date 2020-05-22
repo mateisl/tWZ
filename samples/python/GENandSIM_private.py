@@ -34,7 +34,9 @@ logger.info("Using db file: %s", dbFile)
 tWZ01j_rwgt_filter = FWLiteSample.fromDAS("tWZ01j_rwgt_filter", "/tWZ01j_rwgt_filter_2/ttschida-tWZ01j_rwgt_filter_2_RAWSIMoutput-d21de898ad3d5a9f1861cf5edf14f0e3/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
 #tOrtbar_WZ01j_OLRLL_LO = FWLiteSample.fromDAS("tOrtbar_WZ01j_OLRLL_LO", "/tOrtbar_WZ01j_OLRLL_LO/schoef-tOrtbar_WZ01j_OLRLL_LO-129aa8aa5b17c813bcab74208422fa28/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
 
-tOrtbar_WZ01j_OLRLL_LO = FWLiteSample.fromDAS("tOrtbar_WZ01j_OLRLL_LO", "/gensim_tOrtbar_WZ01j_OLRLL_LO/schoef-gensim_tOrtbar_WZ01j_OLRLL_LO_RAWSIMoutput-f6a5011659c881b9d217cfc35ad761a3/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
+# GENSIM
+#tOrtbar_WZ01j_OLRLL_LO = FWLiteSample.fromDAS("tOrtbar_WZ01j_OLRLL_LO", "/gensim_tOrtbar_WZ01j_OLRLL_LO/schoef-gensim_tOrtbar_WZ01j_OLRLL_LO_RAWSIMoutput-f6a5011659c881b9d217cfc35ad761a3/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
+tOrtbar_WZ01j_OLRLL_LO = FWLiteSample.fromDAS("tOrtbar_WZ01j_OLRLL_LO", "/tOrtbar_WZ01j_OLRLL_LO_ext4/schoef-tOrtbar_WZ01j_OLRLL_LO_ext4-c88179374d61ba4483b39a09a725f437/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
 
 allSamples = [tWZ01j_rwgt_filter, tOrtbar_WZ01j_OLRLL_LO] 
 

@@ -42,7 +42,8 @@ tOrtbar_WZ01j_OLRLL_LO = FWLiteSample.fromDAS("tOrtbar_WZ01j_OLRLL_LO", "/tOrtba
 
 tWZ_NLO = FWLiteSample.fromDAS("tWZ_NLO", "/tWZ_NLO_v16_ext3/schoef-tWZ_NLO_v16_ext3-a1e791adef4fc0a2f32451f12fdbd583/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
 
-tWZ_LO_central = FWLiteSample.fromDAS("tWZ_LO", "/ST_tWll_5f_LO_13TeV-MadGraph-pythia8/RunIISummer16DR80Premix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/AODSIM", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
+#tWZ_LO_central = FWLiteSample.fromDAS("tWZ_LO_central", "/ST_tWll_5f_LO_13TeV-MadGraph-pythia8/RunIISummer16DR80Premix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/AODSIM", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
+tWZ_LO_central = FWLiteSample.fromDAS("tWZ_LO_central", "/ST_tWll_5f_LO_13TeV-MadGraph-pythia8/RunIISummer16MiniAODv3-PUMoriond17_94X_mcRun2_asymptotic_v3-v1/MINIAODSIM", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
 
 allSamples = [tWZ01j_rwgt_filter, tOrtbar_WZ01j_OLRLL_LO, tWZ_NLO, tWZ_LO_central] 
 

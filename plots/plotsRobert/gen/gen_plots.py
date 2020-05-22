@@ -23,7 +23,7 @@ args = argParser.parse_args()
 logger = get_logger(args.logLevel, logFile = None)
 
 
-from tWZ.samples.GENandSIM_private import tOrtbar_WZ01j_OLRLL_LO
+import tWZ.samples.GENandSIM_private as samples
 ## from DAS
 s = tOrtbar_WZ01j_OLRLL_LO
 

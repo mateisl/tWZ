@@ -36,13 +36,13 @@ tWZ01j_rwgt_filter = FWLiteSample.fromDAS("tWZ01j_rwgt_filter", "/tWZ01j_rwgt_fi
 
 # GENSIM
 #tOrtbar_WZ01j_OLRLL_LO = FWLiteSample.fromDAS("tOrtbar_WZ01j_OLRLL_LO", "/gensim_tOrtbar_WZ01j_OLRLL_LO/schoef-gensim_tOrtbar_WZ01j_OLRLL_LO_RAWSIMoutput-f6a5011659c881b9d217cfc35ad761a3/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
-tOrtbar_WZ01j_OLRLL_LO = FWLiteSample.fromDAS("tOrtbar_WZ01j_OLRLL_LO", "/tOrtbar_WZ01j_OLRLL_LO_ext4/schoef-tOrtbar_WZ01j_OLRLL_LO_ext4-c88179374d61ba4483b39a09a725f437/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
+#tOrtbar_WZ01j_OLRLL_LO = FWLiteSample.fromDAS("tOrtbar_WZ01j_OLRLL_LO", "/tOrtbar_WZ01j_OLRLL_LO_ext4/schoef-tOrtbar_WZ01j_OLRLL_LO_ext4-c88179374d61ba4483b39a09a725f437/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
 
-tOrtbar_WZ01j_OLRLL_LO_ext5 = FWLiteSample.fromDAS("tOrtbar_WZ01j_OLRLL_LO_ext5", "/tOrtbar_WZ01j_OLRLL_LO_ext5/schoef-tOrtbar_WZ01j_OLRLL_LO_ext5-c88179374d61ba4483b39a09a725f437/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
+tOrtbar_WZ01j_OLRLL_LO = FWLiteSample.fromDAS("tOrtbar_WZ01j_OLRLL_LO", "/tOrtbar_WZ01j_OLRLL_LO_ext5/schoef-tOrtbar_WZ01j_OLRLL_LO_ext5-c88179374d61ba4483b39a09a725f437/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
 
-tWZ_NLO_v16_ext3 = FWLiteSample.fromDAS("tWZ_NLO_v16_ext3", "/tWZ_NLO_v16_ext3/schoef-tWZ_NLO_v16_ext3-a1e791adef4fc0a2f32451f12fdbd583/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
+tWZ_NLO = FWLiteSample.fromDAS("tWZ_NLO", "/tWZ_NLO_v16_ext3/schoef-tWZ_NLO_v16_ext3-a1e791adef4fc0a2f32451f12fdbd583/USER", instance="phys03", dbFile=dbFile, overwrite=ov, prefix=redirector_global, skipCheck=True)
 
-allSamples = [tWZ01j_rwgt_filter, tOrtbar_WZ01j_OLRLL_LO, tOrtbar_WZ01j_OLRLL_LO_ext5, tWZ_NLO_v16_ext3] 
+allSamples = [tWZ01j_rwgt_filter, tOrtbar_WZ01j_OLRLL_LO, tWZ_NLO] 
 
 for sample in allSamples:
     sample.isData = False

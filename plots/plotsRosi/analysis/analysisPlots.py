@@ -42,7 +42,8 @@ argParser.add_argument('--selection',      action='store', default='trilepMini0p
 argParser.add_argument('--nanoAODv4',   default=True, action='store_true',                                                                        help="Run on nanoAODv4?" )
 argParser.add_argument('--samples',     action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
 #flagg for parton selection
-argParser.add_argument('--partonweight',action='store_true', help='weight partons?', )
+argParser.add_argument('--partonweight', action='store_true', help='weight partons?', )
+argParser.add_argument('--partonweightprivate', action='store_true', help='weight partons?', )
 argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize to 1" )
 
 args = argParser.parse_args()
@@ -58,6 +59,7 @@ if args.small:                        args.plot_directory += "_small"
 if args.mcComp:                       args.plot_directory += "_mcComp"
 if args.noData:                       args.plot_directory += "_noData"
 if args.partonweight:                 args.plot_directory += "_weightedpartons"
+if args.partonweightprivate:                 args.plot_directory += "_weightedpartons(private)"
 if args.normalize:                    args.plot_directory += "_normalize"
 logger.info( "Working in era %s", args.era)
 
@@ -66,22 +68,42 @@ logger.info( "Working in era %s", args.era)
 from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
 
 #TWZ match samples 
-tWZ_ud_match = copy.deepcopy( Summer16.TWZ )
-tWZ_ud_match.name = "tWZ_ud_match"
-tWZ_ud_match.texName = "tWZ (fwd u/d)"
+if args.partonweight:
+    tWZ_ud_match = copy.deepcopy( Summer16.TWZ )
+    tWZ_ud_match.name = "tWZ_ud_match"
+    tWZ_ud_match.texName = "tWZ (fwd u/d)"
+    
+    tWZ_gluon_match = copy.deepcopy( Summer16.TWZ )
+    tWZ_gluon_match.name = "tWZ_gluon_match"
+    tWZ_gluon_match.texName = "tWZ (fwd gluon)"
+    
+    tWZ_other_match = copy.deepcopy( Summer16.TWZ )
+    tWZ_other_match.name = "tWZ_other_match"
+    tWZ_other_match.texName = "tWZ (fwd others)"
 
-tWZ_gluon_match = copy.deepcopy( Summer16.TWZ )
-tWZ_gluon_match.name = "tWZ_gluon_match"
-tWZ_gluon_match.texName = "tWZ (fwd gluon)"
+#priavate tWZ match samples
+#TWZ match samples 
+if args.partonweightprivate: 
+    tWZ_ud_match = copy.deepcopy( Summer16.yt_tWZ01j_filter )
+    tWZ_ud_match.name = "tWZ_ud_match"
+    tWZ_ud_match.texName = "private tWZ (fwd u/d)"
+    
+    tWZ_gluon_match = copy.deepcopy( Summer16.yt_tWZ01j_filter )
+    tWZ_gluon_match.name = "tWZ_gluon_match"
+    tWZ_gluon_match.texName = "private tWZ (fwd gluon)"
+    
+    tWZ_other_match = copy.deepcopy( Summer16.yt_tWZ01j_filter )
+    tWZ_other_match.name = "tWZ_other_match"
+    tWZ_other_match.texName = "private tWZ (fwd others)"
 
-tWZ_other_match = copy.deepcopy( Summer16.TWZ )
-tWZ_other_match.name = "tWZ_other_match"
-tWZ_other_match.texName = "tWZ (fwd others)"
+Summer16.yt_tWZ01j_filter.texName = "TWZ(private)"
 
 if args.era == "Run2016":
     if args.partonweight: 
         # compare tWZ components
         mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.TWZ, Summer16.TTZ]
+    elif args.partonweightprivate: 
+        mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.yt_tWZ01j_filter, Summer16.TWZ, Summer16.TTZ]
     else: 
         mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 elif args.era == "Run2017":
@@ -147,7 +169,7 @@ def drawPlots(plots, mode, dataMCScale):
             plotting.draw(plot,
             plot_directory = plot_directory_,
             #ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
-            ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0),(2,0),(3,0),(4,0)], 'texY':'Ratio'} if args.partonweight else None,
+            ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0),(2,0),(3,0),(4,0),(5,0)], 'texY':'Ratio'} if args.partonweightprivate else None,
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
             #scaling = {0:1} if args.dataMCScaling else {},
@@ -186,15 +208,16 @@ def getM3l( event, sample ):
 
 sequence.append( getM3l )
 
-def getM2l( event, sample ):
-    # get the invariant mass of the 2l system
-    l = []
-    for i in range(2):
-        l.append(ROOT.TLorentzVector())
-        l[i].SetPtEtaPhiM(event.lep_pt[i], event.lep_eta[i], event.lep_phi[i],0)
-    event.M2l = (l[0] + l[1]).M()
+#def getM2l( event, sample ):
+#    # get the invariant mass of the 2l system
+#    l = []
+#    #for i in range(1):
+#    l.append(ROOT.TLorentzVector())
+#    l[0].SetPtEtaPhiM(event.lep_pt[event.Z1_l1_index], event.lep_eta[event.Z1_l1_index], event.lep_phi[event.Z1_l1_index],0)
+#    l[1].SetPtEtaPhiM(event.lep_pt[event.Z1_l2_index], event.lep_eta[event.Z1_l2_index], event.lep_phi[event.Z1_l2_index],0)
+#    event.M2l = (l[0] + l[1]).M()
 
-sequence.append( getM2l )
+#sequence.append( getM2l )
 
 #jets without eta cut
 jetVars          = ['pt/F', 'chEmEF/F', 'chHEF/F', 'neEmEF/F', 'neHEF/F', 'rawFactor/F', 'eta/F', 'phi/F', 'jetId/I', 'btagDeepB/F', 'btagDeepFlavB/F', 'btagCSVV2/F', 'area/F'] 
@@ -310,7 +333,7 @@ sequence.append( deltaRfwdjeteta )
 #DeltaEta
 def deltaEtaZll( event,sample ):
     event.Z1_lldEta =  event.lep_eta[event.Z1_l2_index] - event.lep_eta[event.Z1_l1_index]
-    print event.Z1_lldEta
+#    print event.Z1_lldEta
 
 sequence.append( deltaEtaZll )
 
@@ -392,12 +415,12 @@ for i_mode, mode in enumerate(allModes):
         yt_tWZ01j_filter.style   = styles.lineStyle(ROOT.kBlue)
         yt_tWZ01j_filter.texName = "TWZ(private)"
     
-    if args.partonweight: 
+    if args.partonweight or args.partonweightprivate: 
         tWZ_ud_match.style    = styles.lineStyle(ROOT.kBlue)
         tWZ_gluon_match.style = styles.lineStyle(ROOT.kYellow)
         tWZ_other_match.style = styles.lineStyle(ROOT.kGreen)
         TTZ.style             = styles.lineStyle(1)       
-
+        Summer16.yt_tWZ01j_filter.style = styles.lineStyle(ROOT.kCyan)
     for sample in mc:
       sample.read_variables = read_variables_MC 
       sample.setSelectionString([getLeptonSelection(mode)])
@@ -411,7 +434,9 @@ for i_mode, mode in enumerate(allModes):
     
     if args.partonweight: 
         stack = Stack([Summer16.TWZ],[tWZ_ud_match],[tWZ_gluon_match],[tWZ_other_match],[Summer16.TTZ])
-   # if args.mcComp:
+    elif args.partonweightprivate:
+        stack = Stack([Summer16.yt_tWZ01j_filter],[Summer16.TWZ],[tWZ_ud_match],[tWZ_gluon_match],[tWZ_other_match],[Summer16.TTZ])
+   # elif args.mcComp:
     #    stack = Stack( [Summer16.TWZ], [Summer16.yt_tWZ01j_filter] )
     else:
         if not args.noData:
@@ -434,14 +459,6 @@ for i_mode, mode in enumerate(allModes):
 #    ))
 #
     plots.append(Plot(
-      name = 'maxabs(eta)',
-      texX = 'abs(#eta)_max',
-      texY = 'Number of Events',
-      attribute = lambda event, sample: event.maxEta_of_pt30jets, 
-      binning=[5, 0, 5],
-    ))
-
-    plots.append(Plot(
       name = 'maxabseta',
       texX = 'abs(#eta)_max',
       texY = 'Number of Events',
@@ -450,7 +467,7 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
-      name = 'partons in jets (mineta)',
+      name = 'partons in jets mineta',
       texX = 'partons in jets (mineta)',
       texY = 'Number of Events',
       attribute = lambda event, sample: event.partonsinfwdjetsmineta,
@@ -458,7 +475,7 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
-      name = 'partons in fwd jets (maxeta)',
+      name = 'partons in fwd jets maxeta',
       texX = 'partons in fwd jets (maxeta)',
       texY = 'Number of Events',
       attribute = lambda event, sample: event.partonsinfwdjets,
@@ -477,27 +494,27 @@ for i_mode, mode in enumerate(allModes):
       binning=[20,0,6],
     ))
 
-    plots.append(Plot(
-        name = "M2l",
-        texX = 'M(2l) (GeV)', texY = 'Number of Events',
-        attribute = lambda event, sample:event.M2l,
-        binning=[25,0,500],
-    ))
-
-    plots.append(Plot(
-        name = "m2l",
-        texX = 'M(2l) (GeV)', texY = 'Number of Events',
-        attribute = lambda event, sample:event.M2l,
-        binning=[25,50,150],
-    ))
-
-    plots.append(Plot(
-        name = "M(2l)",
-        texX = 'M(2l) (GeV)', texY = 'Number of Events',
-        attribute = lambda event, sample:event.M2l,
-        binning=[25,80,100],
-    ))
-
+#    plots.append(Plot(
+#        name = "M2l",
+#        texX = 'M(2l) (GeV)', texY = 'Number of Events',
+#        attribute = lambda event, sample:event.M2l,
+#        binning=[25,0,500],
+#    ))
+#
+#    plots.append(Plot(
+#        name = "m2l",
+#        texX = 'M(2l) (GeV)', texY = 'Number of Events',
+#        attribute = lambda event, sample:event.M2l,
+#        binning=[25,50,150],
+#    ))
+#
+#    plots.append(Plot(
+#        name = "M(2l)",
+#        texX = 'M(2l) (GeV)', texY = 'Number of Events',
+#        attribute = lambda event, sample:event.M2l,
+#        binning=[25,80,100],
+#    ))
+#
 
     plots.append(Plot(
       name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',
@@ -712,7 +729,7 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
-        name = 'Deltaeta(Z1(ll))',
+        name = 'Deltaeta_Z1_ll',
         texX = '#Delta#eta(Z_{1}(ll))', texY = 'Number of Events',
         attribute = lambda event, sample: event.Z1_lldEta,
         binning=[10,-3,3],

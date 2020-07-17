@@ -19,7 +19,7 @@ from RootTools.core.standard             import *
 from tWZ.Tools.user                      import plot_directory
 from tWZ.Tools.cutInterpreter            import cutInterpreter
 from tWZ.Tools.objectSelection           import cbEleIdFlagGetter, vidNestedWPBitMapNamingList
-from tWZ.Tools.objectSelection           import mu_string, ele_string 
+from tWZ.Tools.objectSelection           import mu_string, ele_string, isBJet 
 # Analysis
 from Analysis.Tools.helpers              import deltaPhi, deltaR, getCollection, getObjDict
 from Analysis.Tools.puProfileCache       import *
@@ -45,6 +45,8 @@ argParser.add_argument('--samples',     action='store',         nargs='*',  type
 argParser.add_argument('--partonweight', action='store_true', help='weight partons?', )
 argParser.add_argument('--partonweightprivate', action='store_true', help='weight partons?', )
 argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize to 1" )
+argParser.add_argument('--newsamples', action='store_true', help='twzLo and twznlo', )
+argParser.add_argument('--scaled', action='store_true', help='scaling', )
 
 args = argParser.parse_args()
 options = argParser.parse_args()
@@ -59,13 +61,18 @@ if args.small:                        args.plot_directory += "_small"
 if args.mcComp:                       args.plot_directory += "_mcComp"
 if args.noData:                       args.plot_directory += "_noData"
 if args.partonweight:                 args.plot_directory += "_weightedpartons"
-if args.partonweightprivate:                 args.plot_directory += "_weightedpartons(private)"
+if args.partonweightprivate:          args.plot_directory += "_weightedpartons(private)"
+if args.newsamples:                   args.plot_directory += "_tWZ_LO_NLO"
 if args.normalize:                    args.plot_directory += "_normalize"
+if args.scaled:                    args.plot_directory += "_scaled"
 logger.info( "Working in era %s", args.era)
 
 #tWZ_sample = TWZ if args.nominalSignal else yt_TWZ_filter
 
 from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
+
+#import new samples
+from tWZ.samples.nanoTuples_Summer16_nanoAODv6_postProcessed import *
 
 #TWZ match samples 
 if args.partonweight:
@@ -97,6 +104,7 @@ if args.partonweightprivate:
     tWZ_other_match.texName = "private tWZ (fwd others)"
 
 Summer16.yt_tWZ01j_filter.texName = "TWZ(private)"
+Summer16.yt_tWZ01j_filter.style   = styles.lineStyle(ROOT.kBlue)
 
 if args.era == "Run2016":
     if args.partonweight: 
@@ -104,6 +112,8 @@ if args.era == "Run2016":
         mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.TWZ, Summer16.TTZ]
     elif args.partonweightprivate: 
         mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.yt_tWZ01j_filter, Summer16.TWZ, Summer16.TTZ]
+    elif args.newsamples: 
+        mc = [tWZ_LO, tWZ_NLO, Summer16.yt_tWZ01j_filter, Summer16.TWZ, Summer16.TTZ]
     else: 
         mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 elif args.era == "Run2017":
@@ -169,12 +179,12 @@ def drawPlots(plots, mode, dataMCScale):
             plotting.draw(plot,
             plot_directory = plot_directory_,
             #ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
-            ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0),(2,0),(3,0),(4,0),(5,0)], 'texY':'Ratio'} if args.partonweightprivate else None,
+            ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0),(2,0),(3,0),(4,0)], 'texY':'Ratio'} if args.scaled else None,
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
             #scaling = {0:1} if args.dataMCScaling else {},
             #scaling = {0:1} if args.mcComp else {}, #sacling twz to private twz sample to see difference in shape
-            #scaling =  { i+1:0 for i in range(3) } if args.partonweight else {}, 
+            scaling =  { i+1:0 for i in range(4) } if args.scaled else {}, 
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
             copyIndexPHP = True, extensions = ["png"],
@@ -226,10 +236,13 @@ jetVarNames      = [x.split('/')[0] for x in jetVars]
 lepVars         = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F','mvaFall17V2Iso_WP90/O', 'mvaTTH/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','eleIndex/I','muIndex/I']
 lepVarNames     = [x.split('/')[0] for x in lepVars]
 
+bVars      = ['pt/F','eta/F','phi/F']
+bVarNames  = [x.split('/')[0] for x in bVars]
+
 read_variables = [
     "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l2_eta/F", "l2_phi/F", 
-    "JetGood[pt/F,eta/F,phi/F]",
+    "JetGood[pt/F,eta/F,phi/F]", 
     "nJet/I", 
     "nlep/I", "lep[%s]"%(",".join(lepVars)),
     "Z1_l1_index/I", "Z1_l2_index/I", "nonZ1_l1_index/I", "nonZ1_l2_index/I", 
@@ -237,6 +250,9 @@ read_variables = [
     "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I]",
     "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
 ]
+
+#b tagger
+b_tagger = "DeepCSV"
 
 # read only for data:
 read_variables_data = [ "Jet[%s]"%(",".join(jetVars))] 
@@ -248,20 +264,49 @@ read_variables_MC.append( "GenJet[pt/F,eta/F,phi/F,hadronFlavour/b,partonFlavour
 
 # define 3l selections
 
-def getjetswoetacut( event, sample ):
+#def getbjets( event, sample ):
+#    #jets einlesen (in case of MC also reat the index of the genjet)
+#    alljets     = getCollection( event, 'Jet', jetVarNames + (['genJetIdx'] if not sample.isData else []), 'nJet')
+#    event.jets_no_eta         = filter(lambda j:j['pt']>30, clean_jets)
+#    #bjets filtern, nur 2016
+#    #print jetgood
+#    bJets = filter(lambda j:isBJet(j, tagger=b_tagger, year=2016) and abs(j['eta'])<=2.4    , alljets)
+#    #print bJets
+#    for i in range(len(bJets)) :
+#        event.bjet_pt  = bJets[i]['pt']
+#        event.bjet_eta = bJets[i]['eta']
+#        event.bjet_phi = bJets[i]['phi']
+# 
+#    event.bjet_Z1_deltaR      = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+#    event.bjet_nonZ1l1_deltaR = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+#
+#sequence.append( getbjets )
+
+def getjets( event, sample ):
     #jets einlesen (in case of MC also reat the index of the genjet)
     alljets   = getCollection( event, 'Jet', jetVarNames + (['genJetIdx'] if not sample.isData else []), 'nJet')  
     alljets.sort( key = lambda j: -j['pt'] )
     leptons    = getCollection(event, "lep", lepVarNames, 'nlep') 
     # clean against good leptons
     clean_jets,_ = cleanJetsAndLeptons( alljets, leptons )
-    
+    jets  = filter(lambda j:j['pt']>30, clean_jets)
     # filter pt, but not eta (I store the list of jets in the event because I want to use it in the next function)
     event.jets_no_eta         = filter(lambda j:j['pt']>30, clean_jets)
     # very nice, Rosmarie. Here are all the python built on functions, so you get an idea what you can do: https://docs.python.org/2.7/library/functions.html
     event.maxEta_of_pt30jets  = max( [ abs(j['eta']) for j in event.jets_no_eta ] )
 
-sequence.append( getjetswoetacut )
+    #bjets filtern( nur 2016 )
+    bJets = filter(lambda j:isBJet(j, tagger=b_tagger, year=2016) and abs(j['eta'])<=2.4    , jets)
+    #print bJets
+    for i in range(len(bJets)) :
+        event.bjet_pt  = bJets[i]['pt']
+        event.bjet_eta = bJets[i]['eta']
+        event.bjet_phi = bJets[i]['phi']
+ 
+    event.bjet_Z1_deltaR      = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    event.bjet_nonZ1l1_deltaR = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+
+sequence.append( getjets )
 
 def genJetStuff( event, sample ):
     # only do something in simulation
@@ -421,6 +466,10 @@ for i_mode, mode in enumerate(allModes):
         tWZ_other_match.style = styles.lineStyle(ROOT.kGreen)
         TTZ.style             = styles.lineStyle(1)       
         Summer16.yt_tWZ01j_filter.style = styles.lineStyle(ROOT.kCyan)
+
+    if args.newsamples: 
+        Summer16.yt_tWZ01j_filter.style = styles.lineStyle(ROOT.kCyan)
+
     for sample in mc:
       sample.read_variables = read_variables_MC 
       sample.setSelectionString([getLeptonSelection(mode)])
@@ -436,6 +485,8 @@ for i_mode, mode in enumerate(allModes):
         stack = Stack([Summer16.TWZ],[tWZ_ud_match],[tWZ_gluon_match],[tWZ_other_match],[Summer16.TTZ])
     elif args.partonweightprivate:
         stack = Stack([Summer16.yt_tWZ01j_filter],[Summer16.TWZ],[tWZ_ud_match],[tWZ_gluon_match],[tWZ_other_match],[Summer16.TTZ])
+    elif args.newsamples: 
+        stack = Stack([tWZ_NLO],[Summer16.TWZ],[Summer16.yt_tWZ01j_filter],[tWZ_LO],[Summer16.TTZ])
    # elif args.mcComp:
     #    stack = Stack( [Summer16.TWZ], [Summer16.yt_tWZ01j_filter] )
     else:
@@ -764,6 +815,27 @@ for i_mode, mode in enumerate(allModes):
         texX = 'p_{T}(W) (GeV)', texY = 'Number of Events / 20 GeV',
         attribute = lambda event, sample:event.W_pt,
         binning=[20,0,400],
+    ))
+
+   #bjets 
+
+    plots.append(Plot(
+      texX = 'p_{T}(b jet) (GeV)', texY = 'Number of Events / 30 GeV',
+      name = 'bjet_pt', attribute = lambda event, sample: event.bjet_pt,
+      binning=[600/30,0,600],
+    ))
+
+    
+    plots.append(Plot(
+      texX = '#Delta R(bjet, Z_{1})', texY = 'Number of Events',
+      name = 'bjet_Z1_deltaR', attribute = lambda event, sample: event.bjet_Z1_deltaR,
+      binning=[20,0,6],
+    ))
+
+    plots.append(Plot(
+      texX = '#Delta R(bjet, nonZ-l_{1})', texY = 'Number of Events',
+      name = 'bjet_nonZ1l1_deltaR', attribute = lambda event, sample: event.bjet_nonZ1l1_deltaR,
+      binning=[20,0,6],
     ))
 
    # 3l training variables

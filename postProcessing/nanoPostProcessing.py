@@ -154,6 +154,7 @@ if options.nanoAODv4:
 else:
     if options.year == 2016:
         from Samples.nanoAOD.Summer16_nanoAODv6         import allSamples as mcSamples
+        from Samples.nanoAOD.Summer16_private           import allSamples as mcSamples
         from Samples.nanoAOD.Run2016_nanoAODv6          import allSamples as dataSamples
         allSamples = mcSamples + dataSamples
     elif options.year == 2017:

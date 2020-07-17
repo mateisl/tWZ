@@ -50,8 +50,8 @@ triBoson = Sample.fromDirectory(name="triBoson", treeName="Events", isData=False
 dirs['TWZ']             = ['tWnunu', 'tWll']
 TWZ  = Sample.fromDirectory(name="TWZ", treeName="Events", isData=False, color=color.TWZ, texName="tWZ", directory=make_dirs( dirs['TWZ']))
 # TWZ yt
-yt_tWZ01j_filter = Sample.fromDirectory(name="yt_TWZ01j_filter", treeName="Events", isData=False, color=ROOT.kRed, texName="TWZ", directory= make_dirs(['yt_tWZ01j_filter']))
-yt_tWZ01j        = Sample.fromDirectory(name="yt_TWZ01j", treeName="Events", isData=False, color=ROOT.kRed, texName="TWZ", directory= make_dirs(['yt_tWZ01j']))
+yt_tWZ01j_filter = Sample.fromDirectory(name="yt_TWZ01j_filter", treeName="Events", isData=False, color=ROOT.kBlue, texName="TWZ", directory= make_dirs(['yt_tWZ01j_filter']))
+yt_tWZ01j        = Sample.fromDirectory(name="yt_TWZ01j", treeName="Events", isData=False, color=ROOT.kBlue, texName="TWZ", directory= make_dirs(['yt_tWZ01j']))
 
 # TTZ
 dirs['TTZToLLNuNu']     = ['TTZToLLNuNu_ext2_comb']#, 'TTZToLLNuNu_m1to10'] # FIXME

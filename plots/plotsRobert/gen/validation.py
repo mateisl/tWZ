@@ -20,7 +20,8 @@ argParser.add_argument('--logLevel', action='store', nargs='?', choices=['CRITIC
 args = argParser.parse_args()
 logger = get_logger(args.logLevel, logFile = None)
 
-max_events  = 10000
+#max_events  = 10000
+max_events  = 20000
 max_files   = 10
 
 import tWZ.Tools.user as user
@@ -29,7 +30,8 @@ import tWZ.Tools.helpers as helpers
 
 LO      = samples.tOrtbar_WZ01j_OLRLL_LO 
 NLO     = samples.tWZ_NLO
-central = samples.tWZ_LO_central 
+#central = samples.tWZ_LO_central 
+central = FWLiteSample.fromFiles( "tWZ_LO_central", files=['/scratch-cbe/users/hephy/tmp//store/mc/RunIISummer16MiniAODv3/ST_tWll_5f_LO_13TeV-MadGraph-pythia8/MINIAODSIM/PUMoriond17_94X_mcRun2_asymptotic_v3-v1/270000/2EABE1DA-39D2-E811-ACEF-0242AC130002.root'] )
 
 LO.color = ROOT.kBlue
 NLO.color= ROOT.kRed
@@ -58,12 +60,16 @@ LO.products  = GEN_products
 NLO.products = GEN_products
 central.products = MAOD_products
 
-samples = [central, LO, NLO]
+samples = [ central, LO, NLO]
 
 plots = {
-    'j0_pt': {'name': 'j0_pt', 'binning':[20,0,2000]},
+    'j0_pt': {'name': 'j0_pt', 'binning':[20,0,800]},
+    'j1_pt': {'name': 'j1_pt', 'binning':[20,0,800]},
     'j0_nd': {'name': 'j0_nd', 'binning':[20,0,50]},
-    'j1_pt': {'name': 'j1_pt', 'binning':[20,0,2000]},
+    'ptZ': {'name': 'ptZ', 'binning':[10,0,500]},
+    'etaZ': {'name': 'etaZ', 'binning':[10,-4,4]},
+    'ptW': {'name': 'ptW', 'binning':[10,0,500]},
+    'etaW': {'name': 'etaW', 'binning':[10,-4,4]},
     'nJet':  {'name': 'nJet',  'binning':[12,0,12]},
     'nJet_central':  {'name': 'nJet_central',  'binning':[12,0,12]},
 }
@@ -72,7 +78,7 @@ plots = {
 for name, plot in plots.iteritems():
     plot['histos'] = [ROOT.TH1F("_".join([plot['name'],sample.name]),"_".join([plot['name'],sample.name]), *plot['binning']) for sample in samples]
     for i_sample, sample in enumerate(samples):
-        plot['histos'][i_sample].style = styles.lineStyle( sample.color )
+        plot['histos'][i_sample].style = styles.lineStyle( sample.color, errors=True)
         plot['histos'][i_sample].legendText = sample.name 
 
 for i_sample, sample in enumerate(samples):
@@ -90,8 +96,15 @@ for i_sample, sample in enumerate(samples):
 
         if not (len(lep_from_Z)==2 and len(lep_from_W)==1): continue
 
-        jets = [ j for j in r.products['jets'] if j.pt()>30 and min([helpers.deltaR({'phi':j.phi(), 'eta':j.eta()}, {'phi':l.phi(),'eta':l.eta()}) for l in lep_from_W+lep_from_Z],999.)>0.4 ] # if jetID( j )]
-        #print jets
+        jets = [ j for j in r.products['jets'] if j.pt()>30 and min([helpers.deltaR({'phi':j.phi(), 'eta':j.eta()}, {'phi':l.phi(),'eta':l.eta()}) for l in lep_from_W+lep_from_Z] + [999.])>0.4 ] # if jetID( j )]
+
+        if len(lep_from_Z)>0:
+            plots['ptZ']['histos'][i_sample].Fill( lep_from_Z[0].mother(0).pt() )
+            plots['etaZ']['histos'][i_sample].Fill( lep_from_Z[0].mother(0).eta() )
+        if len(lep_from_W)>0:
+            plots['ptW']['histos'][i_sample].Fill( lep_from_W[0].mother(0).pt() )
+            plots['etaW']['histos'][i_sample].Fill( lep_from_W[0].mother(0).eta() )
+
         #print len(jets)
         plots['nJet']['histos'][i_sample].Fill( len(jets) )
         plots['nJet_central']['histos'][i_sample].Fill( len([j for j in jets if abs(j.eta())<2.4]) )

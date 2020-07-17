@@ -5,18 +5,18 @@ from Analysis.TMVA.Trainer       import Trainer
 from Analysis.TMVA.Reader        import Reader
 from Analysis.TMVA.defaults      import default_methods, default_factory_settings 
 
-# TTGammaEFT
-from tWZ.Tools.user              import plot_directory, mva_results
-from tWZ.Tools.cutInterpreter    import cutInterpreter
+# TopEFT
+from tWZ.Tools.user           import plot_directory, mva_directory
+from tWZ.Tools.cutInterpreter import cutInterpreter
 
 # MVA configuration
-from tWZ.MVA.MVA_Top_vs_TTG      import mlp1, bdt1, sequence, read_variables, mva_variables
+from tWZ.MVA.MVA_TWZ_3l import mlp, sequence, read_variables, mva_variables
 
 # Arguments
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--plot_directory',     action='store',             default=None)
-argParser.add_argument('--selection',          action='store', type=str,   default='nLepTight1-nLepVeto1-nJet3p-nBTag1p-nPhoton1')
+argParser.add_argument('--selection',          action='store', type=str,   default='trilep-onZ1')
 argParser.add_argument('--trainingFraction',   action='store', type=float, default=0.5)
 argParser.add_argument('--small',              action='store_true')
 argParser.add_argument('--overwrite',          action='store_true')
@@ -24,7 +24,7 @@ argParser.add_argument('--overwrite',          action='store_true')
 args = argParser.parse_args()
 
 #Logger
-import Analysis.Tools.logger as logger
+import TopEFT.Tools.logger as logger
 logger = logger.get_logger("INFO", logFile = None )
 
 if args.plot_directory == None:
@@ -36,13 +36,12 @@ else:
     selectionString = cutInterpreter.cutString( args.selection )
 
 # Samples
-from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import TTZ
-from tWZ.samples.nanoTuples_Summer16_nanoAODv6_postProcessed import tWZ_NLO
+from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
 
-signal = tWZ_NLO 
+signal = Summer16.yt_tWZ01j_filter
 
 # TTZ
-backgrounds = [ TTZ ]
+backgrounds = [ Summer16.TTZ ]
 
 samples = backgrounds + [signal]
 for sample in samples:
@@ -50,16 +49,18 @@ for sample in samples:
     if args.small:
         sample.reduceFiles(to = 1)
 
-mvas = [ bdt1, mlp1]
+#mvas = [bdt1, bdt2, bdt3, bdt4, mlp1, mlp2, mlp3]
+
+mvas = [ mlp ]
 
 ## TMVA Trainer instance
 trainer = Trainer( 
     signal = signal, 
     backgrounds = backgrounds, 
-    output_directory = mva_results, 
+    output_directory = mva_directory, 
     plot_directory   = plot_directory, 
     mva_variables    = mva_variables,
-    label            = "tWZ", 
+    label            = "TWZ_3l", 
     fractionTraining = args.trainingFraction, 
     )
 
@@ -71,8 +72,17 @@ trainer.createTestAndTrainingSample(
     overwrite        = args.overwrite, 
     )
 
+#trainer.addMethod(method = default_methods["BDT"])
+#trainer.addMethod(method = default_methods["MLP"])
+
 for mva in mvas:
     trainer.addMethod(method = mva)
 
 trainer.trainMVA( factory_settings = default_factory_settings )
 trainer.plotEvaluation()
+
+#reader.addMethod(method = bdt1)
+#reader.addMethod(method = default_methods["MLP"])
+
+#print reader.evaluate("BDT", met_pt=100, ht=-210, Z1_pt_4l=100, lnonZ1_pt=100, lnonZ1_eta=0)
+#print reader.evaluate("BDT", met_pt=120, ht=-210)

@@ -4,6 +4,7 @@
 from Analysis.TMVA.Trainer       import Trainer
 from Analysis.TMVA.Reader        import Reader
 from Analysis.TMVA.defaults      import default_methods, default_factory_settings 
+import Analysis.Tools.syncer
 
 # TopEFT
 from tWZ.Tools.user           import plot_directory, mva_directory

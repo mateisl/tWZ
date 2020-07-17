@@ -297,12 +297,17 @@ def getjets( event, sample ):
 
     #bjets filtern( nur 2016 )
     bJets = filter(lambda j:isBJet(j, tagger=b_tagger, year=2016) and abs(j['eta'])<=2.4    , jets)
+    print bJets
     #print bJets
     for i in range(len(bJets)) :
         event.bjet_pt  = bJets[i]['pt']
         event.bjet_eta = bJets[i]['eta']
         event.bjet_phi = bJets[i]['phi']
- 
+
+    event.bjet_maxbtagdeepb  =  max( [ j['btagDeepB'] for j in bJets ] ) 
+    
+   # event.bjet_2maxbtagdeepb =  max( [ j['btagDeepB'] for j in bJets ] )
+
     event.bjet_Z1_deltaR      = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
     event.bjet_nonZ1l1_deltaR = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
 
@@ -836,6 +841,14 @@ for i_mode, mode in enumerate(allModes):
       texX = '#Delta R(bjet, nonZ-l_{1})', texY = 'Number of Events',
       name = 'bjet_nonZ1l1_deltaR', attribute = lambda event, sample: event.bjet_nonZ1l1_deltaR,
       binning=[20,0,6],
+    ))
+
+    plots.append(Plot(
+      name = 'btagDeepB',
+      texX = 'btagDeepB',
+      texY = 'Number of Events',
+      attribute = lambda event, sample: event.bjet_maxbtagdeepb,
+      binning=[20, 0, 5],
     ))
 
    # 3l training variables

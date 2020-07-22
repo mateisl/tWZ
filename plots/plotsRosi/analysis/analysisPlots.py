@@ -394,8 +394,7 @@ def getLeptonSelection( mode ):
     elif mode=="eee":    return "Sum$({mu_string})==0&&Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
     elif mode=='all':    return "Sum$({mu_string})+Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
 
-# Getter functor for lepton quantities
-def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
+
     if functor is not None:
         if abs_pdg == 13:
             def func_( event, sample ):

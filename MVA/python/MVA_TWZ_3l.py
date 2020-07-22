@@ -2,8 +2,15 @@
 
 # Standard imports
 from operator                    import attrgetter
-from math import pi, sqrt, cosh
-import ROOT
+from math                        import pi, sqrt, cosh
+import ROOT, os
+#ROOT.gROOT.SetBatch(True)
+#import itertools
+#import copy
+#import array
+#
+## RootTools
+#from RootTools.core.standard             import *
 
 # helpers
 from tWZ.Tools.helpers import deltaPhi, deltaR2, deltaR
@@ -17,11 +24,12 @@ read_variables = [\
                     "nBTag/I",
                     "nJetGood/I",
                     "met_pt/F", "met_phi/F",
-                    "lep[pt/F,eta/F,phi/F]",
+                    "lep[pt/F,eta/F,phi/F]", 
                     "Z1_pt/F", "Z1_eta/F", "Z1_phi/F", "Z1_mass/F", "Z1_cosThetaStar/F",
                     "nonZ1_l1_index/I",
                     "JetGood[pt/F,eta/F,phi/F,btagDeepB/F]",
                     "nlep/I",
+                    "Z1_lldPhi/F",
                     ]
 
 #def flavorBin( event, sample=None):
@@ -39,6 +47,8 @@ sequence = []
 
 def getDeltaPhi(event, sample=None):
     event.nonZ1_l1_Z1_deltaPhi = deltaPhi(event.lep_phi[event.nonZ1_l1_index], event.Z1_phi)
+    event.Z1_j1_deltaPhi       = deltaPhi(event.Z1_phi, event.JetGood_phi[0]) 
+#    event.Z1_ll_deltaPhi       = TreeVariable.fromString( "Z1_lldPhi/F" ) 
 sequence.append( getDeltaPhi )
 
 def getDeltaEta(event, sample=None):
@@ -54,6 +64,17 @@ def getDeltaR(event, sample=None):
     event.jet2_Z1_deltaR       = deltaR({'eta':event.JetGood_eta[2], 'phi':event.JetGood_phi[2]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
     event.jet2_nonZ1_l1_deltaR = deltaR({'eta':event.JetGood_eta[2], 'phi':event.JetGood_phi[2]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
 sequence.append( getDeltaR )
+
+def getWpt( event, sample):
+    # get the lepton and met
+    lepton  = ROOT.TLorentzVector()
+    met     = ROOT.TLorentzVector()
+    lepton.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
+    met.SetPtEtaPhiM(event.met_pt, 0, event.met_phi, 0)
+    # get the W boson candidate
+    W   = lepton + met
+    event.W_pt = W.Pt()
+sequence.append( getWpt )
 
 ## met, ht, nonZ1_pt/eta, Z1_pt, nJet, nBTag, lep1_eta
 #mva_variables =  {
@@ -90,9 +111,9 @@ mva_variables = {
                 "mva_jet1_pt"               :(lambda event, sample: event.JetGood_pt[1]          if event.nJetGood >=2 else 0),
                 "mva_jet1_eta"              :(lambda event, sample: event.JetGood_eta[1]         if event.nJetGood >=2 else -10),
                 "mva_jet1_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[1] if (event.nJetGood >=2 and event.JetGood_btagDeepB[1]>-10) else -10),
-                "mva_jet2_pt"               :(lambda event, sample: event.JetGood_pt[2]          if event.nJetGood >=3 else 0),
-                "mva_jet2_eta"              :(lambda event, sample: event.JetGood_eta[2]         if event.nJetGood >=3 else -10),
-                "mva_jet2_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[2]   if (event.nJetGood >=3 and event.JetGood_btagDeepB[1]>-10) else -10),
+#                "mva_jet2_pt"               :(lambda event, sample: event.JetGood_pt[2]          if event.nJetGood >=3 else 0),
+#                "mva_jet2_eta"              :(lambda event, sample: event.JetGood_eta[2]         if event.nJetGood >=3 else -10),
+#                "mva_jet2_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[2]   if (event.nJetGood >=3 and event.JetGood_btagDeepB[1]>-10) else -10),
 
                 "mva_nonZ1_l1_pt"           :(lambda event, sample: event.lep_pt[event.nonZ1_l1_index]),
 #                "mva_nonZ_l1_eta"           :(lambda event, sample: event.lep_eta[event.nonZ_l1_index]),
@@ -104,14 +125,19 @@ mva_variables = {
 
 #                "mva_nonZl1_Z_deltaPhi"     :(lambda event, sample: event.nonZl1_Z_deltaPhi),
 #                "mva_nonZl1_Z_deltaEta"     :(lambda event, sample: event.nonZl1_Z_deltaEta),
-                "mva_nonZ1_l1_Z1_deltaR"       :(lambda event, sample: event.nonZ1_l1_Z1_deltaR),
+                "mva_nonZ1_l1_Z1_deltaR"     :(lambda event, sample: event.nonZ1_l1_Z1_deltaR),
   
                 "mva_jet0_Z1_deltaR"         :(lambda event, sample: event.jet0_Z1_deltaR         if event.nJetGood >=1 else -1),
-                "mva_jet0_nonZl1_deltaR"    :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),
+                "mva_jet0_nonZl1_deltaR"     :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),
                 "mva_jet1_Z1_deltaR"         :(lambda event, sample: event.jet1_Z1_deltaR         if event.nJetGood >=2 else -1),
-                "mva_jet1_nonZl1_deltaR"    :(lambda event, sample: event.jet1_nonZ1_l1_deltaR    if event.nJetGood >=2 else -1),            
+                "mva_jet1_nonZl1_deltaR"     :(lambda event, sample: event.jet1_nonZ1_l1_deltaR    if event.nJetGood >=2 else -1),            
 #                "mva_jet2_Z1_deltaR"         :(lambda event, sample: event.jet2_Z1_deltaR         if event.nJetGood >=3 else -1),
 #                "mva_jet2_nonZl1_deltaR"    :(lambda event, sample: event.jet2_nonZl1_deltaR    if event.nJetGood >=3 else -1),
+#add variables 
+                "mva_Z_j1_deltaPhi"          :(lambda event, sample: event.Z1_j1_deltaPhi           if event.nJetGood >=2 else -1), 
+#                "mva_Z_ll_deltaPhi"          :(lambda event, sample: deltaPhi(event.Z1_phi, event.JetGood_phi[0])),
+                "mva_nonZ1_l1_Z1_deltaPhi"   :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 2 else -1 ),             
+                "mva_W_pt"                   :(lambda event, sample: event.W_pt),
 
                 }
 

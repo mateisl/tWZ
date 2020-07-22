@@ -25,7 +25,7 @@ argParser.add_argument('--overwrite',          action='store_true')
 args = argParser.parse_args()
 
 #Logger
-import TopEFT.Tools.logger as logger
+import tWZ.Tools.logger as logger
 logger = logger.get_logger("INFO", logFile = None )
 
 if args.plot_directory == None:
@@ -37,9 +37,10 @@ else:
     selectionString = cutInterpreter.cutString( args.selection )
 
 # Samples
-from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
+from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed    import *
+from tWZ.samples.nanoTuples_Summer16_nanoAODv6_postProcessed import tWZ_NLO
 
-signal = Summer16.yt_tWZ01j_filter
+signal = tWZ_NLO 
 
 # TTZ
 backgrounds = [ Summer16.TTZ ]

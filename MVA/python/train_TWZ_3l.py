@@ -7,13 +7,12 @@ from Analysis.TMVA.defaults      import default_methods, default_factory_setting
 import Analysis.Tools.syncer
 
 # TopEFT
-from tWZ.Tools.user           import plot_directory, mva_directory
-from tWZ.Tools.cutInterpreter import cutInterpreter
+from tWZ.Tools.user              import plot_directory, mva_directory
+from tWZ.Tools.cutInterpreter    import cutInterpreter
 
 # MVA configuration
-from tWZ.MVA.MVA_TWZ_3l import mlp, sequence, read_variables, mva_variables
+from tWZ.MVA.MVA_TWZ_3l import sequence, read_variables, mva_variables, Bezeichnung #bdt1, bdt2, bdt3, bdt4, mlp, mlp1, mlp2, mlp3, mlp4, mlp5, mlp6, mlp7, mlp8
 
-# Arguments
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--plot_directory',     action='store',             default=None)
@@ -21,6 +20,11 @@ argParser.add_argument('--selection',          action='store', type=str,   defau
 argParser.add_argument('--trainingFraction',   action='store', type=float, default=0.5)
 argParser.add_argument('--small',              action='store_true')
 argParser.add_argument('--overwrite',          action='store_true')
+argParser.add_argument('--variables',          action='store', type=str,   default='all')
+argParser.add_argument('--mva',                action='store', type=str,   default='all')
+argParser.add_argument('--NTrees',             action='store', type=float, default=250)
+argParser.add_argument('--maxdepth',           action='store', type=float, default=1)
+argParser.add_argument('--ncuts',              action='store', type=float, default=50)
 
 args = argParser.parse_args()
 
@@ -35,6 +39,10 @@ if args.selection == None:
     selectionString = "(1)"
 else:
     selectionString = cutInterpreter.cutString( args.selection )
+
+if args.variables: 
+   x = args.variables 
+   plot_directory += "_"+str(x)
 
 # Samples
 from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed    import *
@@ -51,9 +59,7 @@ for sample in samples:
     if args.small:
         sample.reduceFiles(to = 1)
 
-#mvas = [bdt1, bdt2, bdt3, bdt4, mlp1, mlp2, mlp3]
-
-mvas = [ mlp ]
+mvas = [Bezeichnung]
 
 ## TMVA Trainer instance
 trainer = Trainer( 
@@ -87,4 +93,4 @@ trainer.plotEvaluation()
 #reader.addMethod(method = default_methods["MLP"])
 
 #print reader.evaluate("BDT", met_pt=100, ht=-210, Z1_pt_4l=100, lnonZ1_pt=100, lnonZ1_eta=0)
-#print reader.evaluate("BDT", met_pt=120, ht=-210)
+#prinMt reader.evaluate("BDT", met_pt=120, ht=-210)

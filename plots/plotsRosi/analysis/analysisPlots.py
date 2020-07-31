@@ -25,6 +25,7 @@ from Analysis.Tools.helpers              import deltaPhi, deltaR, getCollection,
 from Analysis.Tools.puProfileCache       import *
 from Analysis.Tools.puReweighting        import getReweightingFunction
 from Analysis.Tools.leptonJetArbitration     import cleanJetsAndLeptons
+import Analysis.Tools.syncer 
 
 
 # Arguments
@@ -297,7 +298,7 @@ def getjets( event, sample ):
 
     #bjets filtern( nur 2016 )
     bJets = filter(lambda j:isBJet(j, tagger=b_tagger, year=2016) and abs(j['eta'])<=2.4    , jets)
-    print bJets
+    # print bJets
     #print bJets
     for i in range(len(bJets)) :
         event.bjet_pt  = bJets[i]['pt']

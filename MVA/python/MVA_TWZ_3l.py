@@ -23,9 +23,12 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--variables',          action='store', type=str,   default='all')
 argParser.add_argument('--overwrite',          action='store_true')
 argParser.add_argument('--mva',                action='store', type=str,   default='mlp')
-argParser.add_argument('--NTrees',             action='store', type=float, default=250)
-argParser.add_argument('--maxdepth',           action='store', type=float, default=1)
-argParser.add_argument('--ncuts',              action='store', type=float, default=50)
+argParser.add_argument('--NTrees',             action='store', type=int, default=250)
+argParser.add_argument('--maxdepth',           action='store', type=int, default=1)
+argParser.add_argument('--ncuts',              action='store', type=int, default=50)
+argParser.add_argument('--layer',              action='store', type=str, default='N')
+argParser.add_argument('--sampling',           action='store', type=float, default=1)
+argParser.add_argument('--epoch',              action='store', type=float, default=1)
 
 args = argParser.parse_args()
 
@@ -253,7 +256,7 @@ elif args.variables == 'randZWdphilnonZ' :
 
                      "mva_Z_j1_deltaPhi"          :(lambda event, sample: event.Z1_j1_deltaPhi           if event.nJetGood >=2 else -1),
                      "mva_nonZ1_l1_Z1_deltaPhi"   :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 2 else -1 ),
-#                     "mva_Z_ll_deltaPhi"          :(TreeVariable.fromString( "Z1_lldPhi/F" )),
+                     "mva_Z_ll_deltaPhi"          :(TreeVariable.fromString( "Z1_lldPhi/F" )),
 
                      "mva_lnonZ1_pt"              :(lambda event, sample: event.lep_pt[event.nonZ1_l1_index]),
                      "mva_lnonZ1_eta"             :(lambda event, sample: event.lep_eta[event.nonZ1_l1_index]),
@@ -547,55 +550,35 @@ elif  args.variables == 'original':
                     "mva_jet1_nonZl1_deltaR"     :(lambda event, sample: event.jet1_nonZ1_l1_deltaR    if event.nJetGood >=2 else -1),            
                     }
 
-Bezeichnung = args.mva+"_NTrees"+str(args.NTrees)+"_maxDepth"+str(args.maxdepth)+"_nCuts"+str(args.ncuts)
-NTrees      = args.NTrees
-MaxDepth    = args.maxdepth
-nCuts       = args.ncuts 
+if args.mva == "bdt": 
+    Bezeichnung = args.mva+"_NTrees"+str(args.NTrees)+"_maxDepth"+str(args.maxdepth)+"_nCuts"+str(args.ncuts)
+    NTrees      = args.NTrees
+    MaxDepth    = args.maxdepth
+    nCuts       = args.ncuts 
+    
+    Bezeichnung = {
+    "type"                : ROOT.TMVA.Types.kBDT,
+    "name"                : str(Bezeichnung),
+    "color"               : ROOT.kGreen,
+    "options"             : ["!H","!V","NTrees="+str(NTrees),"BoostType=Grad","Shrinkage=0.20","UseBaggedBoost","GradBaggingFraction=0.5","SeparationType=GiniIndex","nCuts="+str(nCuts),"PruneMethod=NoPruning","MaxDepth="+str(MaxDepth)],
+    }
 
-Bezeichnung = {
-"type"                : ROOT.TMVA.Types.kBDT,
-"name"                : str(Bezeichnung),
-"color"               : ROOT.kGreen,
-"options"             : ["!H","!V","NTrees="+str(NTrees),"BoostType=Grad","Shrinkage=0.20","UseBaggedBoost","GradBaggingFraction=0.5","SeparationType=GiniIndex","nCuts="+str(nCuts),"PruneMethod=NoPruning","MaxDepth="+str(MaxDepth)],
-}
+elif args.mva == "mlp":
+    sampling        = str(args.sampling)
+    epoch           = str(args.epoch)
+    layer           = args.layer
+    sampling        = sampling.replace(".","c")
+    epoch           = epoch.replace(".","c")
+    layer           = layer.replace("p","+")
+    layer           = layer.replace("m","-")
+    layer           = layer.replace("c",",")
 
-#mlp1 = {
-#"type"                : ROOT.TMVA.Types.kMLP,
-#"name"                : "mlp1",
-#"layers"              : "N+7",
-#"color"               : ROOT.kRed+5,
-#"options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.03", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
-#}
-#
-#mlp2 = {
-#"type"                : ROOT.TMVA.Types.kMLP,
-#"name"                : "mlp2",
-#"layers"               :"N+7",
-#"color"               : ROOT.kYellow,
-#"options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
-#}
-#
-#mlp3 = {
-#"type"                : ROOT.TMVA.Types.kMLP,
-#"name"                : "mlp3",
-#"layers"              : "N+5",
-#"color"               : ROOT.kBlue,
-#"options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=1","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
-#}
-#
-#mlp = {
-#"type"                : ROOT.TMVA.Types.kMLP,
-#"name"                : "mlp",
-#"layers"              : "N+7",
-#"color"               : ROOT.kYellow,
-#"options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
-#}
-#
-#mlp4 = {
-#"type"                : ROOT.TMVA.Types.kMLP,
-#"name"                : "mlp4",
-#"layers"              : "N+3",
-#"color"               : ROOT.kMagenta+3,
-#"options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=1","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
-#}
-#
+    Bezeichnung     = args.mva+args.layer+"_sampling"+sampling+"_epoch"+epoch
+    
+    Bezeichnung = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : str(Bezeichnung),
+    "layers"              : layer,
+    "color"               : ROOT.kMagenta+3,
+    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling="+str(args.sampling),"SamplingEpoch="+str(args.epoch),"ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
+    }

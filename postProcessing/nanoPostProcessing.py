@@ -153,16 +153,16 @@ if options.nanoAODv4:
         raise NotImplementedError
 else:
     if options.year == 2016:
-        from Samples.nanoAOD.Summer16_nanoAODv6         import allSamples as mcSamples
-        from Samples.nanoAOD.Summer16_private           import allSamples as mcSamples
+        from Samples.nanoAOD.Summer16_nanoAODv7         import allSamples as mcSamples
+#        from Samples.nanoAOD.Summer16_private           import allSamples as mcSamples
         from Samples.nanoAOD.Run2016_nanoAODv6          import allSamples as dataSamples
         allSamples = mcSamples + dataSamples
     elif options.year == 2017:
-        from Samples.nanoAOD.Fall17_nanoAODv6           import allSamples as mcSamples
+        from Samples.nanoAOD.Fall17_nanoAODv7           import allSamples as mcSamples
         from Samples.nanoAOD.Run2017_nanoAODv6          import allSamples as dataSamples
         allSamples = mcSamples + dataSamples
     elif options.year == 2018:
-        from Samples.nanoAOD.Autumn18_nanoAODv6         import allSamples as mcSamples
+        from Samples.nanoAOD.Autumn18_nanoAODv7         import allSamples as mcSamples
         from Samples.nanoAOD.Run2018_nanoAODv6          import allSamples as dataSamples
         allSamples = mcSamples + dataSamples
     else:

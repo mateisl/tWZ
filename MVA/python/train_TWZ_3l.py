@@ -11,7 +11,7 @@ from tWZ.Tools.user              import plot_directory, mva_directory
 from tWZ.Tools.cutInterpreter    import cutInterpreter
 
 # MVA configuration
-from tWZ.MVA.MVA_TWZ_3l import sequence, read_variables, mva_variables, Bezeichnung #bdt1, bdt2, bdt3, bdt4, mlp, mlp1, mlp2, mlp3, mlp4, mlp5, mlp6, mlp7, mlp8
+from tWZ.MVA.MVA_TWZ_3l          import sequence, read_variables, mva_variables, Bezeichnung 
 
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")

@@ -241,11 +241,11 @@ elif args.variables == 'dRdE':
 #                       "mva_jet2_nonZl1_deltaR"    :(lambda event, sample: event.jet2_nonZl1_deltaR    if event.nJetGood >=3 else -1),
                        }
 
-elif args.variables == 'randZWdphilnonZ' :
+elif args.variables == 'randZWdphilnonZfwdjet' :
     mva_variables = {
                      "mva_Z1_pt"                  :(lambda event, sample: event.Z1_pt),
                      "mva_Z1_eta"                 :(lambda event, sample: event.Z1_eta),
-                     "mva_Z1_cosThetaStar"        :(lambda event, sample: event.Z1_cosThetaStar),
+#                     "mva_Z1_cosThetaStar"        :(lambda event, sample: event.Z1_cosThetaStar),
 
                      "mva_ht"                    :(lambda event, sample: sum( [event.JetGood_pt[i] for i in range(event.nJetGood) ])),
                      "mva_met_pt"                :(lambda event, sample: event.met_pt),
@@ -256,12 +256,12 @@ elif args.variables == 'randZWdphilnonZ' :
 
                      "mva_Z_j1_deltaPhi"          :(lambda event, sample: event.Z1_j1_deltaPhi           if event.nJetGood >=2 else -1),
                      "mva_nonZ1_l1_Z1_deltaPhi"   :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 2 else -1 ),
-                     "mva_Z_ll_deltaPhi"          :(TreeVariable.fromString( "Z1_lldPhi/F" )),
+#                     "mva_Z_ll_deltaPhi"          :(lambda event, (TreeVariable.fromString( "Z1_lldPhi/F" ))),
 
                      "mva_lnonZ1_pt"              :(lambda event, sample: event.lep_pt[event.nonZ1_l1_index]),
                      "mva_lnonZ1_eta"             :(lambda event, sample: event.lep_eta[event.nonZ1_l1_index]),
 
-#                     "mva_jetsnoetacutptg30"      :(lambda event, sample: event.maxEta_of_pt30jets),
+                     "mva_jetsnoetacutptg30"      :(lambda event, sample: event.maxEta_of_pt30jets),
                     }
 
 elif args.variables == 'randZWdphibjet' :
@@ -358,7 +358,7 @@ elif args.variables == 'randZWdphidR' :
                      "mva_jet2_Z1_deltaR"         :(lambda event, sample: event.jet2_Z1_deltaR         if event.nJetGood >=3 else -1),
                     }
 
-elif args.variables == 'randZWdphidR0' :
+elif args.variables == 'randZWdphi' :
     mva_variables = {
                      "mva_Z1_pt"                  :(lambda event, sample: event.Z1_pt),
                      "mva_Z1_eta"                 :(lambda event, sample: event.Z1_eta),
@@ -374,8 +374,8 @@ elif args.variables == 'randZWdphidR0' :
                      "mva_Z_j1_deltaPhi"          :(lambda event, sample: event.Z1_j1_deltaPhi           if event.nJetGood >=2 else -1),
                      "mva_nonZ1_l1_Z1_deltaPhi"   :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 2 else -1 ),
                      
-                     "mva_jet0_Z1_deltaR"         :(lambda event, sample: event.jet0_Z1_deltaR         if event.nJetGood >=1 else -1),
-                     "mva_jet0_nonZl1_deltaR"     :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),
+#                     "mva_jet0_Z1_deltaR"         :(lambda event, sample: event.jet0_Z1_deltaR         if event.nJetGood >=1 else -1),
+#                     "mva_jet0_nonZl1_deltaR"     :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),
                     }
 
 elif args.variables == 'randZWdphidRnonZ' :

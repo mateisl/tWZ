@@ -40,13 +40,14 @@ argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC sc
 argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
 argParser.add_argument('--era',            action='store', type=str, default="2016")
 argParser.add_argument('--selection',      action='store', default='trilepMini0p12-minDLmass12-onZ1-njet4p-btag2p')
-argParser.add_argument('--nanoAODv4',   default=True, action='store_true',                                                                        help="Run on nanoAODv4?" )
+#argParser.add_argument('--nanoAODv4',   default=True, action='store_true',                                                                        help="Run on nanoAODv4?" )
 argParser.add_argument('--samples',     action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
 #flagg for parton selection
 argParser.add_argument('--partonweight', action='store_true', help='weight partons?', )
 argParser.add_argument('--partonweightprivate', action='store_true', help='weight partons?', )
 argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize to 1" )
 argParser.add_argument('--newsamples', action='store_true', help='twzLo and twznlo', )
+argParser.add_argument('--centralttZ', action='store_true', help='twzDR and ttZ', )
 argParser.add_argument('--scaled', action='store_true', help='scaling', )
 
 args = argParser.parse_args()
@@ -63,9 +64,10 @@ if args.mcComp:                       args.plot_directory += "_mcComp"
 if args.noData:                       args.plot_directory += "_noData"
 if args.partonweight:                 args.plot_directory += "_weightedpartons"
 if args.partonweightprivate:          args.plot_directory += "_weightedpartons(private)"
-if args.newsamples:                   args.plot_directory += "_tWZ_LO_NLO"
+if args.newsamples:                   args.plot_directory += "_newsamples"
+if args.centralttZ:               args.plot_directory += "_tWZDR_ttZ"
 if args.normalize:                    args.plot_directory += "_normalize"
-if args.scaled:                    args.plot_directory += "_scaled"
+if args.scaled:                       args.plot_directory += "_scaled"
 logger.info( "Working in era %s", args.era)
 
 #tWZ_sample = TWZ if args.nominalSignal else yt_TWZ_filter
@@ -114,9 +116,11 @@ if args.era == "Run2016":
     elif args.partonweightprivate: 
         mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.yt_tWZ01j_filter, Summer16.TWZ, Summer16.TTZ]
     elif args.newsamples: 
-        mc = [tWZ_LO, tWZ_NLO, Summer16.yt_tWZ01j_filter, Summer16.TWZ, Summer16.TTZ]
+        mc = [tWZ_LO, tWZ_NLO, Summer16.yt_tWZ01j_filter, Summer16.TWZ, Summer16.TTZ, tWZ_DR , tWZ_DS ]
+    elif args.centralttZ: 
+        mc = [tWZ_DR, Summer16.TTZ]
     else: 
-        mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
+        mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l, tWZ_DR]
 elif args.era == "Run2017":
     mc = [Fall17.TWZ, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
 elif args.era == "Run2018":
@@ -180,12 +184,14 @@ def drawPlots(plots, mode, dataMCScale):
             plotting.draw(plot,
             plot_directory = plot_directory_,
             #ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
-            ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0),(2,0),(3,0),(4,0)], 'texY':'Ratio'} if args.scaled else None,
+            ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0)], 'texY':'Ratio'} if args.scaled else None,
+            #ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0),(2,0),(3,0),(4,0)], 'texY':'Ratio'} if args.scaled else None,
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
             #scaling = {0:1} if args.dataMCScaling else {},
             #scaling = {0:1} if args.mcComp else {}, #sacling twz to private twz sample to see difference in shape
-            scaling =  { i+1:0 for i in range(4) } if args.scaled else {}, 
+            scaling =  { 1:0 } if args.scaled else {}, 
+            #scaling =  { i+1:0 for i in range(4) } if args.scaled else {}, 
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
             copyIndexPHP = True, extensions = ["png"],
@@ -294,92 +300,93 @@ def getjets( event, sample ):
     # filter pt, but not eta (I store the list of jets in the event because I want to use it in the next function)
     event.jets_no_eta         = filter(lambda j:j['pt']>30, clean_jets)
     # very nice, Rosmarie. Here are all the python built on functions, so you get an idea what you can do: https://docs.python.org/2.7/library/functions.html
-    event.maxEta_of_pt30jets  = max( [ abs(j['eta']) for j in event.jets_no_eta ] )
+    if event.jets_no_eta: 
+        event.maxEta_of_pt30jets  = max( [ abs(j['eta']) for j in event.jets_no_eta ] )
 
-    #bjets filtern( nur 2016 )
-    bJets = filter(lambda j:isBJet(j, tagger=b_tagger, year=2016) and abs(j['eta'])<=2.4    , jets)
-    # print bJets
-    #print bJets
-    for i in range(len(bJets)) :
-        event.bjet_pt  = bJets[i]['pt']
-        event.bjet_eta = bJets[i]['eta']
-        event.bjet_phi = bJets[i]['phi']
-
-    event.bjet_maxbtagdeepb  =  max( [ j['btagDeepB'] for j in bJets ] ) 
-    
-   # event.bjet_2maxbtagdeepb =  max( [ j['btagDeepB'] for j in bJets ] )
-
-    event.bjet_Z1_deltaR      = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
-    event.bjet_nonZ1l1_deltaR = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
-
+#    #bjets filtern( nur 2016 )
+#    bJets = filter(lambda j:isBJet(j, tagger=b_tagger, year=2016) and abs(j['eta'])<=2.4    , jets)
+#    # print bJets
+#    #print bJets
+#    for i in range(len(bJets)) :
+#        event.bjet_pt  = bJets[i]['pt']
+#        event.bjet_eta = bJets[i]['eta']
+#        event.bjet_phi = bJets[i]['phi']
+#    event.bjet_maxbtagdeepb  =  max( [ j['btagDeepB'] for j in bJets ] ) 
+#    
+#   # event.bjet_2maxbtagdeepb =  max( [ j['btagDeepB'] for j in bJets ] )
+#
+#    event.bjet_Z1_deltaR      = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+#    event.bjet_nonZ1l1_deltaR = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+#
 sequence.append( getjets )
 
-def genJetStuff( event, sample ):
-    # only do something in simulation
-    if sample.isData:
-        return
-    # let's now match jets with genjets. It's been done for us in the nanoAOD. 
-    # here you have all nanoAOD branches: https://cms-nanoaod-integration.web.cern.ch/integration/master-102X/mc102X_doc.html#Muon    
-    # Jet_genJetIdx is the index of the genjet that matches the jet. It only makes sense in simulation. 
-    # See above and below how I changed the logic of when we read this collection (look at the read_variables_MC/data).
-
-    # If you look up the max function you learn that you can give it a method that tells python how it should do the comparison. Let's use it to get the highest eta *jet* 
-    max_eta_jet = max( event.jets_no_eta, key = lambda j:abs(j['eta']) )
-    # Let's see if it has a gen match:
-    # Set default values
-    event.partonsinfwdjets = -8
-    if max_eta_jet['genJetIdx']>=0:
-        # we have a gen jet index (negative number means nothing found). 
-        # Let's not read all the genjets, just the one we need. Looking up getCollection you'll find it only loops getObjDict, i.e. a method that makes a dictionary from event.Collection_branch
-        # the "prefix" argument of getObjDict needs an underscore ... we could have done that better. 
-        max_eta_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], max_eta_jet['genJetIdx'] )
-        # You'll find that GenJet_hadronFlavour is a UChar_t, i.e. to save disk space we're not using a 32 bit integer but an 8 bit character (it explains the /b above = Byte)
-        # We change the byte to a normal number (the function ord is in the link above)
-        max_eta_genjet['hadronFlavour'] = ord(max_eta_genjet['hadronFlavour'])
-        # Genjets are clustered from all stable particles after the shower (pythia) and hadronisation. Neutrinos are not taken into account. Look at the gen jet flavour: 
-        # partonFlavor: This flavor is obtained by including the generator partons (from the hard scatter) in the jet clustering but with infinitesimal momentum (otherwise the genjet would be changed)
-        #               The partonflavor is the pdgId of the genparton that gets clustered with the jet. E.g. 5 means b-jet. 
-        #               Negative numbers mean antiparticles.
-        #               The hadronFlavour is the same, but instead of partons, the generated hadrons are used (e.g. after shower+hadronisation). The most important difference is gluon splitting:
-        #               For strongly interacting particles, we can radiate a gluon and gluon can produce a b/bbar pair. Such b quarks from the shower are not what we want to use when we decide
-        #               whether a jet was originally a b-jet because they don't originate from the top but are rather produced inside jets. 
-        #               Thus, we mostly use partonFlavour (i.e. hard scatter) while e.g. the performance measurements of b-tagging are done with the hadronFlavor (after all, it's a true b)
-        # Look at the numbers. Here is the dictionary: http://pdg.lbl.gov/2007/reviews/montecarlorpp.pdf
-        #print max_eta_jet['genJetIdx'], max_eta_genjet
-        # partonFlavour number 
-        #print max_eta_genjet['partonFlavour']
-        #in event schreiben 
-        event.partonsinfwdjets =  max_eta_genjet['partonFlavour']
-        event.ud_match    =  max_eta_genjet['partonFlavour'] in [ 1, 2, -1, -2]
-        event.gluon_match =  max_eta_genjet['partonFlavour'] in [ 21 ]
-        event.other_match =  max_eta_genjet['partonFlavour'] not in [ 1, 2, -1, -2, 21 ]
-    else:
-        event.ud_match    = 0
-        event.gluon_match = 0
-        event.other_match = 1
-
-sequence.append( genJetStuff )
+#def genJetStuff( event, sample ):
+#    # only do something in simulation
+#    if sample.isData:
+#        return
+#    # let's now match jets with genjets. It's been done for us in the nanoAOD. 
+#    # here you have all nanoAOD branches: https://cms-nanoaod-integration.web.cern.ch/integration/master-102X/mc102X_doc.html#Muon    
+#    # Jet_genJetIdx is the index of the genjet that matches the jet. It only makes sense in simulation. 
+#    # See above and below how I changed the logic of when we read this collection (look at the read_variables_MC/data).
+#
+#    # If you look up the max function you learn that you can give it a method that tells python how it should do the comparison. Let's use it to get the highest eta *jet* 
+#    if event.jets_no_eta:
+#        max_eta_jet = max( event.jets_no_eta, key = lambda j:abs(j['eta']) )
+#    # Let's see if it has a gen match:
+#    # Set default values
+#    event.partonsinfwdjets = -8
+#    if max_eta_jet['genJetIdx']>=0:
+#        # we have a gen jet index (negative number means nothing found). 
+#        # Let's not read all the genjets, just the one we need. Looking up getCollection you'll find it only loops getObjDict, i.e. a method that makes a dictionary from event.Collection_branch
+#        # the "prefix" argument of getObjDict needs an underscore ... we could have done that better. 
+#        max_eta_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], max_eta_jet['genJetIdx'] )
+#        # You'll find that GenJet_hadronFlavour is a UChar_t, i.e. to save disk space we're not using a 32 bit integer but an 8 bit character (it explains the /b above = Byte)
+#        # We change the byte to a normal number (the function ord is in the link above)
+#        max_eta_genjet['hadronFlavour'] = ord(max_eta_genjet['hadronFlavour'])
+#        # Genjets are clustered from all stable particles after the shower (pythia) and hadronisation. Neutrinos are not taken into account. Look at the gen jet flavour: 
+#        # partonFlavor: This flavor is obtained by including the generator partons (from the hard scatter) in the jet clustering but with infinitesimal momentum (otherwise the genjet would be changed)
+#        #               The partonflavor is the pdgId of the genparton that gets clustered with the jet. E.g. 5 means b-jet. 
+#        #               Negative numbers mean antiparticles.
+#        #               The hadronFlavour is the same, but instead of partons, the generated hadrons are used (e.g. after shower+hadronisation). The most important difference is gluon splitting:
+#        #               For strongly interacting particles, we can radiate a gluon and gluon can produce a b/bbar pair. Such b quarks from the shower are not what we want to use when we decide
+#        #               whether a jet was originally a b-jet because they don't originate from the top but are rather produced inside jets. 
+#        #               Thus, we mostly use partonFlavour (i.e. hard scatter) while e.g. the performance measurements of b-tagging are done with the hadronFlavor (after all, it's a true b)
+#        # Look at the numbers. Here is the dictionary: http://pdg.lbl.gov/2007/reviews/montecarlorpp.pdf
+#        #print max_eta_jet['genJetIdx'], max_eta_genjet
+#        # partonFlavour number 
+#        #print max_eta_genjet['partonFlavour']
+#        #in event schreiben 
+#        event.partonsinfwdjets =  max_eta_genjet['partonFlavour']
+#        event.ud_match    =  max_eta_genjet['partonFlavour'] in [ 1, 2, -1, -2]
+#        event.gluon_match =  max_eta_genjet['partonFlavour'] in [ 21 ]
+#        event.other_match =  max_eta_genjet['partonFlavour'] not in [ 1, 2, -1, -2, 21 ]
+#    else:
+#        event.ud_match    = 0
+#        event.gluon_match = 0
+#        event.other_match = 1
+#
+#sequence.append( genJetStuff )
 
 #do the same for min. eta
-def genjetmineta( event, sample ):    
-    if sample.isData:
-        return
-    min_eta_jet = min( event.jets_no_eta, key = lambda j:abs(j['eta']) )
-    event.partonsinfwdjetsmineta = -8
-    if min_eta_jet['genJetIdx']>=0:
-        min_eta_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], min_eta_jet['genJetIdx'] )
-        event.partonsinfwdjetsmineta =  min_eta_genjet['partonFlavour']
-
-sequence.append( genjetmineta )
+#def genjetmineta( event, sample ):    
+#    if sample.isData:
+#        return
+#    min_eta_jet = min( event.jets_no_eta, key = lambda j:abs(j['eta']) )
+#    event.partonsinfwdjetsmineta = -8
+#    if min_eta_jet['genJetIdx']>=0:
+#        min_eta_genjet = getObjDict( event, "GenJet_", ["pt", "eta", "phi", "hadronFlavour", "partonFlavour"], min_eta_jet['genJetIdx'] )
+#        event.partonsinfwdjetsmineta =  min_eta_genjet['partonFlavour']
+#
+#sequence.append( genjetmineta )
 
 #DeltaR 
-def deltaRfwdjeteta(event, sample):
-    #get highest eta jet(most fwd) 
-    event.max_eta_jet = max( event.jets_no_eta, key = lambda j:abs(j['eta']) )
-    #use deltaR function to get deltaR 
-    event.maxeta_Z_deltaR      = deltaR({'eta':event.max_eta_jet['eta'], 'phi':event.max_eta_jet['phi']}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
-    
-sequence.append( deltaRfwdjeteta )
+#def deltaRfwdjeteta(event, sample):
+#    #get highest eta jet(most fwd) 
+#    event.max_eta_jet = max( event.jets_no_eta, key = lambda j:abs(j['eta']) )
+#    #use deltaR function to get deltaR 
+#    event.maxeta_Z_deltaR      = deltaR({'eta':event.max_eta_jet['eta'], 'phi':event.max_eta_jet['phi']}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+#    
+#sequence.append( deltaRfwdjeteta )
 
 #DeltaEta
 def deltaEtaZll( event,sample ):
@@ -491,7 +498,10 @@ for i_mode, mode in enumerate(allModes):
     elif args.partonweightprivate:
         stack = Stack([Summer16.yt_tWZ01j_filter],[Summer16.TWZ],[tWZ_ud_match],[tWZ_gluon_match],[tWZ_other_match],[Summer16.TTZ])
     elif args.newsamples: 
-        stack = Stack([tWZ_NLO],[Summer16.TWZ],[Summer16.yt_tWZ01j_filter],[tWZ_LO],[Summer16.TTZ])
+        stack = Stack([tWZ_NLO],[Summer16.TWZ],[Summer16.yt_tWZ01j_filter],[tWZ_LO],[Summer16.TTZ],[tWZ_DR],[tWZ_DS])
+    elif args.centralttZ: 
+        stack = Stack([tWZ_DR],[Summer16.TTZ])
+   # elif args.mcComp:
    # elif args.mcComp:
     #    stack = Stack( [Summer16.TWZ], [Summer16.yt_tWZ01j_filter] )
     else:
@@ -514,29 +524,29 @@ for i_mode, mode in enumerate(allModes):
 #      binning=[20, 0, 400],
 #    ))
 #
-    plots.append(Plot(
-      name = 'maxabseta',
-      texX = 'abs(#eta)_max',
-      texY = 'Number of Events',
-      attribute = lambda event, sample: event.maxEta_of_pt30jets,
-      binning=[20, 0, 5],
-    ))
-
-    plots.append(Plot(
-      name = 'partons in jets mineta',
-      texX = 'partons in jets (mineta)',
-      texY = 'Number of Events',
-      attribute = lambda event, sample: event.partonsinfwdjetsmineta,
-      binning=[28, -6, 22],
-    ))
-
-    plots.append(Plot(
-      name = 'partons in fwd jets maxeta',
-      texX = 'partons in fwd jets (maxeta)',
-      texY = 'Number of Events',
-      attribute = lambda event, sample: event.partonsinfwdjets,
-      binning=[28, -6, 22],
-    ))
+#    plots.append(Plot(
+#      name = 'maxabseta',
+#      texX = 'abs(#eta)_max',
+#      texY = 'Number of Events',
+#      attribute = lambda event, sample: event.maxEta_of_pt30jets,
+#      binning=[20, 0, 5],
+#    ))
+#
+#    plots.append(Plot(
+#      name = 'partons in jets mineta',
+#      texX = 'partons in jets (mineta)',
+#      texY = 'Number of Events',
+#      attribute = lambda event, sample: event.partonsinfwdjetsmineta,
+#      binning=[28, -6, 22],
+#    ))
+#
+#    plots.append(Plot(
+#      name = 'partons in fwd jets maxeta',
+#      texX = 'partons in fwd jets (maxeta)',
+#      texY = 'Number of Events',
+#      attribute = lambda event, sample: event.partonsinfwdjets,
+#      binning=[28, -6, 22],
+#    ))
 
     plots.append(Plot(
       name = 'yield', texX = '', texY = 'Number of Events',
@@ -544,12 +554,12 @@ for i_mode, mode in enumerate(allModes):
       binning=[4, 0, 4],
     ))
 
-    plots.append(Plot(
-      texX = '#Delta R(maxetajet, Z_{1})', texY = 'Number of Events',
-      name = 'maxptjet_Z1_deltaR', attribute = lambda event, sample: event.maxeta_Z_deltaR,
-      binning=[20,0,6],
-    ))
-
+#    plots.append(Plot(
+#      texX = '#Delta R(maxetajet, Z_{1})', texY = 'Number of Events',
+#      name = 'maxptjet_Z1_deltaR', attribute = lambda event, sample: event.maxeta_Z_deltaR,
+#      binning=[20,0,6],
+#    ))
+#
 #    plots.append(Plot(
 #        name = "M2l",
 #        texX = 'M(2l) (GeV)', texY = 'Number of Events',
@@ -823,34 +833,34 @@ for i_mode, mode in enumerate(allModes):
     ))
 
    #bjets 
-
-    plots.append(Plot(
-      texX = 'p_{T}(b jet) (GeV)', texY = 'Number of Events / 30 GeV',
-      name = 'bjet_pt', attribute = lambda event, sample: event.bjet_pt,
-      binning=[600/30,0,600],
-    ))
-
-    
-    plots.append(Plot(
-      texX = '#Delta R(bjet, Z_{1})', texY = 'Number of Events',
-      name = 'bjet_Z1_deltaR', attribute = lambda event, sample: event.bjet_Z1_deltaR,
-      binning=[20,0,6],
-    ))
-
-    plots.append(Plot(
-      texX = '#Delta R(bjet, nonZ-l_{1})', texY = 'Number of Events',
-      name = 'bjet_nonZ1l1_deltaR', attribute = lambda event, sample: event.bjet_nonZ1l1_deltaR,
-      binning=[20,0,6],
-    ))
-
-    plots.append(Plot(
-      name = 'btagDeepB',
-      texX = 'btagDeepB',
-      texY = 'Number of Events',
-      attribute = lambda event, sample: event.bjet_maxbtagdeepb,
-      binning=[20, 0, 5],
-    ))
-
+#
+#    plots.append(Plot(
+#      texX = 'p_{T}(b jet) (GeV)', texY = 'Number of Events / 30 GeV',
+#      name = 'bjet_pt', attribute = lambda event, sample: event.bjet_pt,
+#      binning=[600/30,0,600],
+#    ))
+#
+#    
+#    plots.append(Plot(
+#      texX = '#Delta R(bjet, Z_{1})', texY = 'Number of Events',
+#      name = 'bjet_Z1_deltaR', attribute = lambda event, sample: event.bjet_Z1_deltaR,
+#      binning=[20,0,6],
+#    ))
+#
+#    plots.append(Plot(
+#      texX = '#Delta R(bjet, nonZ-l_{1})', texY = 'Number of Events',
+#      name = 'bjet_nonZ1l1_deltaR', attribute = lambda event, sample: event.bjet_nonZ1l1_deltaR,
+#      binning=[20,0,6],
+#    ))
+#
+#    plots.append(Plot(
+#      name = 'btagDeepB',
+#      texX = 'btagDeepB',
+#      texY = 'Number of Events',
+#      attribute = lambda event, sample: event.bjet_maxbtagdeepb,
+#      binning=[20, 0, 5],
+#    ))
+#
    # 3l training variables
 
     plots.append(Plot(

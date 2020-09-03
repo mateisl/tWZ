@@ -11,29 +11,24 @@ from tWZ.Tools.user              import plot_directory, mva_directory
 from tWZ.Tools.cutInterpreter    import cutInterpreter
 
 # MVA configuration
-from tWZ.MVA.MVA_TWZ_3l import sequence, read_variables, mva_variables, Bezeichnung #bdt1, bdt2, bdt3, bdt4, mlp, mlp1, mlp2, mlp3, mlp4, mlp5, mlp6, mlp7, mlp8
+from tWZ.MVA.MVA_TWZ_3l          import sequence, read_variables, mva_variables 
+from tWZ.MVA.MVA_TWZ_3l          import bdt1, mlp1 
 
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--plot_directory',     action='store',             default=None)
-argParser.add_argument('--selection',          action='store', type=str,   default='trilep-onZ1')
+argParser.add_argument('--selection',          action='store', type=str,   default='trilepM-onZ1')
 argParser.add_argument('--trainingFraction',   action='store', type=float, default=0.5)
 argParser.add_argument('--small',              action='store_true')
 argParser.add_argument('--overwrite',          action='store_true')
-argParser.add_argument('--variables',          action='store', type=str,   default='all')
-argParser.add_argument('--mva',                action='store', type=str,   default='all')
-argParser.add_argument('--NTrees',             action='store', type=int, default=250)
-argParser.add_argument('--maxdepth',           action='store', type=int, default=1)
-argParser.add_argument('--ncuts',              action='store', type=int, default=50)
-argParser.add_argument('--layer',              action='store', type=str, default='N')
-argParser.add_argument('--sampling',           action='store', type=float, default=1)
-argParser.add_argument('--epoch',              action='store', type=float, default=1)
 
 args = argParser.parse_args()
 
 #Logger
 import tWZ.Tools.logger as logger
-logger = logger.get_logger("INFO", logFile = None )
+logger = logger.get_logger("DEBUG", logFile = None )
+import Analysis.Tools.logger as logger_an
+logger_an = logger_an.get_logger("DEBUG", logFile = None )
 
 if args.plot_directory == None:
     args.plot_directory = plot_directory
@@ -43,18 +38,14 @@ if args.selection == None:
 else:
     selectionString = cutInterpreter.cutString( args.selection )
 
-if args.variables: 
-   x = args.variables 
-   plot_directory += "_"+str(x)
-
 # Samples
-from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed    import *
-from tWZ.samples.nanoTuples_Summer16_nanoAODv6_postProcessed import tWZ_NLO
+#from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed    import *
+from tWZ.samples.nanoTuples_Summer16_nanoAODv6_private_postProcessed import *
 
-signal = tWZ_NLO 
+signal = TWZ_NLO_DR 
 
 # TTZ
-backgrounds = [ Summer16.TTZ ]
+backgrounds = [ TTZ ]
 
 samples = backgrounds + [signal]
 for sample in samples:
@@ -62,7 +53,7 @@ for sample in samples:
     if args.small:
         sample.reduceFiles(to = 1)
 
-mvas = [Bezeichnung]
+mvas = [mlp1]
 
 ## TMVA Trainer instance
 trainer = Trainer( 

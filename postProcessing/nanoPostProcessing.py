@@ -146,8 +146,21 @@ elif options.year == 2018:
     from Samples.nanoAOD.Autumn18_private_nanoAODv6         import allSamples as mcSamples
     from Samples.nanoAOD.Run2018_private_nanoAODv6          import allSamples as dataSamples
     allSamples = mcSamples + dataSamples
-else:
-    raise NotImplementedError
+#    if options.year == 2016:
+#        from Samples.nanoAOD.Summer16_nanoAODv7         import allSamples as mcSamples
+##        from Samples.nanoAOD.Summer16_private           import allSamples as mcSamples
+#        from Samples.nanoAOD.Run2016_nanoAODv6          import allSamples as dataSamples
+#        allSamples = mcSamples + dataSamples
+#    elif options.year == 2017:
+#        from Samples.nanoAOD.Fall17_nanoAODv7           import allSamples as mcSamples
+#        from Samples.nanoAOD.Run2017_nanoAODv6          import allSamples as dataSamples
+#        allSamples = mcSamples + dataSamples
+#    elif options.year == 2018:
+#        from Samples.nanoAOD.Autumn18_nanoAODv7         import allSamples as mcSamples
+#        from Samples.nanoAOD.Run2018_nanoAODv6          import allSamples as dataSamples
+#        allSamples = mcSamples + dataSamples
+#    else:
+#        raise NotImplementedError
 
 samples = []
 for selectedSamples in options.samples:
@@ -693,7 +706,7 @@ def filler( event ):
 
     for iLep, lep in enumerate(leptons):
         lep['index']    = iLep
-        lep['mvaTopWP'] = mvaTopWP(lep['mvaTOP'], lep['pdgId'])
+        lep['mvaTOPWP'] = mvaTopWP(lep['mvaTOP'], lep['pdgId'])
 
     fill_vector_collection( event, "lep", lepVarNames, leptons)
     event.nlep = len(leptons)

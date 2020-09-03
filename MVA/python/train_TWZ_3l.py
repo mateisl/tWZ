@@ -49,9 +49,9 @@ if args.variables:
 
 # Samples
 from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed    import *
-from tWZ.samples.nanoTuples_Summer16_nanoAODv6_postProcessed import tWZ_NLO
+from tWZ.samples.nanoTuples_Summer16_nanoAODv6_postProcessed import tWZ_DR
 
-signal = tWZ_NLO 
+signal = tWZ_DR 
 
 # TTZ
 backgrounds = [ Summer16.TTZ ]

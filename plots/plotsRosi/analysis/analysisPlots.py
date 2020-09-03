@@ -120,7 +120,7 @@ if args.era == "Run2016":
     elif args.centralttZ: 
         mc = [tWZ_DR, Summer16.TTZ]
     else: 
-        mc = [Summer16.TWZ, Summer16.yt_tWZ01j_filter, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l, tWZ_DR]
+        mc = [Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l, tWZ_DR]
 elif args.era == "Run2017":
     mc = [Fall17.TWZ, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
 elif args.era == "Run2018":
@@ -466,7 +466,7 @@ for i_mode, mode in enumerate(allModes):
         lumi_scale                 = data_sample.lumi/1000
 
     #for sample in mc: sample.style = styles.fillStyle(sample.color)
-    for sample in mc: sample.style = styles.lineStyle(sample.color)
+    for sample in mc: sample.style = styles.fillStyle(sample.color)
     
     if args.mcComp: 
         yt_tWZ01j_filter.style   = styles.lineStyle(ROOT.kBlue)

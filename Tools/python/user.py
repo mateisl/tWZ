@@ -12,7 +12,8 @@ if os.environ["USER"] in ["schoef", "rschoefbeck", "schoefbeck"]:
     # directory with veto lists
 
 if os.environ["USER"] in ["robert.schoefbeck"]:
-    postprocessing_output_directory = "/mnt/hephy/cms/robert.schoefbeck/tWZ/nanoTuples"
+    #postprocessing_output_directory = "/mnt/hephy/cms/robert.schoefbeck/tWZ/nanoTuples"
+    postprocessing_output_directory = "/scratch-cbe/users/robert.schoefbeck/tWZ/nanoTuples"
     postprocessing_tmp_directory    = "/scratch/hephy/cms/robert.schoefbeck/tWZ/tmp/"
     plot_directory                  = "/mnt/hephy/cms/robert.schoefbeck/www/tWZ/plots"
     cache_dir                       = "/mnt/hephy/cms/robert.schoefbeck/tWZ/caches"

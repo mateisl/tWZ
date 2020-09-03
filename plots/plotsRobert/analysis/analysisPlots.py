@@ -19,11 +19,12 @@ from RootTools.core.standard             import *
 from tWZ.Tools.user                      import plot_directory
 from tWZ.Tools.cutInterpreter            import cutInterpreter
 from tWZ.Tools.objectSelection           import cbEleIdFlagGetter, vidNestedWPBitMapNamingList
-from tWZ.Tools.objectSelection           import mu_string, ele_string 
+from tWZ.Tools.objectSelection           import lepString 
 # Analysis
 from Analysis.Tools.helpers              import deltaPhi, deltaR
 from Analysis.Tools.puProfileCache       import *
 from Analysis.Tools.puReweighting        import getReweightingFunction
+import Analysis.Tools.syncer
 
 # Arguments
 import argparse
@@ -35,7 +36,7 @@ argParser.add_argument('--small',                             action='store_true
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
 argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
 argParser.add_argument('--era',            action='store', type=str, default="2016")
-argParser.add_argument('--selection',      action='store', default='trilepMini0p12-minDLmass12-onZ1-njet4p-btag2p')
+argParser.add_argument('--selection',      action='store', default='trilep-minDLmass12-onZ1-njet4p-btag2p')
 args = argParser.parse_args()
 
 # Logger
@@ -50,17 +51,16 @@ if args.noData:                       args.plot_directory += "_noData"
 logger.info( "Working in era %s", args.era)
 
 #tWZ_sample = TWZ if args.nominalSignal else yt_TWZ_filter
-
-from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
+from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
 
 if args.era == "Run2016":
-    mc = [Summer16.TWZ, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
+    mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 elif args.era == "Run2017":
-    mc = [Fall17.TWZ, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
+    mc = [Fall17.TWZ_NLO_DR, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
 elif args.era == "Run2018":
-    mc = [Autumn18.TWZ, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
+    mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
-    mc = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
+    mc = [TWZ_NLO_DR, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
 # data sample
 try:
@@ -77,8 +77,8 @@ for sample in mc:
 if args.small:
     for sample in mc + [data_sample]:
         sample.normalization = 1.
-        #sample.reduceFiles( factor = 40 )
-        sample.reduceFiles( to=1)
+        sample.reduceFiles( factor = 10 )
+        #sample.reduceFiles( to=1)
         sample.scale /= sample.normalization
 
 # Text on the plots
@@ -150,49 +150,53 @@ sequence.append( getM3l )
 
 read_variables = [
     "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
-    "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l2_eta/F", "l2_phi/F", 
+    "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l1_mvaTOP/F", "l1_mvaTOPWP/I", "l1_index/I", 
+    "l2_pt/F", "l2_eta/F" , "l2_phi/F", "l2_mvaTOP/F", "l2_mvaTOPWP/I", "l2_index/I",
+    "l3_pt/F", "l3_eta/F" , "l3_phi/F", "l3_mvaTOP/F", "l3_mvaTOPWP/I", "l3_index/I",
     "JetGood[pt/F,eta/F,phi/F]",
     "lep[pt/F,eta/F,phi/F,pdgId/I,muIndex/I,eleIndex/I]",
     "Z1_l1_index/I", "Z1_l2_index/I", "nonZ1_l1_index/I", "nonZ1_l2_index/I", 
     "Z1_phi/F", "Z1_pt/F", "Z1_mass/F", "Z1_cosThetaStar/F", "Z1_eta/F", "Z1_lldPhi/F", "Z1_lldR/F",
-    "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I]",
-    "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
+    "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I]",
+    "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
 ]
 
 read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F']
 # define 3l selections
 
-#MVA
-from Analysis.TMVA.Reader   import Reader
-from tWZ.MVA.MVA_TWZ_3l  import mva_variables, mlp
-from tWZ.MVA.MVA_TWZ_3l  import sequence as mva_sequence
-from tWZ.MVA.MVA_TWZ_3l  import read_variables as mva_read_variables
-from tWZ.Tools.user      import mva_directory
+##MVA
+#from Analysis.TMVA.Reader   import Reader
+#from tWZ.MVA.MVA_TWZ_3l  import mva_variables, mlp
+#from tWZ.MVA.MVA_TWZ_3l  import sequence as mva_sequence
+#from tWZ.MVA.MVA_TWZ_3l  import read_variables as mva_read_variables
+#from tWZ.Tools.user      import mva_directory
 
-sequence.extend( mva_sequence )
-read_variables.extend( mva_read_variables )
+#sequence.extend( mva_sequence )
+#read_variables.extend( mva_read_variables )
+#
+#mva_reader = Reader(
+#    mva_variables     = mva_variables,
+#    weight_directory  = os.path.join( mva_directory, "TWZ_3l" ),
+#    label             = "TWZ_3l")
+#
+#def makeDiscriminator( mva ):
+#    def _getDiscriminator( event, sample ):
+#        kwargs = {name:func(event,None) for name, func in mva_variables.iteritems()}
+#        setattr( event, mva['name'], mva_reader.evaluate(mva['name'], **kwargs))
+#    return _getDiscriminator
+#
+#def discriminator_getter(name):
+#    def _disc_getter( event, sample ):
+#        return getattr( event, name )
+#    return _disc_getter
 
-mva_reader = Reader(
-    mva_variables     = mva_variables,
-    weight_directory  = os.path.join( mva_directory, "TWZ_3l" ),
-    label             = "TWZ_3l")
+#mvas = [mlp]
+#for mva in mvas:
+#    mva_reader.addMethod(method=mva)
+#    sequence.append( makeDiscriminator(mva) )
 
-def makeDiscriminator( mva ):
-    def _getDiscriminator( event, sample ):
-        kwargs = {name:func(event,None) for name, func in mva_variables.iteritems()}
-        setattr( event, mva['name'], mva_reader.evaluate(mva['name'], **kwargs))
-    return _getDiscriminator
-
-def discriminator_getter(name):
-    def _disc_getter( event, sample ):
-        return getattr( event, name )
-    return _disc_getter
-
-mvas = [mlp]
-for mva in mvas:
-    mva_reader.addMethod(method=mva)
-    sequence.append( makeDiscriminator(mva) )
-
+mu_string  = lepString('mu','VL')
+ele_string = lepString('ele','VL')
 def getLeptonSelection( mode ):
     if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
     elif mode=="mumue":  return "Sum$({mu_string})==2&&Sum$({ele_string})==1".format(mu_string=mu_string,ele_string=ele_string)
@@ -290,25 +294,112 @@ for i_mode, mode in enumerate(allModes):
       binning=[4, 0, 4],
     ))
 
-    for mva in mvas:
-        plots.append(Plot(
-            texX = 'MVA_{3l}', texY = 'Number of Events',
-            name = mva['name'], attribute = discriminator_getter(mva['name']),
-            binning=[25, 0, 1],
-        ))
-
-    for mva in mvas:
-        plots.append(Plot(
-            texX = 'MVA_{3l}', texY = 'Number of Events',
-            name = mva['name']+'_coarse', attribute = discriminator_getter(mva['name']),
-            binning=[10, 0, 1],
-        ))
+#    for mva in mvas:
+#        plots.append(Plot(
+#            texX = 'MVA_{3l}', texY = 'Number of Events',
+#            name = mva['name'], attribute = discriminator_getter(mva['name']),
+#            binning=[25, 0, 1],
+#        ))
+#
+#    for mva in mvas:
+#        plots.append(Plot(
+#            texX = 'MVA_{3l}', texY = 'Number of Events',
+#            name = mva['name']+'_coarse', attribute = discriminator_getter(mva['name']),
+#            binning=[10, 0, 1],
+#        ))
 
     plots.append(Plot(
       name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',
       attribute = TreeVariable.fromString( "PV_npvsGood/I" ),
       binning=[50,0,50],
       addOverFlowBin='upper',
+    ))
+
+    plots.append(Plot(
+        name = 'l1_pt',
+        texX = 'p_{T}(l_{1}) (GeV)', texY = 'Number of Events / 20 GeV',
+        attribute = lambda event, sample:event.l1_pt,
+        binning=[15,0,300],
+        addOverFlowBin='upper',
+    ))
+
+    plots.append(Plot(
+        name = 'l1_eta',
+        texX = '#eta(l_{1})', texY = 'Number of Events',
+        attribute = lambda event, sample: event.l1_eta,
+        binning=[20,-3,3],
+    ))
+
+    plots.append(Plot(
+        name = 'l1_mvaTOP',
+        texX = 'MVA_{TOP}(l_{1})', texY = 'Number of Events',
+        attribute = lambda event, sample: event.l1_mvaTOP,
+        binning=[20,-1,1],
+    ))
+
+    plots.append(Plot(
+        name = 'l1_mvaTOPWP',
+        texX = 'MVA_{TOP}(l_{1}) WP', texY = 'Number of Events',
+        attribute = lambda event, sample: event.l1_mvaTOPWP,
+        binning=[5,0,5],
+    ))
+
+    plots.append(Plot(
+        name = 'l2_pt',
+        texX = 'p_{T}(l_{2}) (GeV)', texY = 'Number of Events / 20 GeV',
+        attribute = lambda event, sample:event.l2_pt,
+        binning=[15,0,300],
+        addOverFlowBin='upper',
+    ))
+
+    plots.append(Plot(
+        name = 'l2_eta',
+        texX = '#eta(l_{2})', texY = 'Number of Events',
+        attribute = lambda event, sample: event.l2_eta,
+        binning=[20,-3,3],
+    ))
+
+    plots.append(Plot(
+        name = 'l2_mvaTOP',
+        texX = 'MVA_{TOP}(l_{2})', texY = 'Number of Events',
+        attribute = lambda event, sample: event.l2_mvaTOP,
+        binning=[20,-1,1],
+    ))
+
+    plots.append(Plot(
+        name = 'l2_mvaTOPWP',
+        texX = 'MVA_{TOP}(l_{1}) WP', texY = 'Number of Events',
+        attribute = lambda event, sample: event.l2_mvaTOPWP,
+        binning=[5,0,5],
+    ))
+
+    plots.append(Plot(
+        name = 'l3_pt',
+        texX = 'p_{T}(l_{3}) (GeV)', texY = 'Number of Events / 20 GeV',
+        attribute = lambda event, sample:event.l3_pt,
+        binning=[15,0,300],
+        addOverFlowBin='upper',
+    ))
+
+    plots.append(Plot(
+        name = 'l3_eta',
+        texX = '#eta(l_{3})', texY = 'Number of Events',
+        attribute = lambda event, sample: event.l3_eta,
+        binning=[20,-3,3],
+    ))
+
+    plots.append(Plot(
+        name = 'l3_mvaTOP',
+        texX = 'MVA_{TOP}(l_{3})', texY = 'Number of Events',
+        attribute = lambda event, sample: event.l3_mvaTOP,
+        binning=[20,-1,1],
+    ))
+
+    plots.append(Plot(
+        name = 'l3_mvaTOPWP',
+        texX = 'MVA_{TOP}(l_{1}) WP', texY = 'Number of Events',
+        attribute = lambda event, sample: event.l3_mvaTOPWP,
+        binning=[5,0,5],
     ))
 
     plots.append(Plot(
@@ -642,6 +733,11 @@ for i_mode, mode in enumerate(allModes):
             plots.append(Plot(
               texX = 'mvaTTH(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
               name = '%s%i_mvaTTH'%(lep_name, index), attribute = lep_getter("mvaTTH", index, abs_pdg),
+              binning=[24,-1.2,1.2],
+            ))
+            plots.append(Plot(
+              texX = 'mvaTOP(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+              name = '%s%i_mvaTOP'%(lep_name, index), attribute = lep_getter("mvaTOP", index, abs_pdg),
               binning=[24,-1.2,1.2],
             ))
             plots.append(Plot(

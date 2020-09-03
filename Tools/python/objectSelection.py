@@ -103,10 +103,21 @@ def get_index_str( index ):
         raise ValueError( "Don't know what to do with index %r" % index )
     return index_str
 
-# string based
-lep_string = "lep_pt>10&&abs(lep_eta)<2.5&&((lep_mvaTTH>0.6&&abs(lep_pdgId)==13)||(lep_mvaTTH>0.6&&abs(lep_pdgId)==11))"
-mu_string  = "lep_pt>10&&abs(lep_eta)<2.5&&lep_mvaTTH>0.6&&abs(lep_pdgId)==13"
-ele_string = "lep_pt>10&&abs(lep_eta)<2.5&&lep_mvaTTH>0.6&&abs(lep_pdgId)==11"
+## MVA TOP lepton thresholds ##
+mvaTOP = {'mu':{'VL':-0.45, 'L':0.05, 'M':0.65, 'T':0.90}, 'ele':{'VL':-0.55, 'L':0.0, 'M':0.60, 'T':0.90}}
+
+def lepString( eleMu = None, WP = 'VL', idx = None):
+    idx_str = "[%s]"%idx if idx is not None else ""
+    if eleMu=='ele':
+        return "lep_pt{idx_str}>10&&abs(lep_eta{idx_str})<2.5&&abs(lep_pdgId{idx_str})==11&&lep_mvaTOP{idx_str}>{threshold}".format( threshold = mvaTOP['ele'][WP], idx_str=idx_str )
+    elif eleMu=='mu':
+        return "lep_pt{idx_str}>10&&abs(lep_eta{idx_str})<2.4&&abs(lep_pdgId{idx_str})==13&&lep_mvaTOP{idx_str}>{threshold}".format( threshold = mvaTOP['mu'][WP], idx_str=idx_str )
+    else:
+        return '('+lepString( 'ele', WP, idx=idx) + ')||(' + lepString( 'mu', WP, idx=idx) + ')'
+
+def mvaTopWP(mvaTopThr, pdgId):
+    mvaTOPs = mvaTOP['mu'] if abs(pdgId)==13 else mvaTOP['ele']
+    return sum( [ int( mvaTopThr > th ) for th in mvaTOPs.values() ] ) 
 
 ## MUONS ##
 def muonSelector( lepton_selection, year, ptCut = 10):
@@ -140,6 +151,30 @@ def muonSelector( lepton_selection, year, ptCut = 10):
                 and abs(l["dxy"])       < 0.05 \
                 and abs(l["dz"])        < 0.1 \
                 and l["mediumId"] 
+    elif lepton_selection == 'mvaTOPVL':
+        def func(l):
+            return \
+                l["pt"]                 >= ptCut \
+                and abs(l["eta"])       < 2.5 \
+                and l["mvaTOP"]         > mvaTOP['mu']['VL']
+    elif lepton_selection == 'mvaTOPL':
+        def func(l):
+            return \
+                l["pt"]                 >= ptCut \
+                and abs(l["eta"])       < 2.5 \
+                and l["mvaTOP"]         > mvaTOP['mu']['L']
+    elif lepton_selection == 'mvaTOPM':
+        def func(l):
+            return \
+                l["pt"]                 >= ptCut \
+                and abs(l["eta"])       < 2.5 \
+                and l["mvaTOP"]         > mvaTOP['mu']['M']
+    elif lepton_selection == 'mvaTOPT':
+        def func(l):
+            return \
+                l["pt"]                 >= ptCut \
+                and abs(l["eta"])       < 2.5 \
+                and l["mvaTOP"]         > mvaTOP['mu']['T']
     return func
 
 #def muonSelectorString(relIso03 = 0.2, ptCut = 20, absEtaCut = 2.4, dxy = 0.05, dz = 0.1, index = "Sum"):
@@ -268,7 +303,32 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and l["sip3d"]          < 4.0 \
                 and abs(l["dxy"])       < 0.05 \
                 and abs(l["dz"])        < 0.1
+    elif lepton_selection == 'mvaTOPVL':
+        def func(l):
+            return \
+                l["pt"]                 >= ptCut \
+                and abs(l["eta"])       < 2.4 \
+                and l["mvaTOP"]         > mvaTOP['ele']['VL']
+    elif lepton_selection == 'mvaTOPL':
+        def func(l):
+            return \
+                l["pt"]                 >= ptCut \
+                and abs(l["eta"])       < 2.4 \
+                and l["mvaTOP"]         > mvaTOP['ele']['L']
+    elif lepton_selection == 'mvaTOPM':
+        def func(l):
+            return \
+                l["pt"]                 >= ptCut \
+                and abs(l["eta"])       < 2.4 \
+                and l["mvaTOP"]         > mvaTOP['ele']['M']
+    elif lepton_selection == 'mvaTOPT':
+        def func(l):
+            return \
+                l["pt"]                 >= ptCut \
+                and abs(l["eta"])       < 2.4 \
+                and l["mvaTOP"]         > mvaTOP['ele']['T']
     return func
+
 
 #def eleSelectorString(relIso03 = 0.2, eleId = 4, ptCut = 20, absEtaCut = 2.4, dxy = 0.05, dz = 0.1, index = "Sum", noMissingHits=True):
 #    idx = None if (index is None) or (type(index)==type("") and index.lower()=="sum") else index
@@ -291,10 +351,10 @@ def eleSelector( lepton_selection, year, ptCut = 10):
 #        return '&&'.join(string)
 
 
-electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','lostHits','convVeto','dxy','dz','charge','deltaEtaSC', 'mvaFall17V2Iso_WP80', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap','mvaTTH']
+electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','lostHits','convVeto','dxy','dz','charge','deltaEtaSC', 'mvaFall17V2Iso_WP80', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap','mvaTOP']
 electronVars = electronVars_data + []
 
-muonVars_data = ['pt','eta','phi','pdgId','mediumId','miniPFRelIso_all','pfRelIso03_all','sip3d','dxy','dz','charge','mvaTTH']
+muonVars_data = ['pt','eta','phi','pdgId','mediumId','miniPFRelIso_all','pfRelIso03_all','sip3d','dxy','dz','charge','mvaTOP']
 muonVars = muonVars_data + []
 
 def getMuons(c, collVars=muonVars):

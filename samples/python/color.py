@@ -28,6 +28,7 @@ color.TTG            = ROOT.kRed
 color.TTG_signal     = 91
 color.TZQ            = ROOT.kRed - 9
 color.WJetsToLNu     = ROOT.kRed-10
+color.WJets          = ROOT.kRed-10
 color.diBoson        = ROOT.kOrange
 color.multiBoson     = ROOT.kOrange
 color.ZZ             = ROOT.kGreen+3

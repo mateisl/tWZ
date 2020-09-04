@@ -7,3 +7,5 @@ mc_2017               = base+"/tWZ_nAODv6_private_v2/2017/trilep"
 data_2017             = base+"/tWZ_nAODv6_private_v2/2017/trilep"
 mc_2018               = base+"/tWZ_nAODv6_private_v2/2018/trilep"
 data_2018             = base+"/tWZ_nAODv6_private_v2/2018/trilep"
+
+fakes_2016            = base+"/tWZ_fakes/2016/1j1mu"

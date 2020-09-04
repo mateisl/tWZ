@@ -19,8 +19,8 @@ from RootTools.core.standard             import *
 from tWZ.Tools.user                      import plot_directory
 from tWZ.Tools.cutInterpreter            import cutInterpreter
 from tWZ.Tools.objectSelection           import cbEleIdFlagGetter, vidNestedWPBitMapNamingList
-from tWZ.Tools.objectSelection           import mu_string, ele_string, isBJet 
-# Analysis
+from tWZ.Tools.objectSelection           import lepString
+
 from Analysis.Tools.helpers              import deltaPhi, deltaR, getCollection, getObjDict
 from Analysis.Tools.puProfileCache       import *
 from Analysis.Tools.puReweighting        import getReweightingFunction
@@ -39,7 +39,7 @@ argParser.add_argument('--mcComp',                            action='store_true
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
 argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
 argParser.add_argument('--era',            action='store', type=str, default="2016")
-argParser.add_argument('--selection',      action='store', default='trilepMini0p12-minDLmass12-onZ1-njet4p-btag2p')
+argParser.add_argument('--selection',      action='store', default='trilep-minDLmass12-onZ1-njet4p-btag2p')
 #argParser.add_argument('--nanoAODv4',   default=True, action='store_true',                                                                        help="Run on nanoAODv4?" )
 argParser.add_argument('--samples',     action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
 #flagg for parton selection
@@ -48,6 +48,8 @@ argParser.add_argument('--partonweightprivate', action='store_true', help='weigh
 argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize to 1" )
 argParser.add_argument('--newsamples', action='store_true', help='twzLo and twznlo', )
 argParser.add_argument('--centralttZ', action='store_true', help='twzDR and ttZ', )
+argParser.add_argument('--privateTWZttZ', action='store_true', help='twzDR and ttZ', )
+argParser.add_argument('--central', action='store_true', help='twzDR and ttZ', )
 argParser.add_argument('--scaled', action='store_true', help='scaling', )
 
 args = argParser.parse_args()
@@ -65,17 +67,21 @@ if args.noData:                       args.plot_directory += "_noData"
 if args.partonweight:                 args.plot_directory += "_weightedpartons"
 if args.partonweightprivate:          args.plot_directory += "_weightedpartons(private)"
 if args.newsamples:                   args.plot_directory += "_newsamples"
-if args.centralttZ:               args.plot_directory += "_tWZDR_ttZ"
+if args.centralttZ:                   args.plot_directory += "_tWZDR_ttZ"
+if args.central:                      args.plot_directory += "_central"
+if args.privateTWZttZ:                args.plot_directory += "_privateTWZDR_ttZ"
 if args.normalize:                    args.plot_directory += "_normalize"
 if args.scaled:                       args.plot_directory += "_scaled"
 logger.info( "Working in era %s", args.era)
 
 #tWZ_sample = TWZ if args.nominalSignal else yt_TWZ_filter
 
-from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
+#from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
 
 #import new samples
-from tWZ.samples.nanoTuples_Summer16_nanoAODv6_postProcessed import *
+#from tWZ.samples.nanoTuples_Summer16_nanoAODv6_postProcessed import *
+#import new privat samples 
+from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
 
 #TWZ match samples 
 if args.partonweight:
@@ -119,14 +125,18 @@ if args.era == "Run2016":
         mc = [tWZ_LO, tWZ_NLO, Summer16.yt_tWZ01j_filter, Summer16.TWZ, Summer16.TTZ, tWZ_DR , tWZ_DS ]
     elif args.centralttZ: 
         mc = [tWZ_DR, Summer16.TTZ]
-    else: 
+    elif args.privateTWZttZ: 
+        mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ]
+    elif args.central: 
         mc = [Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l, tWZ_DR]
+    else: 
+        mc = [Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l, Summer16.TWZ_NLO_DR]
 elif args.era == "Run2017":
-    mc = [Fall17.TWZ, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
+    mc = [Fall17.TWZ_NLO_DR, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
 elif args.era == "Run2018":
-    mc = [Autumn18.TWZ, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
+    mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
-    mc = [TWZ, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
+    mc = [TWZ_NLO_DR, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
 # data sample
 try:
@@ -183,8 +193,8 @@ def drawPlots(plots, mode, dataMCScale):
       if isinstance( plot, Plot):
             plotting.draw(plot,
             plot_directory = plot_directory_,
-            #ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
-            ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0)], 'texY':'Ratio'} if args.scaled else None,
+            ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
+            #ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0)], 'texY':'Ratio'} if args.scaled else None,
             #ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0),(2,0),(3,0),(4,0)], 'texY':'Ratio'} if args.scaled else None,
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
@@ -225,22 +235,11 @@ def getM3l( event, sample ):
 
 sequence.append( getM3l )
 
-#def getM2l( event, sample ):
-#    # get the invariant mass of the 2l system
-#    l = []
-#    #for i in range(1):
-#    l.append(ROOT.TLorentzVector())
-#    l[0].SetPtEtaPhiM(event.lep_pt[event.Z1_l1_index], event.lep_eta[event.Z1_l1_index], event.lep_phi[event.Z1_l1_index],0)
-#    l[1].SetPtEtaPhiM(event.lep_pt[event.Z1_l2_index], event.lep_eta[event.Z1_l2_index], event.lep_phi[event.Z1_l2_index],0)
-#    event.M2l = (l[0] + l[1]).M()
-
-#sequence.append( getM2l )
-
 #jets without eta cut
 jetVars          = ['pt/F', 'chEmEF/F', 'chHEF/F', 'neEmEF/F', 'neHEF/F', 'rawFactor/F', 'eta/F', 'phi/F', 'jetId/I', 'btagDeepB/F', 'btagDeepFlavB/F', 'btagCSVV2/F', 'area/F'] 
 jetVarNames      = [x.split('/')[0] for x in jetVars]
 
-lepVars         = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F','mvaFall17V2Iso_WP90/O', 'mvaTTH/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','eleIndex/I','muIndex/I']
+lepVars         = ['pt/F','eta/F','phi/F','pdgId/I','muIndex/I','eleIndex/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F','mvaFall17V2Iso_WP90/O', 'mvaTTH/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','eleIndex/I','muIndex/I']
 lepVarNames     = [x.split('/')[0] for x in lepVars]
 
 bVars      = ['pt/F','eta/F','phi/F']
@@ -248,18 +247,20 @@ bVarNames  = [x.split('/')[0] for x in bVars]
 
 read_variables = [
     "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
-    "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l2_eta/F", "l2_phi/F", 
+    "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l1_mvaTOP/F", "l1_mvaTOPWP/I", "l1_index/I", 
+    "l2_pt/F", "l2_eta/F" , "l2_phi/F", "l2_mvaTOP/F", "l2_mvaTOPWP/I", "l2_index/I",
+    "l3_pt/F", "l3_eta/F" , "l3_phi/F", "l3_mvaTOP/F", "l3_mvaTOPWP/I", "l3_index/I",
     "JetGood[pt/F,eta/F,phi/F]", 
     "nJet/I", 
     "nlep/I", "lep[%s]"%(",".join(lepVars)),
     "Z1_l1_index/I", "Z1_l2_index/I", "nonZ1_l1_index/I", "nonZ1_l2_index/I", 
     "Z1_phi/F", "Z1_pt/F", "Z1_mass/F", "Z1_cosThetaStar/F", "Z1_eta/F", "Z1_lldPhi/F", "Z1_lldR/F",
-    "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I]",
-    "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
+    "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I]",
+    "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
 ]
 
 #b tagger
-b_tagger = "DeepCSV"
+b_tagger = "DeepJet"
 
 # read only for data:
 read_variables_data = [ "Jet[%s]"%(",".join(jetVars))] 
@@ -395,6 +396,8 @@ def deltaEtaZll( event,sample ):
 
 sequence.append( deltaEtaZll )
 
+mu_string  = lepString('mu','VL')
+ele_string = lepString('ele','VL')
 def getLeptonSelection( mode ):
     if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
     elif mode=="mumue":  return "Sum$({mu_string})==2&&Sum$({ele_string})==1".format(mu_string=mu_string,ele_string=ele_string)
@@ -402,7 +405,8 @@ def getLeptonSelection( mode ):
     elif mode=="eee":    return "Sum$({mu_string})==0&&Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
     elif mode=='all':    return "Sum$({mu_string})+Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
 
-
+# Getter functor for lepton quantities
+def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
     if functor is not None:
         if abs_pdg == 13:
             def func_( event, sample ):
@@ -991,6 +995,101 @@ for i_mode, mode in enumerate(allModes):
   #                    name = '%s%i_%s_Flag'%(lep_name, index, cbIdFlag), attribute = lep_getter("vidNestedWPBitmap", index, abs_pdg, functor = cbEleIdFlagGetter(cbIdFlag)),
   #                    binning=[5,0,5],
   #                  ))
+
+#newplots 
+
+    plots.append(Plot(
+       texX = 'mvaTOP(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+       name = '%s%i_mvaTOP'%(lep_name, index), attribute = lep_getter("mvaTOP", index, abs_pdg),
+       binning=[24,-1.2,1.2],
+     ))
+
+    plots.append(Plot(
+       name = 'l1_pt',
+       texX = 'p_{T}(l_{1}) (GeV)', texY = 'Number of Events / 20 GeV',
+       attribute = lambda event, sample:event.l1_pt,
+       binning=[15,0,300],
+       addOverFlowBin='upper',
+   ))
+
+    plots.append(Plot(
+       name = 'l1_eta',
+       texX = '#eta(l_{1})', texY = 'Number of Events',
+       attribute = lambda event, sample: event.l1_eta,
+       binning=[20,-3,3],
+   ))
+
+    plots.append(Plot(
+       name = 'l1_mvaTOP',
+       texX = 'MVA_{TOP}(l_{1})', texY = 'Number of Events',
+       attribute = lambda event, sample: event.l1_mvaTOP,
+       binning=[20,-1,1],
+   ))
+
+    plots.append(Plot(
+       name = 'l1_mvaTOPWP',
+       texX = 'MVA_{TOP}(l_{1}) WP', texY = 'Number of Events',
+       attribute = lambda event, sample: event.l1_mvaTOPWP,
+       binning=[5,0,5],
+   ))
+
+    plots.append(Plot(
+       name = 'l2_pt',
+       texX = 'p_{T}(l_{2}) (GeV)', texY = 'Number of Events / 20 GeV',
+       attribute = lambda event, sample:event.l2_pt,
+       binning=[15,0,300],
+       addOverFlowBin='upper',
+   ))
+
+    plots.append(Plot(
+       name = 'l2_eta',
+       texX = '#eta(l_{2})', texY = 'Number of Events',
+       attribute = lambda event, sample: event.l2_eta,
+       binning=[20,-3,3],
+   ))
+
+    plots.append(Plot(
+       name = 'l2_mvaTOP',
+       texX = 'MVA_{TOP}(l_{2})', texY = 'Number of Events',
+       attribute = lambda event, sample: event.l2_mvaTOP,
+       binning=[20,-1,1],
+   ))
+
+    plots.append(Plot(
+       name = 'l2_mvaTOPWP',
+       texX = 'MVA_{TOP}(l_{1}) WP', texY = 'Number of Events',
+       attribute = lambda event, sample: event.l2_mvaTOPWP,
+       binning=[5,0,5],
+   ))
+
+    plots.append(Plot(
+       name = 'l3_pt',
+       texX = 'p_{T}(l_{3}) (GeV)', texY = 'Number of Events / 20 GeV',
+       attribute = lambda event, sample:event.l3_pt,
+       binning=[15,0,300],
+       addOverFlowBin='upper',
+   ))
+
+    plots.append(Plot(
+       name = 'l3_eta',
+       texX = '#eta(l_{3})', texY = 'Number of Events',
+       attribute = lambda event, sample: event.l3_eta,
+       binning=[20,-3,3],
+   ))
+
+    plots.append(Plot(
+       name = 'l3_mvaTOP',
+       texX = 'MVA_{TOP}(l_{3})', texY = 'Number of Events',
+       attribute = lambda event, sample: event.l3_mvaTOP,
+       binning=[20,-1,1],
+   ))
+
+    plots.append(Plot(
+       name = 'l3_mvaTOPWP',
+       texX = 'MVA_{TOP}(l_{1}) WP', texY = 'Number of Events',
+       attribute = lambda event, sample: event.l3_mvaTOPWP,
+       binning=[5,0,5],
+   ))
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 

@@ -165,10 +165,32 @@ mva_variables = {
 
                  "mva_Z_j1_deltaPhi"          :(lambda event, sample: event.Z1_j1_deltaPhi           if event.nJetGood >=1 else -1),
                  "mva_nonZ1_l1_Z1_deltaPhi"   :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 1 else -1 ),
-                 
+}                 
 #                     "mva_jet0_Z1_deltaR"         :(lambda event, sample: event.jet0_Z1_deltaR         if event.nJetGood >=1 else -1),
 #                     "mva_jet0_nonZl1_deltaR"     :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),
-                }
+#mva_variables = { 
+#                     "mva_jet0_pt"               :(lambda event, sample: event.JetGood_pt[0]          if event.nJetGood >=1 else 0),
+#                     "mva_jet0_eta"              :(lambda event, sample: event.JetGood_eta[0]         if event.nJetGood >=1 else -10),
+#                     "mva_jet0_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[0] if (event.nJetGood >=1 and event.JetGood_btagDeepB[0]>-10) else -10),
+#
+#                     "mva_Z1_pt"                  :(lambda event, sample: event.Z1_pt),
+#                     "mva_Z1_eta"                 :(lambda event, sample: event.Z1_eta),
+#                     "mva_Z1_cosThetaStar"        :(lambda event, sample: event.Z1_cosThetaStar),
+#
+#                     "mva_jet0_nonZl1_deltaR"     :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),
+#                     "mva_jet1_nonZl1_deltaR"     :(lambda event, sample: event.jet1_nonZ1_l1_deltaR    if event.nJetGood >=2 else -1),
+##
+#                     "mva_ht"                    :(lambda event, sample: sum( [event.JetGood_pt[i] for i in range(event.nJetGood) ])),
+#                     "mva_met_pt"                :(lambda event, sample: event.met_pt),
+#                     "mva_nJetGood"              :(lambda event, sample: event.nJetGood),
+#                     "mva_nBTag"                 :(lambda event, sample: event.nBTag),
+#
+#                     "mva_W_pt"                   :(lambda event, sample: event.W_pt),
+#
+#                     "mva_Z_j1_deltaPhi"          :(lambda event, sample: event.Z1_j1_deltaPhi           if event.nJetGood >=2 else -1),
+#                     "mva_nonZ1_l1_Z1_deltaPhi"   :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 2 else -1 ),
+#
+#                }
 
 bdt1 = {
     "type"                : ROOT.TMVA.Types.kBDT,
@@ -181,5 +203,5 @@ mlp1 = {
     "name"                : 'mlp1',
     "layers"              : "N+7",
     "color"               : ROOT.kMagenta+3,
-    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
+    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
     }

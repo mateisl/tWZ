@@ -12,7 +12,7 @@ from tWZ.Tools.cutInterpreter    import cutInterpreter
 
 # MVA configuration
 from tWZ.MVA.MVA_TWZ_3l          import sequence, read_variables, mva_variables 
-from tWZ.MVA.MVA_TWZ_3l          import bdt1, mlp1 
+from tWZ.MVA.MVA_TWZ_3l          import mlp1 #,bdt 
 
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
@@ -27,8 +27,8 @@ args = argParser.parse_args()
 #Logger
 import tWZ.Tools.logger as logger
 logger = logger.get_logger("DEBUG", logFile = None )
-import Analysis.Tools.logger as logger_an
-logger_an = logger_an.get_logger("DEBUG", logFile = None )
+#import Analysis.Tools.logger as logger_an
+#logger_an = logger_an.get_logger("DEBUG", logFile = None )
 
 if args.plot_directory == None:
     args.plot_directory = plot_directory

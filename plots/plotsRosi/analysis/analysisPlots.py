@@ -34,7 +34,6 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--logLevel',       action='store',      default='INFO', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
 argParser.add_argument('--noData',         action='store_true', default=False, help='also plot data?')
 argParser.add_argument('--small',                             action='store_true', help='Run only on a small subset of the data?', )
-argParser.add_argument('--mcComp',                            action='store_true', help='make MC comparison?', )
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
 argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
@@ -46,10 +45,7 @@ argParser.add_argument('--samples',     action='store',         nargs='*',  type
 argParser.add_argument('--partonweight', action='store_true', help='weight partons?', )
 argParser.add_argument('--partonweightprivate', action='store_true', help='weight partons?', )
 argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize to 1" )
-argParser.add_argument('--newsamples', action='store_true', help='twzLo and twznlo', )
-argParser.add_argument('--centralttZ', action='store_true', help='twzDR and ttZ', )
 argParser.add_argument('--privateTWZttZ', action='store_true', help='twzDR and ttZ', )
-argParser.add_argument('--central', action='store_true', help='twzDR and ttZ', )
 argParser.add_argument('--scaled', action='store_true', help='scaling', )
 
 args = argParser.parse_args()
@@ -62,73 +58,36 @@ logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 if args.small:                        args.plot_directory += "_small"
-if args.mcComp:                       args.plot_directory += "_mcComp"
 if args.noData:                       args.plot_directory += "_noData"
-if args.partonweight:                 args.plot_directory += "_weightedpartons"
 if args.partonweightprivate:          args.plot_directory += "_weightedpartons(private)"
-if args.newsamples:                   args.plot_directory += "_newsamples"
-if args.centralttZ:                   args.plot_directory += "_tWZDR_ttZ"
-if args.central:                      args.plot_directory += "_central"
 if args.privateTWZttZ:                args.plot_directory += "_privateTWZDR_ttZ"
 if args.normalize:                    args.plot_directory += "_normalize"
 if args.scaled:                       args.plot_directory += "_scaled"
 logger.info( "Working in era %s", args.era)
 
-#tWZ_sample = TWZ if args.nominalSignal else yt_TWZ_filter
-
-#from tWZ.samples.nanoTuples_RunII_nanoAODv4_postProcessed import *
-
-#import new samples
-#from tWZ.samples.nanoTuples_Summer16_nanoAODv6_postProcessed import *
-#import new privat samples 
 from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
-
-#TWZ match samples 
-if args.partonweight:
-    tWZ_ud_match = copy.deepcopy( Summer16.TWZ )
-    tWZ_ud_match.name = "tWZ_ud_match"
-    tWZ_ud_match.texName = "tWZ (fwd u/d)"
-    
-    tWZ_gluon_match = copy.deepcopy( Summer16.TWZ )
-    tWZ_gluon_match.name = "tWZ_gluon_match"
-    tWZ_gluon_match.texName = "tWZ (fwd gluon)"
-    
-    tWZ_other_match = copy.deepcopy( Summer16.TWZ )
-    tWZ_other_match.name = "tWZ_other_match"
-    tWZ_other_match.texName = "tWZ (fwd others)"
 
 #priavate tWZ match samples
 #TWZ match samples 
 if args.partonweightprivate: 
-    tWZ_ud_match = copy.deepcopy( Summer16.yt_tWZ01j_filter )
+    tWZ_ud_match = copy.deepcopy( Summer16.TWZ_NLO_DR  )
     tWZ_ud_match.name = "tWZ_ud_match"
     tWZ_ud_match.texName = "private tWZ (fwd u/d)"
     
-    tWZ_gluon_match = copy.deepcopy( Summer16.yt_tWZ01j_filter )
+    tWZ_gluon_match = copy.deepcopy( Summer16.TWZ_NLO_DR  )
     tWZ_gluon_match.name = "tWZ_gluon_match"
     tWZ_gluon_match.texName = "private tWZ (fwd gluon)"
     
-    tWZ_other_match = copy.deepcopy( Summer16.yt_tWZ01j_filter )
+    tWZ_other_match = copy.deepcopy( Summer16.TWZ_NLO_DR  )
     tWZ_other_match.name = "tWZ_other_match"
     tWZ_other_match.texName = "private tWZ (fwd others)"
 
-Summer16.yt_tWZ01j_filter.texName = "TWZ(private)"
-Summer16.yt_tWZ01j_filter.style   = styles.lineStyle(ROOT.kBlue)
 
 if args.era == "Run2016":
-    if args.partonweight: 
-        # compare tWZ components
-        mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.TWZ, Summer16.TTZ]
-    elif args.partonweightprivate: 
-        mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.yt_tWZ01j_filter, Summer16.TWZ, Summer16.TTZ]
-    elif args.newsamples: 
-        mc = [tWZ_LO, tWZ_NLO, Summer16.yt_tWZ01j_filter, Summer16.TWZ, Summer16.TTZ, tWZ_DR , tWZ_DS ]
-    elif args.centralttZ: 
-        mc = [tWZ_DR, Summer16.TTZ]
+    if args.partonweightprivate: 
+        mc = [tWZ_gluon_match, tWZ_ud_match, tWZ_other_match, Summer16.TWZ_NLO_DR, Summer16.TTZ]
     elif args.privateTWZttZ: 
         mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ]
-    elif args.central: 
-        mc = [Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l, tWZ_DR]
     else: 
         mc = [Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l, Summer16.TWZ_NLO_DR]
 elif args.era == "Run2017":
@@ -198,8 +157,6 @@ def drawPlots(plots, mode, dataMCScale):
             #ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0),(2,0),(3,0),(4,0)], 'texY':'Ratio'} if args.scaled else None,
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
-            #scaling = {0:1} if args.dataMCScaling else {},
-            #scaling = {0:1} if args.mcComp else {}, #sacling twz to private twz sample to see difference in shape
             scaling =  { 1:0 } if args.scaled else {}, 
             #scaling =  { i+1:0 for i in range(4) } if args.scaled else {}, 
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
@@ -472,18 +429,11 @@ for i_mode, mode in enumerate(allModes):
     #for sample in mc: sample.style = styles.fillStyle(sample.color)
     for sample in mc: sample.style = styles.fillStyle(sample.color)
     
-    if args.mcComp: 
-        yt_tWZ01j_filter.style   = styles.lineStyle(ROOT.kBlue)
-        yt_tWZ01j_filter.texName = "TWZ(private)"
-    
-    if args.partonweight or args.partonweightprivate: 
+    if args.partonweightprivate: 
         tWZ_ud_match.style    = styles.lineStyle(ROOT.kBlue)
         tWZ_gluon_match.style = styles.lineStyle(ROOT.kYellow)
         tWZ_other_match.style = styles.lineStyle(ROOT.kGreen)
         TTZ.style             = styles.lineStyle(1)       
-        Summer16.yt_tWZ01j_filter.style = styles.lineStyle(ROOT.kCyan)
-
-    if args.newsamples: 
         Summer16.yt_tWZ01j_filter.style = styles.lineStyle(ROOT.kCyan)
 
     for sample in mc:
@@ -497,17 +447,10 @@ for i_mode, mode in enumerate(allModes):
 
     #yt_TWZ_filter.scale = lumi_scale * 1.07314
     
-    if args.partonweight: 
-        stack = Stack([Summer16.TWZ],[tWZ_ud_match],[tWZ_gluon_match],[tWZ_other_match],[Summer16.TTZ])
-    elif args.partonweightprivate:
-        stack = Stack([Summer16.yt_tWZ01j_filter],[Summer16.TWZ],[tWZ_ud_match],[tWZ_gluon_match],[tWZ_other_match],[Summer16.TTZ])
-    elif args.newsamples: 
-        stack = Stack([tWZ_NLO],[Summer16.TWZ],[Summer16.yt_tWZ01j_filter],[tWZ_LO],[Summer16.TTZ],[tWZ_DR],[tWZ_DS])
-    elif args.centralttZ: 
-        stack = Stack([tWZ_DR],[Summer16.TTZ])
-   # elif args.mcComp:
-   # elif args.mcComp:
-    #    stack = Stack( [Summer16.TWZ], [Summer16.yt_tWZ01j_filter] )
+    if args.partonweightprivate:
+        stack = Stack([Summer16.TWz_NLO_DR],[tWZ_ud_match],[tWZ_gluon_match],[tWZ_other_match],[Summer16.TTZ])
+    elif args.privateTWZttZ:
+        mc = ([Summer16.TWZ_NLO_DR], [Summer16.TTZ])
     else:
         if not args.noData:
           stack = Stack(mc, data_sample)

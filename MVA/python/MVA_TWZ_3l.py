@@ -59,13 +59,18 @@ def getbjets( event, sample=None ):
     alljets   = getCollection( event, 'Jet', jetVarNames , 'nJet')  
     goodjets = filter( isAnalysisJet, alljets ) 
     bJets = filter(lambda j:isBJet(j, tagger=b_tagger, year=2016) and abs(j['eta'])<=2.4, goodjets)
-    for i in range(len(bJets)) :
-        event.bjet_pt  = bJets[i]['pt']
-        event.bjet_eta = bJets[i]['eta']
-        event.bjet_phi = bJets[i]['phi']
+    if len(bJets)>=1:
+        
+        #bjet_pt  = bJets[0]['pt']
+        bjet_eta = bJets[0]['eta']
+        bjet_phi = bJets[0]['phi']
     
-#    event.bjet_Z1_deltaR      = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
-#    event.bjet_nonZ1l1_deltaR = deltaR({'eta':event.bjet_eta, 'phi':event.bjet_phi}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+        event.bjet_Z1_deltaR      = deltaR({'eta':bjet_eta, 'phi':bjet_phi}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+        event.bjet_nonZ1l1_deltaR = deltaR({'eta':bjet_eta, 'phi':bjet_phi}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+    else:
+        event.bjet_Z1_deltaR      = -1 
+        event.bjet_nonZ1l1_deltaR = -1 
+
 sequence.append( getbjets )
 
 def getM3l( event, sample=None):
@@ -158,8 +163,8 @@ mva_variables = {
                  
                  "mva_W_pt"                   :(lambda event, sample: event.W_pt),
 
-                 "mva_Z_j1_deltaPhi"          :(lambda event, sample: event.Z1_j1_deltaPhi           if event.nJetGood >=2 else -1),
-                 "mva_nonZ1_l1_Z1_deltaPhi"   :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 2 else -1 ),
+                 "mva_Z_j1_deltaPhi"          :(lambda event, sample: event.Z1_j1_deltaPhi           if event.nJetGood >=1 else -1),
+                 "mva_nonZ1_l1_Z1_deltaPhi"   :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 1 else -1 ),
                  
 #                     "mva_jet0_Z1_deltaR"         :(lambda event, sample: event.jet0_Z1_deltaR         if event.nJetGood >=1 else -1),
 #                     "mva_jet0_nonZl1_deltaR"     :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),

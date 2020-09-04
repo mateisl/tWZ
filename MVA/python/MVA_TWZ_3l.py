@@ -179,7 +179,7 @@ bdt1 = {
 mlp1 = {
     "type"                : ROOT.TMVA.Types.kMLP,
     "name"                : 'mlp1',
-    "layers"              : "N,N+7",
+    "layers"              : "N+7",
     "color"               : ROOT.kMagenta+3,
     "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
     }

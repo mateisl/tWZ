@@ -43,6 +43,8 @@ else:
 from tWZ.samples.nanoTuples_Summer16_nanoAODv6_private_postProcessed import *
 
 signal = TWZ_NLO_DR 
+#signal.reduceFiles(factor=20)
+#TTZ.reduceFiles(factor=3)
 
 # TTZ
 backgrounds = [ TTZ ]

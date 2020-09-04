@@ -12,6 +12,7 @@ mIsoWP = { "VT":5, "T":4, "M":3 , "L":2 , "VL":1, 0:"None" }
 lep_string_TTH = "lep_pt>10&&abs(lep_eta)<2.5&&((lep_mvaTTH>0.6&&abs(lep_pdgId)==13)||(lep_mvaTTH>0.6&&abs(lep_pdgId)==11))"
 from tWZ.Tools.objectSelection import lepString
 special_cuts = {
+    "trilepOLD":       "Sum$(lep_pt>40&&{lep_string})>=1&&Sum$(lep_pt>20&&{lep_string})>=2&&Sum$(lep_pt>10&&{lep_string})==3".format(lep_string=lep_string_TTH),
     "trilepVL":        "l1_pt>40&&l2_pt>20&&l3_pt>10",
     "trilepL" :        "l1_pt>40&&l2_pt>20&&l3_pt>10&&l1_mvaTOPWP>=2&&l2_mvaTOPWP>=2&&l3_mvaTOPWP>=2",
     "trilepM" :        "l1_pt>40&&l2_pt>20&&l3_pt>10&&l1_mvaTOPWP>=3&&l2_mvaTOPWP>=3&&l3_mvaTOPWP>=3",

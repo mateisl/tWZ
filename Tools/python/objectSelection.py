@@ -175,6 +175,40 @@ def muonSelector( lepton_selection, year, ptCut = 10):
                 l["pt"]                 >= ptCut \
                 and abs(l["eta"])       < 2.5 \
                 and l["mvaTOP"]         > mvaTOP['mu']['T']
+
+    elif lepton_selection == 'hybridIso':
+        def func(l):
+            if l["pt"] <= 25 and l["pt"] >3.5:
+                return \
+                    abs(l["eta"])       < 2.4 \
+                    and (l['pfRelIso03_all']*l['pt']) < 5.0 \
+                    and abs(l["dxy"])       < 0.02 \
+                    and abs(l["dz"])        < 0.1 \
+                    and l["looseId"] 
+            elif l["pt"] > 25:
+                return \
+                    abs(l["eta"])       < 2.4 \
+                    and l['pfRelIso03_all'] < 0.2 \
+                    and abs(l["dxy"])       < 0.02 \
+                    and abs(l["dz"])        < 0.1 \
+                    and l["looseId"] 
+                    
+    elif lepton_selection == 'looseHybridIso':
+        def func(l):
+            if l["pt"] <= 25 and l["pt"] >3.5:
+                return \
+                    abs(l["eta"])       < 2.4 \
+                    and (l['pfRelIso03_all']*l['pt']) < 20.0 \
+                    and abs(l["dxy"])       < 0.1 \
+                    and abs(l["dz"])        < 0.5 \
+                    and l["looseId"] 
+            elif l["pt"] > 25:
+                return \
+                    abs(l["eta"])       < 2.4 \
+                    and l['pfRelIso03_all'] < 0.8 \
+                    and abs(l["dxy"])       < 0.1 \
+                    and abs(l["dz"])        < 0.5 \
+                    and l["looseId"] 
     return func
 
 #def muonSelectorString(relIso03 = 0.2, ptCut = 20, absEtaCut = 2.4, dxy = 0.05, dz = 0.1, index = "Sum"):
@@ -351,10 +385,10 @@ def eleSelector( lepton_selection, year, ptCut = 10):
 #        return '&&'.join(string)
 
 
-electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','lostHits','convVeto','dxy','dz','charge','deltaEtaSC', 'mvaFall17V2Iso_WP80', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap','mvaTOP']
+electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','lostHits','convVeto','dxy','dz','charge','deltaEtaSC', 'mvaFall17V2Iso_WP80', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap','mvaTOP', 'jetRelIso', 'jetIdx']
 electronVars = electronVars_data + []
 
-muonVars_data = ['pt','eta','phi','pdgId','mediumId','miniPFRelIso_all','pfRelIso03_all','sip3d','dxy','dz','charge','mvaTOP']
+muonVars_data = ['pt','eta','phi','pdgId','mediumId','miniPFRelIso_all','pfRelIso03_all','sip3d','dxy','dz','charge','mvaTOP', 'looseId', 'jetRelIso', 'jetIdx']
 muonVars = muonVars_data + []
 
 def getMuons(c, collVars=muonVars):

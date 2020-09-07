@@ -31,3 +31,13 @@ if os.environ["USER"] in ["rosmarie.schoefbeck"]:
     analysis_results                = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/results/v1"
     mva_directory                   = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/MVA"
     cern_proxy_certificate          = "/users/rosmarie.schoefbeck/.private/.proxy"
+
+if os.environ['USER'] in ['janik.andrejkovic']:
+    postprocessing_output_directory = "/mnt/hephy/cms/janik.andrejkovic/tWZ/nanoTuples"
+    postprocessing_tmp_directory    = "/scratch/hephy/cms/janik.andrejkovic/tWZ/tmp/"
+    plot_directory                  = "/mnt/hephy/cms/janik.andrejkovic/www/tWZ/plots"
+    cache_dir                       = "/mnt/hephy/cms/janik.andrejkovic/tWZ/caches"
+    # Analysis result files
+    analysis_results                = "/mnt/hephy/cms/janik.andrejkovic/tWZ/results/v1"
+    mva_directory                   = "/mnt/hephy/cms/janik.andrejkovic/tWZ/MVA"
+    cern_proxy_certificate          = "/users/janik.andrejkovic/.private/.proxy"

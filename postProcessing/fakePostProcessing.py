@@ -100,6 +100,11 @@ def fill_vector_collection( event, collection_name, collection_varnames, objects
 # Skim condition
 if options.skim == '1j1mu':
     skimConds = ["Sum$(Jet_pt>40)>=1&&Sum$(Muon_pt>3.5)>=1"]
+    triggerCond  = "HLT_Mu3_PFJet40" 
+elif options.skim == '1j1ele':
+    skimConds = ["Sum$(Jet_pt>40)>=1&&Sum$(Electron_pt>5)>=1"]
+    triggerCond  = "HLT_Ele8_CaloIdM_TrackIdM_PFJet30"
+    #triggerCond  = "HLT_Ele8_CaloIdM_TrackIdM_PFJet30", "_HLT_Ele12_CaloIdM_TrackIdM_PFJet30", "_HLT_Ele17_CaloIdM_TrackIdM_PFJet30", "_HLT_Ele23_CaloIdM_TrackIdM_PFJet30" 
 
 #Samples: Load samples
 maxN = 1 if options.small else None
@@ -141,7 +146,6 @@ xSection = samples[0].xSection if isMC else None
 
 L1PW = L1PrefireWeight(options.year)
 
-triggerCond  = "HLT_Mu3_PFJet40" 
 treeFormulas = {"triggerDecision": {'string':triggerCond} }
 logger.info("Sample will have the following trigger skim: %s"%triggerCond)
 skimConds.append( triggerCond )
@@ -384,7 +388,7 @@ new_variables.extend( ['nBTag/I'] )
 
 # ids
 mu_ids  = ['mvaTOPVL', 'hybridIso', 'looseHybridIso']
-ele_ids = ['mvaTOPVL']
+ele_ids = ['mvaTOPVL', 'hybridIso', 'looseHybridIso']
 
 L_T_pairs = {'looseHybridIso':'hybridIso'}
 
@@ -406,9 +410,10 @@ if options.checkTTGJetsOverlap:
     new_variables.extend( ['TTGJetsEventType/I'] )
 
 # Btag weights Method 1a
-for var in btagEff.btagWeightNames:
-    if var!='MC':
-        new_variables.append('reweightBTag_'+var+'/F')
+if isMC:
+    for var in btagEff.btagWeightNames:
+        if var!='MC':
+            new_variables.append('reweightBTag_'+var+'/F')
 
 if not options.skipNanoTools:
     ### nanoAOD postprocessor
@@ -623,8 +628,6 @@ def filler( event ):
     event.nJetGood   = len(store_jets)
     for iJet, jet in enumerate(store_jets):
         event.JetGood_index[iJet] = jet['index']
-        for b in jetVarNames + [x.split('/')[0] for x in cleaning_vars]:
-            getattr(event, "JetGood_"+b)[iJet] = jet[b]
         if isMC:
             if store_jets[iJet]['genJetIdx'] >= 0:
                 if r.nGenJet<maxNJet:
@@ -634,6 +637,8 @@ def filler( event ):
                         event.JetGood_genPt[iJet] = -1
                 else:
                     event.JetGood_genPt[iJet] = -1
+        for b in jetVarNames + [x.split('/')[0] for x in cleaning_vars]:
+            getattr(event, "JetGood_"+b)[iJet] = jet[b]
         #getattr(event, "JetGood_pt")[iJet] = jet['pt']
 
     if isMC and options.doCRReweighting:

@@ -280,6 +280,67 @@ def cbEleIdFlagGetter( flag ):
 
     return getter
 
+def ECALGap(e):
+    if abs(e['pdgId']) == 11: absEta = abs(e["eta"] + e["deltaEtaSC"])   # eta supercluster
+    else:                     absEta = abs(e["eta"])                     # eta
+    return ( absEta > 1.566 or absEta < 1.4442 )
+
+vidNestedWPBitMapNamingList = \
+    ['GsfEleMissingHitsCut',
+     'GsfEleConversionVetoCut',
+     'GsfEleRelPFIsoScaledCut',
+     'GsfEleEInverseMinusPInverseCut',
+     'GsfEleHadronicOverEMEnergyScaledCut',
+     'GsfEleFull5x5SigmaIEtaIEtaCut',
+     'GsfEleDPhiInCut',
+     'GsfEleDEtaInSeedCut',
+     'GsfEleSCEtaMultiRangeCut',
+     'MinPtCut']
+vidNestedWPBitMap           = { 'fail':0, 'veto':1, 'loose':2, 'medium':3, 'tight':4 }  # Bitwise (Electron vidNestedWPBitMap ID flags (3 bits per cut), '000'=0 is fail, '001'=1 is veto, '010'=2 is loose, '011'=3 is medium, '100'=4 is tight)
+
+
+def vidNestedWPBitMapToDict( val ):
+    # convert int of vidNestedWPBitMap ( e.g. val = 611099940 ) to bitmap ( e.g. "100100011011001010010100100100")
+    # split vidBitmap string (containing 3 bits per cut) in parts of 3 bits ( e.g. ["100","100","011","011","001","010","010","100","100","100"] )
+    # convert 3 bits to int ( e.g. [4, 4, 3, 3, 1, 2, 2, 4, 4, 4])
+    # create dictionary
+    idList = [ int( x, 2 ) for x in textwrap.wrap( "{0:030b}".format( val ) , 3) ] #use 2 for nanoAOD version 80x
+    return dict( zip( vidNestedWPBitMapNamingList, idList ) )
+
+def removekey(d, key):
+    r = dict(d)
+    del r[key]
+    return r
+
+def electronVIDSelector( l, idVal, removedCuts=[] ):
+
+    vidDict    = vidNestedWPBitMapToDict( l['vidNestedWPBitmap'] )
+    if not removedCuts:
+        return all( [ cut >= idVal for cut in vidDict.values() ] )
+
+    if ("pt"             in removedCuts):
+        vidDict = removekey( vidDict, "MinPtCut" )
+    if ("sieie"          in removedCuts):
+        vidDict = removekey( vidDict, "GsfEleFull5x5SigmaIEtaIEtaCut" )
+    if ("hoe"            in removedCuts):
+        vidDict = removekey( vidDict, "GsfEleHadronicOverEMEnergyScaledCut" )
+    if ("pfRelIso03_all" in removedCuts):
+        vidDict = removekey( vidDict, "GsfEleRelPFIsoScaledCut" )
+    if ("SCEta" in removedCuts):
+        vidDict = removekey( vidDict, "GsfEleSCEtaMultiRangeCut" )
+    if ("dEtaSeed" in removedCuts):
+        vidDict = removekey( vidDict, "GsfEleDEtaInSeedCut" )
+    if ("dPhiInCut" in removedCuts):
+        vidDict = removekey( vidDict, "GsfEleDPhiInCut" )
+    if ("EinvMinusPinv" in removedCuts):
+        vidDict = removekey( vidDict, "GsfEleEInverseMinusPInverseCut" )
+    if ("convVeto" in removedCuts):
+        vidDict = removekey( vidDict, "GsfEleConversionVetoCut" )
+    if ("lostHits" in removedCuts):
+        vidDict = removekey( vidDict, "GsfEleMissingHitsCut" )
+
+    return all( [ cut >= idVal for cut in vidDict.values() ] )
+
 def eleSelector( lepton_selection, year, ptCut = 10):
     # tigher isolation applied on analysis level. cutBased corresponds to Fall17V2 ID for all 2016-2018.
     if lepton_selection == 'CBtight':
@@ -361,6 +422,42 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 l["pt"]                 >= ptCut \
                 and abs(l["eta"])       < 2.4 \
                 and l["mvaTOP"]         > mvaTOP['ele']['T']
+    elif lepton_selection == 'hybridIso':
+        def func(l):
+            if l["pt"] <= 25 and l["pt"] >5:
+                return \
+                    abs(l["eta"]) < 2.5 \
+                    and ECALGap(l) \
+                    and electronVIDSelector( l, idVal= 1 , removedCuts=['pt'] ) \
+                    and (l['pfRelIso03_all']*l['pt']) < 5.0 \
+                    and abs(l["dxy"])       < 0.02 \
+                    and abs(l["dz"])        < 0.1 
+            elif l["pt"] > 25:
+                return \
+                    abs(l["eta"]) < 2.5 \
+                    and ECALGap(l) \
+                    and electronVIDSelector( l, idVal= 1 , removedCuts=['pt'] ) \
+                    and l['pfRelIso03_all'] < 0.2 \
+                    and abs(l["dxy"])       < 0.02 \
+                    and abs(l["dz"])        < 0.1 
+    elif lepton_selection == 'looseHybridIso':
+        def func(l):
+            if l["pt"] <= 25 and l["pt"] >5:
+                return \
+                    abs(l["eta"]) < 2.5 \
+                    and ECALGap(l) \
+                    and electronVIDSelector( l, idVal= 1 , removedCuts=['pt'] ) \
+                    and (l['pfRelIso03_all']*l['pt']) < 20.0 \
+                    and abs(l["dxy"])       < 0.1 \
+                    and abs(l["dz"])        < 0.5 
+            elif l["pt"] > 25:
+                return \
+                    abs(l["eta"]) < 2.5 \
+                    and ECALGap(l) \
+                    and electronVIDSelector( l, idVal= 1 , removedCuts=['pt'] ) \
+                    and l['pfRelIso03_all'] < 0.8 \
+                    and abs(l["dxy"])       < 0.1 \
+                    and abs(l["dz"])        < 0.5 
     return func
 
 

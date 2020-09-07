@@ -1,10 +1,10 @@
-#python nanoPostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016B_25Oct2019_ver2 #SPLIT30
-#python nanoPostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016C_25Oct2019 #SPLIT30
-#python nanoPostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016D_25Oct2019 #SPLIT30
-#python nanoPostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016E_25Oct2019 #SPLIT30
-#python nanoPostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016F_25Oct2019 #SPLIT30
-#python nanoPostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016G_25Oct2019 #SPLIT30
-#python nanoPostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016H_25Oct2019 #SPLIT30
+#python fakePostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016B_25Oct2019_ver2 #SPLIT30
+#python fakePostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016C_25Oct2019 #SPLIT30
+#python fakePostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016D_25Oct2019 #SPLIT30
+#python fakePostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016E_25Oct2019 #SPLIT30
+#python fakePostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016F_25Oct2019 #SPLIT30
+#python fakePostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016G_25Oct2019 #SPLIT30
+#python fakePostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample DoubleMuon_Run2016H_25Oct2019 #SPLIT30
 #
 #python fakePostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample TTLep_pow #SPLIT50
 #python fakePostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --sample TTSingleLep_pow #SPLIT50
@@ -27,10 +27,31 @@
 
 
 
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample DoubleEG_Run2016B_25Oct2019_ver2 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample DoubleEG_Run2016C_25Oct2019 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample DoubleEG_Run2016D_25Oct2019 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample DoubleEG_Run2016E_25Oct2019 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample DoubleEG_Run2016F_25Oct2019 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample DoubleEG_Run2016G_25Oct2019 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample DoubleEG_Run2016H_25Oct2019 #SPLIT30
 
-
-
-
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample TTLep_pow #SPLIT50
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample TTSingleLep_pow #SPLIT50
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample TTbar #SPLIT50
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample WJetsToLNu WJetsToLNu_ext #SPLIT50
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample QCD_Ele_pt20to30 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample QCD_Ele_pt30to50 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample QCD_Ele_pt30to50_ext1 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample QCD_Ele_pt50to80 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample QCD_Ele_pt50to80_ext1 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample QCD_Ele_pt80to120 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample QCD_Ele_pt80to120_ext1 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample QCD_Ele_pt120to170 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample QCD_Ele_pt120to170_ext1 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample QCD_Ele_pt170to300 #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample QCD_Ele_pt300toInf #SPLIT30
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample DYJetsToLL_M50_LO_ext1 DYJetsToLL_M50_LO_ext2 #SPLIT50
+python fakePostProcessing.py  --forceProxy --skim 1j1ele --year 2016 --processingEra tWZ_fakes --sample DYJetsToLL_M10to50_LO #SPLIT50
 
 
 #python fakePostProcessing.py  --forceProxy --skim 1j1mu --year 2016 --processingEra tWZ_fakes --flagTTBar --sample TTGJets TTGJets_ext #SPLIT50

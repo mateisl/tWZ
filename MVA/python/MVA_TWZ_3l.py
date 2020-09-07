@@ -54,24 +54,21 @@ b_tagger = "DeepJet"
 # sequence 
 sequence = []
 
-def getbjets( event, sample=None ):
-#    #bjets filtern( nur 2016 )
+def getbJets( event, sample=None ):
+#    #bJets filtern( nur 2016 )
     alljets   = getCollection( event, 'Jet', jetVarNames , 'nJet')  
     goodjets = filter( isAnalysisJet, alljets ) 
     bJets = filter(lambda j:isBJet(j, tagger=b_tagger, year=2016) and abs(j['eta'])<=2.4, goodjets)
 
     if len(bJets)>=1:
-        #bjet_pt  = bJets[0]['pt']
-        bjet_eta = bJets[0]['eta']
-        bjet_phi = bJets[0]['phi']
-    
-        event.bjet_Z1_deltaR      = deltaR({'eta':bjet_eta, 'phi':bjet_phi}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
-        event.bjet_nonZ1l1_deltaR = deltaR({'eta':bjet_eta, 'phi':bjet_phi}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+        event.bJet = bJets[0]
+        event.bJet_Z1_deltaR      = deltaR({'eta':bJets[0]['eta'], 'phi':bJets[0]['phi']}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+        event.bJet_nonZ1l1_deltaR = deltaR({'eta':bJets[0]['eta'], 'phi':bJets[0]['phi']}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
     else:
-        event.bjet_Z1_deltaR      = -1 
-        event.bjet_nonZ1l1_deltaR = -1 
+        event.bJet_Z1_deltaR      = -1 
+        event.bJet_nonZ1l1_deltaR = -1 
 
-sequence.append( getbjets )
+sequence.append( getbJets )
 
 def getM3l( event, sample=None):
     # get the invariant mass of the 3l system
@@ -79,19 +76,13 @@ def getM3l( event, sample=None):
     for i in range(3):
         l.append(ROOT.TLorentzVector())
         l[i].SetPtEtaPhiM(event.lep_pt[i], event.lep_eta[i], event.lep_phi[i],0)
-    event.M3l = (l[0] + l[1] + l[2]).M()
+    event.m3l = (l[0] + l[1] + l[2]).M()
 sequence.append( getM3l )
 
-def getDeltaPhi(event, sample=None):
+def getAngles(event, sample=None):
     event.nonZ1_l1_Z1_deltaPhi = deltaPhi(event.lep_phi[event.nonZ1_l1_index], event.Z1_phi)
     event.Z1_j1_deltaPhi       = deltaPhi(event.Z1_phi, event.JetGood_phi[0]) 
-sequence.append( getDeltaPhi )
-
-def getDeltaEta(event, sample=None):
     event.nonZ1_l1_Z1_deltaEta = abs(event.lep_eta[event.nonZ1_l1_index] - event.Z1_eta)
-sequence.append( getDeltaEta )
-
-def getDeltaR(event, sample=None):
     event.nonZ1_l1_Z1_deltaR   = deltaR({'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
     event.jet0_Z1_deltaR       = deltaR({'eta':event.JetGood_eta[0], 'phi':event.JetGood_phi[0]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
     event.jet0_nonZ1_l1_deltaR = deltaR({'eta':event.JetGood_eta[0], 'phi':event.JetGood_phi[0]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
@@ -100,13 +91,7 @@ def getDeltaR(event, sample=None):
     event.jet2_Z1_deltaR       = deltaR({'eta':event.JetGood_eta[2], 'phi':event.JetGood_phi[2]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
     event.jet2_nonZ1_l1_deltaR = deltaR({'eta':event.JetGood_eta[2], 'phi':event.JetGood_phi[2]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
 
-    event.jet0_l1_deltaR        = deltaR({'eta':event.JetGood_eta[0], 'phi':event.JetGood_phi[0]}, {'eta':event.lep_eta[1], 'phi':event.lep_phi[1]})
-    event.jet0_l2_deltaR        = deltaR({'eta':event.JetGood_eta[0], 'phi':event.JetGood_phi[0]}, {'eta':event.lep_eta[2], 'phi':event.lep_phi[2]})
-    event.jet1_l1_deltaR        = deltaR({'eta':event.JetGood_eta[1], 'phi':event.JetGood_phi[1]}, {'eta':event.lep_eta[1], 'phi':event.lep_phi[1]})
-    event.jet1_l2_deltaR        = deltaR({'eta':event.JetGood_eta[1], 'phi':event.JetGood_phi[1]}, {'eta':event.lep_eta[2], 'phi':event.lep_phi[2]})
-
-    event.Z1_l1_deltaR          = deltaR({'eta':event.Z1_eta, 'phi':event.Z1_phi},{'eta':event.lep_eta[1], 'phi':event.lep_phi[1]})
-sequence.append( getDeltaR )
+sequence.append( getAngles )
 
 def getWpt( event, sample=None):
     # get the lepton and met
@@ -119,7 +104,7 @@ def getWpt( event, sample=None):
     event.W_pt = W.Pt()
 sequence.append( getWpt )
 
-def getjets( event, sample=None ):
+def forwardJets( event, sample=None ):
     #jets einlesen (in case of MC also reat the index of the genjet)
     alljets   = getCollection( event, 'Jet', jetVarNames, 'nJet')  
     alljets.sort( key = lambda j: -j['pt'] )
@@ -129,8 +114,11 @@ def getjets( event, sample=None ):
     # filter pt, but not eta 
     jets_no_eta         = filter(lambda j:j['pt']>30, clean_jets)
     if jets_no_eta: 
-        event.maxEta_of_pt30jets  = max( [ abs(j['eta']) for j in jets_no_eta ])   
-sequence.append( getjets )
+        event.maxAbsEta_of_pt30jets = max( [ abs(j['eta']) for j in jets_no_eta ])
+    else:
+        event.maxAbsEta_of_pt30jets = -1
+
+sequence.append( forwardJets )
 
 ## met, ht, nonZ1_pt/eta, Z1_pt, nJet, nBTag, lep1_eta
 #mva_variables =  {
@@ -151,74 +139,131 @@ sequence.append( getjets )
 #                    #"myvar1" :(lambda event: event.nBTag), # calculate on the fly
 #                    #"myvar2" :(lambda event: event.myFancyVar), # from sequence
 
-mva_variables = {
-                 "mva_Z1_pt"                  :(lambda event, sample: event.Z1_pt),
-                 "mva_Z1_eta"                 :(lambda event, sample: event.Z1_eta),
-                 "mva_Z1_cosThetaStar"        :(lambda event, sample: event.Z1_cosThetaStar),
-                 
-                 "mva_ht"                    :(lambda event, sample: sum( [event.JetGood_pt[i] for i in range(event.nJetGood) ])),
-                 "mva_met_pt"                :(lambda event, sample: event.met_pt),
-                 "mva_nJetGood"              :(lambda event, sample: event.nJetGood),
-                 "mva_nBTag"                 :(lambda event, sample: event.nBTag),
-                 
-                 "mva_W_pt"                   :(lambda event, sample: event.W_pt),
+all_mva_variables = {
 
-                 "mva_Z_j1_deltaPhi"          :(lambda event, sample: event.Z1_j1_deltaPhi           if event.nJetGood >=1 else -1),
-                 "mva_nonZ1_l1_Z1_deltaPhi"   :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 1 else -1 ),
-                 
-                 "mva_jet0_Z1_deltaR"         :(lambda event, sample: event.jet0_Z1_deltaR         if event.nJetGood >=1 else -1),
-                 "mva_jet0_nonZl1_deltaR"     :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),
- 
-                 "mva_jet0_pt"               :(lambda event, sample: event.JetGood_pt[0]          if event.nJetGood >=1 else 0),
-                 "mva_jet0_eta"              :(lambda event, sample: event.JetGood_eta[0]         if event.nJetGood >=1 else -10),
-                 "mva_jet0_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[0] if (event.nJetGood >=1 and event.JetGood_btagDeepB[0]>-10) else -10),
+# global event properties     
+     "mva_ht"                    :(lambda event, sample: sum( [event.JetGood_pt[i] for i in range(event.nJetGood) ])),
+     "mva_met_pt"                :(lambda event, sample: event.met_pt),
+     "mva_m3l"                   :(lambda event, sample: event.m3l),
+     "mva_nJetGood"              :(lambda event, sample: event.nJetGood),
+     "mva_nBTag"                 :(lambda event, sample: event.nBTag),
 
-                 "mva_jet1_nonZl1_deltaR"     :(lambda event, sample: event.jet1_nonZ1_l1_deltaR    if event.nJetGood >=2 else -1),
+# jet kinmatics
+     "mva_jet0_pt"               :(lambda event, sample: event.JetGood_pt[0]          if event.nJetGood >=1 else 0),
+     "mva_jet0_eta"              :(lambda event, sample: event.JetGood_eta[0]         if event.nJetGood >=1 else -10),
+     "mva_jet0_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[0] if (event.nJetGood >=1 and event.JetGood_btagDeepB[0]>-10) else -10),
+     "mva_jet1_pt"               :(lambda event, sample: event.JetGood_pt[1]          if event.nJetGood >=2 else 0),
+     "mva_jet1_eta"              :(lambda event, sample: event.JetGood_eta[1]         if event.nJetGood >=2 else -10),
+     "mva_jet1_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[1] if (event.nJetGood >=2 and event.JetGood_btagDeepB[1]>-10) else -10),
+     "mva_jet2_pt"               :(lambda event, sample: event.JetGood_pt[2]          if event.nJetGood >=3 else 0),
+     "mva_jet2_eta"              :(lambda event, sample: event.JetGood_eta[2]         if event.nJetGood >=3 else -10),
+     "mva_jet2_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[2]   if (event.nJetGood >=3 and event.JetGood_btagDeepB[1]>-10) else -10),
 
-                 "mva_jet1_pt"               :(lambda event, sample: event.JetGood_pt[1]          if event.nJetGood >=2 else 0),
-                 "mva_jet1_eta"              :(lambda event, sample: event.JetGood_eta[1]         if event.nJetGood >=2 else -10),
-                 "mva_jet1_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[1] if (event.nJetGood >=2 and event.JetGood_btagDeepB[1]>-10) else -10),
-                 "mva_jet2_pt"               :(lambda event, sample: event.JetGood_pt[2]          if event.nJetGood >=3 else 0),
-                 "mva_jet2_eta"              :(lambda event, sample: event.JetGood_eta[2]         if event.nJetGood >=3 else -10),
-                 "mva_jet2_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[2]   if (event.nJetGood >=3 and event.JetGood_btagDeepB[1]>-10) else -10),
+# Z1 kinematics
+     "mva_Z1_pt"                 :(lambda event, sample: event.Z1_pt),
+     "mva_Z1_eta"                :(lambda event, sample: event.Z1_eta),
+     "mva_Z1_cosThetaStar"       :(lambda event, sample: event.Z1_cosThetaStar),
 
-                 "mva_jet1_Z1_deltaR"         :(lambda event, sample: event.jet1_Z1_deltaR         if event.nJetGood >=2 else -1),
+# extra lepton kinematics
+     "mva_lnonZ1_pt"             :(lambda event, sample: event.lep_pt[event.nonZ1_l1_index]),
+     "mva_lnonZ1_eta"            :(lambda event, sample: event.lep_eta[event.nonZ1_l1_index]),
 
-                 "mva_jet0_l1_deltaR"         :(lambda event, sample: event.jet0_l1_deltaR         if event.nJetGood >=1 else -1),
-                 "mva_jet1_l1_deltaR"         :(lambda event, sample: event.jet1_l1_deltaR         if event.nJetGood >=2 else -1),
-                 "mva_Z1_l1_deltaR"           :(lambda event, sample: event.Z1_l1_deltaR),
+# leptonic W     
+     "mva_W_pt"                  :(lambda event, sample: event.W_pt),
 
-                 "mva_l1_pt"                  :(lambda event, sample: event.lep_pt[1]),
-                 "mva_l2_pt"                  :(lambda event, sample: event.lep_pt[2]),
+# Z1 vs. other objects
+     "mva_nonZ1_l1_Z1_deltaPhi"  :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 1 else -1 ),
+     "mva_nonZ1_l1_Z1_deltaR"    :(lambda event, sample: event.nonZ1_l1_Z1_deltaR),
+     
+     "mva_jet0_Z1_deltaR"        :(lambda event, sample: event.jet0_Z1_deltaR         if event.nJetGood >=1 else -1),
+     "mva_jet1_Z1_deltaR"        :(lambda event, sample: event.jet1_Z1_deltaR         if event.nJetGood >=2 else -1),
+     "mva_jet2_Z1_deltaR"        :(lambda event, sample: event.jet2_Z1_deltaR         if event.nJetGood >=3 else -1),
 
-#                 "mva_bjet_pt"                :(lambda event, sample: event.bjet_pt),
-                 "mva_bjet_Z1_deltaR"         :(lambda event, sample: event.bjet_Z1_deltaR),
-                 "mva_bjet_non_Z1l1_deltaR"   :(lambda event, sample: event.bjet_nonZ1l1_deltaR),
+# nonZ1_l1 vs. other objects
+     "mva_jet0_nonZl1_deltaR"    :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),
+     "mva_jet1_nonZl1_deltaR"    :(lambda event, sample: event.jet1_nonZ1_l1_deltaR    if event.nJetGood >=2 else -1),
 
-#                 "mva_Z_ll_deltaPhi"          :(lambda event, (TreeVariable.fromString( "Z1_lldPhi/F" ))),
+     "mva_bJet_Z1_deltaR"        :(lambda event, sample: event.bJet_Z1_deltaR),
+     "mva_bJet_non_Z1l1_deltaR"  :(lambda event, sample: event.bJet_nonZ1l1_deltaR),
 
-                 "mva_lnonZ1_pt"              :(lambda event, sample: event.lep_pt[event.nonZ1_l1_index]),
-                 "mva_lnonZ1_eta"             :(lambda event, sample: event.lep_eta[event.nonZ1_l1_index]),
-
-                 "mva_jetsnoetacutptg30"      :(lambda event, sample: event.maxEta_of_pt30jets),
-                 
-                 "mva_jet2_Z1_deltaR"         :(lambda event, sample: event.jet2_Z1_deltaR         if event.nJetGood >=3 else -1),
-                 "lnonZ1_pt"                  :(lambda event, sample: event.lep_pt[event.nonZ1_l1_index]),
-                 "lnonZ1_eta"                 :(lambda event, sample: event.lep_eta[event.nonZ1_l1_index]),
-                 "mva_nonZ1_l1_pt"           :(lambda event, sample: event.lep_pt[event.nonZ1_l1_index]),
-                 "mva_nonZ1_l1_Z1_deltaR"     :(lambda event, sample: event.nonZ1_l1_Z1_deltaR),
+     "mva_maxAbsEta_of_pt30jets" :(lambda event, sample: event.maxAbsEta_of_pt30jets),
                 }
 
-bdt1 = {
-    "type"                : ROOT.TMVA.Types.kBDT,
-    "name"                : 'bdt1',
-    "color"               : ROOT.kGreen,
-    "options"             : ["!H","!V","NTrees=250","BoostType=Grad","Shrinkage=0.20","UseBaggedBoost","GradBaggingFraction=0.5","SeparationType=GiniIndex","nCuts=50","PruneMethod=NoPruning","MaxDepth=1"],
+mva_variables_ = {
+    "mva_Z1_pt",
+    "mva_Z1_eta",
+    "mva_Z1_cosThetaStar",
+    "mva_ht",
+    "mva_met_pt",
+    "mva_nJetGood",
+    "mva_nBTag",
+    "mva_W_pt",
+    "mva_Z1_j1_deltaPhi",
+    "mva_nonZ1_l1_Z1_deltaPhi",
 }
-mlp1 = {
+
+mva_variables = {key:value for key, value in all_mva_variables.iteritems() if key in mva_variables_}
+
+nTr1000_maxD1_mNS5 = {
+    "type"                : ROOT.TMVA.Types.kBDT,
+    "name"                : 'nTr1000_maxD1_mNS5',
+    "color"               : ROOT.kGreen,
+    "options"             : ["!H","!V","NTrees=220", "BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=1", "MinNodeSize=5"],
+}
+
+nTr1000_maxD1_mNS10 = {
+    "type"                : ROOT.TMVA.Types.kBDT,
+    "name"                : 'nTr1000_maxD1_mNS10',
+    "color"               : ROOT.kGreen,
+    "options"             : ["!H","!V","NTrees=1000","BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=1", "MinNodeSize=10"],
+}
+
+nTr1000_maxD3_mNS10 = {
+    "type"                : ROOT.TMVA.Types.kBDT,
+    "name"                : 'nTr1000_maxD3_mNS10',
+    "color"               : ROOT.kGreen,
+    "options"             : ["!H","!V","NTrees=1000","BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=3", "MinNodeSize=10"],
+}
+
+nTr1000_maxD4_mNS20 = {
+    "type"                : ROOT.TMVA.Types.kBDT,
+    "name"                : 'nTr1000_maxD4_mNS20',
+    "color"               : ROOT.kGreen,
+    "options"             : ["!H","!V","NTrees=1000","BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=4", "MinNodeSize=20"],
+}
+
+mlp_np7 = {
     "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'mlp1',
+    "name"                : 'mlp_np7',
     "layers"              : "N+7",
     "color"               : ROOT.kMagenta+3,
-    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+mlp_np10 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'mlp_np10',
+    "layers"              : "N+10",
+    "color"               : ROOT.kMagenta+3,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+mlp_np20 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'mlp_np20',
+    "layers"              : "N+20",
+    "color"               : ROOT.kMagenta+3,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+mlp_np30 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'mlp_np30',
+    "layers"              : "N+30",
+    "color"               : ROOT.kMagenta+3,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+mlp_np40 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'mlp1',
+    "layers"              : "N+40",
+    "color"               : ROOT.kMagenta+3,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
     }

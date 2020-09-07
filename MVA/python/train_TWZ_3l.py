@@ -11,8 +11,8 @@ from tWZ.Tools.user              import plot_directory, mva_directory
 from tWZ.Tools.cutInterpreter    import cutInterpreter
 
 # MVA configuration
-from tWZ.MVA.MVA_TWZ_3l          import sequence, read_variables, mva_variables 
-from tWZ.MVA.MVA_TWZ_3l          import mlp1 #,bdt 
+from tWZ.MVA.MVA_TWZ_3l          import sequence, read_variables, mva_variables, all_mva_variables 
+from tWZ.MVA.MVA_TWZ_3l          import * 
 
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
@@ -26,9 +26,9 @@ args = argParser.parse_args()
 
 #Logger
 import tWZ.Tools.logger as logger
-logger = logger.get_logger("DEBUG", logFile = None )
-#import Analysis.Tools.logger as logger_an
-#logger_an = logger_an.get_logger("DEBUG", logFile = None )
+logger = logger.get_logger("INFO", logFile = None )
+import Analysis.Tools.logger as logger_an
+logger_an = logger_an.get_logger("INFO", logFile = None )
 
 if args.plot_directory == None:
     args.plot_directory = plot_directory
@@ -55,7 +55,8 @@ for sample in samples:
     if args.small:
         sample.reduceFiles(to = 1)
 
-mvas = [mlp1]
+#mvas = [mlp_np7,mlp_np10, mlp_np20, mlp_np30, mlp_np40]
+mvas = [nTr1000_maxD1_mNS5, nTr1000_maxD1_mNS10, nTr1000_maxD3_mNS10, nTr1000_maxD4_mNS20]
 
 ## TMVA Trainer instance
 trainer = Trainer( 
@@ -73,7 +74,8 @@ trainer.createTestAndTrainingSample(
     read_variables   = read_variables,   
     sequence         = sequence,
     weightString     = weightString,
-    overwrite        = args.overwrite, 
+    overwrite        = args.overwrite,
+    mva_variables    = all_mva_variables 
     )
 
 #trainer.addMethod(method = default_methods["BDT"])

@@ -13,6 +13,7 @@ from RootTools.core.standard             import *
 
 # tWZ
 from tWZ.Tools.user                      import plot_directory
+from tWZ.Tools.helpers                   import getObjDict, getVarValue
 #from tWZ.Tools.cutInterpreter            import cutInterpreter
 #from tWZ.Tools.objectSelection           import lepString 
 # Analysis
@@ -50,7 +51,7 @@ if args.era == "Run2016":
     data_sample =  samples.DoubleMuon_Run2016
     triggers    = ["HLT_Mu3_PFJet40" ]#, "HLT_Mu8", "HLT_Mu17"]#, "HLT_Mu27"] HLT_Mu27 is actually in SingleMuon!
 
-    mc = [ samples.QCD_Mu, samples.WJetsToLNu ]
+    mc = [ samples.QCD_Mu, samples.WJetsToLNu, samples.TTbar]
 
     #mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 #elif args.era == "Run2017":
@@ -72,8 +73,8 @@ data_sample.scale          = 1.
 if args.small:
     for sample in [data_sample] + mc:
         sample.normalization = 1.
-        sample.reduceFiles( factor = 10 )
-        #sample.reduceFiles( to=1)
+        #sample.reduceFiles( factor = 10 )
+        sample.reduceFiles( to=3)
         #sample.scale /= sample.normalization
 
 # Text on the plots
@@ -110,13 +111,24 @@ def drawPlots(plots):
           )
             
 # Read variables and sequences
-sequence       = []
 
 read_variables = [
     "weight/F",
-    "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I]",
-    "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
+#    "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I]",
+#    "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
     ]
+
+sequence       = []
+
+read_variables += ["nmu_looseHybridIso/I", "mu_looseHybridIso[pt/F,eta/F,phi/F,mT/F,hybridIso/F]", "met_pt/F"]
+def makeLeptons( event, sample ):
+
+    collVars = ["pt","eta","phi","mT","hybridIso"]
+    mu  = getObjDict(event, 'mu_looseHybridIso_', collVars, 0)
+    for var in collVars:
+        setattr( event, "mu_"+var, mu[var]  )
+
+sequence.append( makeLeptons )
 
 allPlots   = {}
 
@@ -143,6 +155,48 @@ plots.append(Plot(
   attribute = TreeVariable.fromString( "PV_npvsGood/I" ),
   binning=[50,0,50],
   addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+  name = 'met_pt', texX = 'MET', texY = 'Number of Events',
+  attribute = TreeVariable.fromString( "met_pt/F" ),
+  binning=[50,0,250],
+  addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+  name = 'mu_pt', texX = 'p_{T}', texY = 'Number of Events',
+  attribute = lambda event, sample: event.mu_pt,
+  binning=[100,0,50],
+  addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+  name = 'mu_eta', texX = '#eta', texY = 'Number of Events',
+  attribute = lambda event, sample: event.mu_eta,
+  binning=[30,-3,3],
+  addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+  name = 'mu_mT', texX = 'm_{T}', texY = 'Number of Events',
+  attribute = lambda event, sample: event.mu_mT,
+  binning=[40,0,200],
+  addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+  name = 'mu_hybridIso_lowpT', texX = 'hybridIso (lowPt)', texY = 'Number of Events',
+  attribute = lambda event, sample: event.mu_hybridIso if event.mu_pt<25 else float('nan'),
+  binning=[40,0,20],
+  addOverFlowBin='none',
+))
+
+plots.append(Plot(
+  name = 'mu_hybridIso_highpT', texX = 'hybridIso (highPt)', texY = 'Number of Events',
+  attribute = lambda event, sample: event.mu_hybridIso if event.mu_pt>25 else float('nan'),
+  binning=[40,0,2],
+  addOverFlowBin='none',
 ))
 
 plotting.fill(plots, read_variables = read_variables, sequence = sequence)

@@ -27,8 +27,8 @@ dirs['QCD_Mu']               = ["QCD_Mu_pt1000toInf_comb", "QCD_Mu_pt120to170", 
 QCD_Mu = Sample.fromDirectory(name="QCD_Mu", treeName="Events", isData=False, color=color.QCD, texName="QCD(#mu)", directory=make_dirs( dirs['QCD_Mu']))
 
 # TT
-dirs['TTLep']           = ['TTLep_pow']
-TTLep  = Sample.fromDirectory(name="TTLep", treeName="Events", isData=False, color=color.TTJets, texName="t/t#bar{t}", directory=make_dirs(dirs['TTLep']))
+dirs['TTbar']           = ['TTbar']
+TTbar  = Sample.fromDirectory(name="TTbar", treeName="Events", isData=False, color=color.TTJets, texName="t/t#bar{t}", directory=make_dirs(dirs['TTbar']))
 
 # WJets
 dirs['WJetsToLNu']           = ['WJetsToLNu_comb']

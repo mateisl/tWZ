@@ -37,8 +37,8 @@ argParser.add_argument('--small',                             action='store_true
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
 argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
-argParser.add_argument('--era',            action='store', type=str, default="2016")
-argParser.add_argument('--selection',      action='store', default='trilep-minDLmass12-onZ1-njet4p-btag2p')
+argParser.add_argument('--era',            action='store', type=str, default="Run2016")
+argParser.add_argument('--selection',      action='store', default='trilepM-minDLmass12-onZ1-njet4p-btag2p')
 #argParser.add_argument('--nanoAODv4',   default=True, action='store_true',                                                                        help="Run on nanoAODv4?" )
 argParser.add_argument('--samples',     action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
 #flagg for parton selection
@@ -425,6 +425,8 @@ for i_mode, mode in enumerate(allModes):
         data_sample.style          = styles.errorStyle(ROOT.kBlack)
         data_sample.read_variables = read_variables_data
         lumi_scale                 = data_sample.lumi/1000
+
+    weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
 
     #for sample in mc: sample.style = styles.fillStyle(sample.color)
     for sample in mc: sample.style = styles.fillStyle(sample.color)
@@ -941,11 +943,11 @@ for i_mode, mode in enumerate(allModes):
 
 #newplots 
 
-    plots.append(Plot(
-       texX = 'mvaTOP(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
-       name = '%s%i_mvaTOP'%(lep_name, index), attribute = lep_getter("mvaTOP", index, abs_pdg),
-       binning=[24,-1.2,1.2],
-     ))
+    #plots.append(Plot(
+    #   texX = 'mvaTOP(%s_{%i}) (GeV)'%(lep_name, index), texY = 'Number of Events',
+    #   name = '%s%i_mvaTOP'%(lep_name, index), attribute = lep_getter("mvaTOP", index, abs_pdg),
+    #   binning=[24,-1.2,1.2],
+    # ))
 
     plots.append(Plot(
        name = 'l1_pt',

@@ -190,80 +190,287 @@ all_mva_variables = {
                 }
 
 mva_variables_ = {
-    "mva_Z1_pt",
-    "mva_Z1_eta",
-    "mva_Z1_cosThetaStar",
-    "mva_ht",
-    "mva_met_pt",
-    "mva_nJetGood",
-    "mva_nBTag",
-    "mva_W_pt",
-    "mva_Z1_j1_deltaPhi",
-    "mva_nonZ1_l1_Z1_deltaPhi",
-}
+
+# global event properties     
+     "mva_ht"                    :(lambda event, sample: sum( [event.JetGood_pt[i] for i in range(event.nJetGood) ])),
+     "mva_met_pt"                :(lambda event, sample: event.met_pt),
+     "mva_m3l"                   :(lambda event, sample: event.m3l),
+     "mva_nJetGood"              :(lambda event, sample: event.nJetGood),
+     "mva_nBTag"                 :(lambda event, sample: event.nBTag),
+
+# jet kinmatics
+     "mva_jet0_pt"               :(lambda event, sample: event.JetGood_pt[0]          if event.nJetGood >=1 else 0),
+     "mva_jet0_eta"              :(lambda event, sample: event.JetGood_eta[0]         if event.nJetGood >=1 else -10),
+     "mva_jet0_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[0] if (event.nJetGood >=1 and event.JetGood_btagDeepB[0]>-10) else -10),
+     "mva_jet1_pt"               :(lambda event, sample: event.JetGood_pt[1]          if event.nJetGood >=2 else 0),
+     "mva_jet1_eta"              :(lambda event, sample: event.JetGood_eta[1]         if event.nJetGood >=2 else -10),
+     "mva_jet1_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[1] if (event.nJetGood >=2 and event.JetGood_btagDeepB[1]>-10) else -10),
+     "mva_jet2_pt"               :(lambda event, sample: event.JetGood_pt[2]          if event.nJetGood >=3 else 0),
+     "mva_jet2_eta"              :(lambda event, sample: event.JetGood_eta[2]         if event.nJetGood >=3 else -10),
+     "mva_jet2_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[2]   if (event.nJetGood >=3 and event.JetGood_btagDeepB[1]>-10) else -10),
+
+# Z1 kinematics
+     "mva_Z1_pt"                 :(lambda event, sample: event.Z1_pt),
+     "mva_Z1_eta"                :(lambda event, sample: event.Z1_eta),
+     "mva_Z1_cosThetaStar"       :(lambda event, sample: event.Z1_cosThetaStar),
+
+# extra lepton kinematics
+     "mva_lnonZ1_pt"             :(lambda event, sample: event.lep_pt[event.nonZ1_l1_index]),
+     "mva_lnonZ1_eta"            :(lambda event, sample: event.lep_eta[event.nonZ1_l1_index]),
+
+# leptonic W     
+     "mva_W_pt"                  :(lambda event, sample: event.W_pt),
+
+# Z1 vs. other objects
+     "mva_nonZ1_l1_Z1_deltaPhi"  :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 1 else -1 ),
+     "mva_nonZ1_l1_Z1_deltaR"    :(lambda event, sample: event.nonZ1_l1_Z1_deltaR),
+     
+     "mva_jet0_Z1_deltaR"        :(lambda event, sample: event.jet0_Z1_deltaR         if event.nJetGood >=1 else -1),
+     "mva_jet1_Z1_deltaR"        :(lambda event, sample: event.jet1_Z1_deltaR         if event.nJetGood >=2 else -1),
+     "mva_jet2_Z1_deltaR"        :(lambda event, sample: event.jet2_Z1_deltaR         if event.nJetGood >=3 else -1),
+
+# nonZ1_l1 vs. other objects
+     "mva_jet0_nonZl1_deltaR"    :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),
+     "mva_jet1_nonZl1_deltaR"    :(lambda event, sample: event.jet1_nonZ1_l1_deltaR    if event.nJetGood >=2 else -1),
+
+     "mva_bJet_Z1_deltaR"        :(lambda event, sample: event.bJet_Z1_deltaR),
+     "mva_bJet_non_Z1l1_deltaR"  :(lambda event, sample: event.bJet_nonZ1l1_deltaR),
+
+     "mva_maxAbsEta_of_pt30jets" :(lambda event, sample: event.maxAbsEta_of_pt30jets),
+                }
+
+#varcon1
+#mva_variables_ = {
+#    "mva_Z1_pt",
+#    "mva_Z1_eta",
+#    "mva_Z1_cosThetaStar",
+#    "mva_ht",
+#    "mva_met_pt",
+#    "mva_nJetGood",
+#    "mva_nBTag",
+#    "mva_W_pt",
+#    "mva_Z1_j1_deltaPhi",
+#    "mva_nonZ1_l1_Z1_deltaPhi",
+#}
+
+#varcon2
+#mva_variables_ = {
+#    "mva_Z1_pt"                  :(lambda event, sample: event.Z1_pt),
+#    "mva_Z1_eta"                 :(lambda event, sample: event.Z1_eta),
+#    "mva_Z1_cosThetaStar"        :(lambda event, sample: event.Z1_cosThetaStar),
+#    "mva_ht"                    :(lambda event, sample: sum( [event.JetGood_pt[i] for i in range(event.nJetGood) ])),
+#    "mva_met_pt"                :(lambda event, sample: event.met_pt),
+#    "mva_nJetGood"              :(lambda event, sample: event.nJetGood),
+#    "mva_nBTag"                 :(lambda event, sample: event.nBTag),
+#    "mva_W_pt"                   :(lambda event, sample: event.W_pt),
+#    "mva_Z_j1_deltaPhi"          :(lambda event, sample: event.Z1_j1_deltaPhi           if event.nJetGood >=2 else -1),
+#    "mva_nonZ1_l1_Z1_deltaPhi"   :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 2 else -1 ),
+#    "mva_jet0_pt"               :(lambda event, sample: event.JetGood_pt[0]          if event.nJetGood >=1 else 0),
+#    "mva_jet0_eta"              :(lambda event, sample: event.JetGood_eta[0]         if event.nJetGood >=1 else -10),
+#    "mva_jet0_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[0] if (event.nJetGood >=1 and event.JetGood_btagDeepB[0]>-10) else -10),
+#}
+ 
+#varcon3
+#mva_variables_ = {
+#    "mva_Z1_pt",
+#    "mva_Z1_eta",
+#    "mva_Z1_cosThetaStar",
+#    "mva_ht",
+#    "mva_met_pt",
+#    "mva_nJetGood",
+#    "mva_nBTag",
+#    "mva_W_pt",
+#    "mva_Z1_j1_deltaPhi",
+#    "mva_nonZ1_l1_Z1_deltaPhi",
+#    "mva_jet0_nonZl1_deltaR",
+#    "mva_jet1_nonZl1_deltaR",
+#}
+
+#varcon4
+#mva_variables_ = {
+#    "mva_Z1_pt"                  :(lambda event, sample: event.Z1_pt),
+#    "mva_Z1_eta"                 :(lambda event, sample: event.Z1_eta),
+#    "mva_Z1_cosThetaStar"        :(lambda event, sample: event.Z1_cosThetaStar),
+#    "mva_ht"                    :(lambda event, sample: sum( [event.JetGood_pt[i] for i in range(event.nJetGood) ])),
+#    "mva_met_pt"                :(lambda event, sample: event.met_pt),
+#    "mva_nJetGood"              :(lambda event, sample: event.nJetGood),
+#    "mva_nBTag"                 :(lambda event, sample: event.nBTag),
+#    "mva_W_pt"                   :(lambda event, sample: event.W_pt),
+#    "mva_Z_j1_deltaPhi"          :(lambda event, sample: event.Z1_j1_deltaPhi           if event.nJetGood >=2 else -1),
+#    "mva_nonZ1_l1_Z1_deltaPhi"   :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 2 else -1 ),
+#    "mva_jet0_pt"               :(lambda event, sample: event.JetGood_pt[0]          if event.nJetGood >=1 else 0),
+#    "mva_jet0_eta"              :(lambda event, sample: event.JetGood_eta[0]         if event.nJetGood >=1 else -10),
+#    "mva_jet0_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[0] if (event.nJetGood >=1 and event.JetGood_btagDeepB[0]>-10) else -10),
+#    "mva_jet0_nonZl1_deltaR",
+#    "mva_jet1_nonZl1_deltaR",
+#}
+
 
 mva_variables = {key:value for key, value in all_mva_variables.iteritems() if key in mva_variables_}
 
-nTr1000_maxD1_mNS5 = {
+#bdt
+all_bdt_nTr1000_maxD1_mNS5 = {
     "type"                : ROOT.TMVA.Types.kBDT,
-    "name"                : 'nTr1000_maxD1_mNS5',
+    "name"                : 'all_bdt_Tr1000_maxD1_mNS5',
     "color"               : ROOT.kGreen,
     "options"             : ["!H","!V","NTrees=220", "BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=1", "MinNodeSize=5"],
 }
 
-nTr1000_maxD1_mNS10 = {
+all_bdt_nTr1000_maxD1_mNS10 = {
     "type"                : ROOT.TMVA.Types.kBDT,
-    "name"                : 'nTr1000_maxD1_mNS10',
-    "color"               : ROOT.kGreen,
+    "name"                : 'all_bdt_nTr1000_maxD1_mNS10',
+    "color"               : ROOT.kGreen+4,
     "options"             : ["!H","!V","NTrees=1000","BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=1", "MinNodeSize=10"],
 }
 
-nTr1000_maxD3_mNS10 = {
+all_bdt_nTr1000_maxD3_mNS10 = {
     "type"                : ROOT.TMVA.Types.kBDT,
-    "name"                : 'nTr1000_maxD3_mNS10',
-    "color"               : ROOT.kGreen,
+    "name"                : 'all_bdt_nTr1000_maxD3_mNS10',
+    "color"               : ROOT.kGreen-5,
     "options"             : ["!H","!V","NTrees=1000","BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=3", "MinNodeSize=10"],
 }
 
-nTr1000_maxD4_mNS20 = {
+all_bdt_nTr1000_maxD4_mNS20 = {
     "type"                : ROOT.TMVA.Types.kBDT,
-    "name"                : 'nTr1000_maxD4_mNS20',
-    "color"               : ROOT.kGreen,
+    "name"                : 'all_bdt_nTr1000_maxD4_mNS20',
+    "color"               : ROOT.kGreen-10,
     "options"             : ["!H","!V","NTrees=1000","BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=4", "MinNodeSize=20"],
 }
 
-mlp_np7 = {
+#mlp
+all_mlp_np5s0c5e0c8 = {
     "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'mlp_np7',
+    "name"                : 'all_mlp_np5s0c5e0c8',
+    "layers"              : "N+5",
+    "color"               : ROOT.kMagenta+3,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+all_mlp_np5s0c3e0c5 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_np5s0c3e0c5',
+    "layers"              : "N+5",
+    "color"               : ROOT.kMagenta-5,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+all_mlp_np5s0c5e1 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_np5s0c5e1',
+    "layers"              : "N+5",
+    "color"               : ROOT.kMagenta-10,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=1","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+all_mlp_np7s0c3e0c5 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_np7s0c3e0c5',
     "layers"              : "N+7",
-    "color"               : ROOT.kMagenta+3,
+    "color"               : ROOT.kBlue+3,
     "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
     }
-mlp_np10 = {
+all_mlp_np7s0c5e1 = {
     "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'mlp_np10',
-    "layers"              : "N+10",
-    "color"               : ROOT.kMagenta+3,
+    "name"                : 'all_mlp_np7s0c5e1',
+    "layers"              : "N+7",
+    "color"               : ROOT.kBlue-4,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=1","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+all_mlp_np7s0c5e0c8 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_np7s0c5e0c8',
+    "layers"              : "N+7",
+    "color"               : ROOT.kBlue-5,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+all_mlp_ncnc1s0c3e0c5 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_ncnc1s0c3e0c5',
+    "layers"              : "N,N,1",
+    "color"               : ROOT.kBlue-10,
     "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
     }
-mlp_np20 = {
+all_mlp_ncnc1s0c5e1 = {
     "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'mlp_np20',
+    "name"                : 'all_mlp_ncnc1s0c5e1',
+    "layers"              : "N,N,1",
+    "color"               : ROOT.kRed,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=1","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+all_mlp_ncnc1s0c5e0c8 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_ncnc1s0c5e0c8',
+    "layers"              : "N,N,1",
+    "color"               : ROOT.kRed+3,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+all_mlp_ncnp5c1s0c3e0c5 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_ncnp5c1s0c3e0c5',
+    "layers"              : "N,N+5,1",
+    "color"               : ROOT.kRed-5,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+all_mlp_ncnp5c1s0c5e1 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_ncnp5c1s0c5e1',
+    "layers"              : "N,N+5,1",
+    "color"               : ROOT.kRed-9,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=1","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+all_mlp_ncnp5c1s0c5e0c8 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_ncnp5c1s0c5e0c8',
+    "layers"              : "N,N+5,1",
+    "color"               : ROOT.kOrange-6,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+
+all_mlp_np20 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_np20',
     "layers"              : "N+20",
-    "color"               : ROOT.kMagenta+3,
+    "color"               : ROOT.kYellow+3,
     "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
     }
-mlp_np30 = {
+all_mlp_np30 = {
     "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'mlp_np30',
+    "name"                : 'all_mlp_np30',
     "layers"              : "N+30",
-    "color"               : ROOT.kMagenta+3,
+    "color"               : ROOT.kGray,
     "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
     }
-mlp_np40 = {
+all_mlp_np40 = {
     "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'mlp1',
+    "name"                : 'all_mlp_np40',
     "layers"              : "N+40",
-    "color"               : ROOT.kMagenta+3,
+    "color"               : ROOT.kCyan+3,
     "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
+
+#oldconfig
+all_mlp_oldconfig_ncnp5c1s0c3e0c5 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_oldconfig_ncnp5c1s0c3e0c5',
+    "layers"              : "N,N+5,1",
+    "color"               : ROOT.kCyan-6,
+    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
+    }
+all_mlp_oldconfig_ncnp5c1s0c3e0c3 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_oldconfig_ncnp5c1s0c3e0c3',
+    "layers"              : "N,N+5,1",
+    "color"               : ROOT.kBlack,
+    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.3","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
+    }
+all_mlp_oldconfig_np7s0c3e0c8 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_oldconfig_np7s0c3e0c8',
+    "layers"              : "N+7",
+    "color"               : ROOT.kYellow,
+    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
+    }
+all_mlp_oldconfig_np7c1s0c5e0c5 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_oldconfig_np7c1s0c5e0c5',
+    "layers"              : "N+7",
+    "color"               : ROOT.kGreen-8,
+    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
     }

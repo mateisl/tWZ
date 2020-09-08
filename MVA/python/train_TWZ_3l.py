@@ -56,7 +56,9 @@ for sample in samples:
         sample.reduceFiles(to = 1)
 
 #mvas = [mlp_np7,mlp_np10, mlp_np20, mlp_np30, mlp_np40]
-mvas = [nTr1000_maxD1_mNS5, nTr1000_maxD1_mNS10, nTr1000_maxD3_mNS10, nTr1000_maxD4_mNS20]
+mvas = [all_bdt_nTr1000_maxD1_mNS5, all_bdt_nTr1000_maxD1_mNS10, all_bdt_nTr1000_maxD3_mNS10, all_bdt_nTr1000_maxD4_mNS20,
+        all_mlp_np5s0c5e0c8, all_mlp_np5s0c3e0c5, all_mlp_np5s0c5e1, all_mlp_np7s0c3e0c5, all_mlp_np7s0c5e1, all_mlp_np7s0c5e0c8, all_mlp_ncnc1s0c3e0c5, all_mlp_ncnc1s0c5e1, all_mlp_ncnc1s0c5e0c8,
+        all_mlp_ncnp5c1s0c3e0c5, all_mlp_ncnp5c1s0c5e1, all_mlp_ncnp5c1s0c5e0c8, all_mlp_np20, all_mlp_np30, all_mlp_np40, all_mlp_oldconfig_ncnp5c1s0c3e0c5, all_mlp_oldconfig_ncnp5c1s0c3e0c3, all_mlp_oldconfig_np7s0c3e0c8, all_mlp_oldconfig_np7c1s0c5e0c5 ]
 
 ## TMVA Trainer instance
 trainer = Trainer( 

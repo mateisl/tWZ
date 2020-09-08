@@ -574,7 +574,7 @@ def filler( event ):
         for m in muons:
             m['pdgId']      = int( -13*m['charge'] )
             m['mT']         = sqrt( 2*event.met_pt*m['pt']*(1-cos(event.met_phi-m['phi'])) )
-            m['hybridIso']  = m['pfRelIso03_all']*m['pt'] if m['pt']<25 else m['pfRelIso03_all'] 
+            m['hybridIso']  = m['pfRelIso03_all']*min(25, m['pt'])
             m['mvaTOPWP']   = mvaTopWP(m['mvaTOP'], m['pdgId'])
             if L_T_pairs.has_key(mu_id): # this mu_id has a tight ID that corresponds to it
                 is_tight = muSelector_[L_T_pairs[mu_id]](m)
@@ -596,9 +596,9 @@ def filler( event ):
         for e in electrons:
             e['pdgId']      = int( -11*e['charge'] )
             e['mT']         = sqrt( 2*event.met_pt*e['pt']*(1-cos(event.met_phi-e['phi'])) )
-            e['hybridIso']  = e['pfRelIso03_all']*e['pt'] if e['pt']<25 else e['pfRelIso03_all'] 
+            e['hybridIso']  = e['pfRelIso03_all']*min(25, e['pt'])
             e['mvaTOPWP']   = mvaTopWP(e['mvaTOP'], e['pdgId'])
-            if L_T_pairs.has_key(ele_id): # this mu_id has a tight ID that corresponds to it
+            if L_T_pairs.has_key(ele_id): # this ele_id has a tight ID that corresponds to it
                 is_tight = eleSelector_[L_T_pairs[ele_id]](e)
                 if is_tight:# or e['jetIdx']<0:
                     e['pt_corr'] = e['pt'] 

@@ -32,6 +32,7 @@ argParser.add_argument('--small',                             action='store_true
 #argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
 argParser.add_argument('--plot_directory', action='store', default='tWZ_fakes')
 argParser.add_argument('--era',            action='store', type=str, default="Run2016")
+argParser.add_argument('--mode',           action='store', type=str, default="mu", choices=["mu","ele"])
 #argParser.add_argument('--selection',      action='store', default='trilep-minDLmass12-onZ1-njet4p-btag2p')
 args = argParser.parse_args()
 
@@ -48,10 +49,14 @@ if args.small:                        args.plot_directory += "_small"
 
 if args.era == "Run2016":
     import tWZ.samples.nanoTuples_fakes_2016_nanoAODv6_private_postProcessed as samples
-    data_sample =  samples.DoubleMuon_Run2016
-    triggers    = ["HLT_Mu3_PFJet40" ]#, "HLT_Mu8", "HLT_Mu17"]#, "HLT_Mu27"] HLT_Mu27 is actually in SingleMuon!
-
-    mc = [ samples.QCD_Mu, samples.WJetsToLNu, samples.TTbar]
+    if args.mode=='mu':
+        data_sample =  samples.DoubleMuon_Run2016
+        triggers    = ["HLT_Mu3_PFJet40" ]#, "HLT_Mu8", "HLT_Mu17"]#, "HLT_Mu27"] HLT_Mu27 is actually in SingleMuon!
+        mc = [ samples.QCD_mu, samples.WJetsToLNu_mu, samples.TTbar_mu]
+    elif args.mode=='ele':
+        data_sample =  samples.DoubleEG_Run2016
+        triggers    = ["HLT_Ele8_CaloIdM_TrackIdM_PFJet30" ]
+        mc = [ samples.QCD_ele, samples.WJetsToLNu_ele, samples.TTbar_ele]
 
     #mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 #elif args.era == "Run2017":
@@ -62,8 +67,8 @@ if args.era == "Run2016":
 #    mc = [TWZ_NLO_DR, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
 triggerSelection = '('+"||".join(triggers)+')'
-leptonSelection  = 'nmu_looseHybridIso==1'
-jetSelection     = 'Sum$(Jet_pt>40&&abs(Jet_eta)<2.4&&JetGood_cleaned_mu_looseHybridIso)>=1'
+leptonSelection  = 'n%s_looseHybridIso==1'%args.mode
+jetSelection     = 'Sum$(Jet_pt>40&&abs(Jet_eta)<2.4&&JetGood_cleaned_%s_looseHybridIso)>=1'%args.mode
 
 #lumi_scale                 = data_sample.lumi/1000
 data_sample.scale          = 1.
@@ -120,13 +125,13 @@ read_variables = [
 
 sequence       = []
 
-read_variables += ["nmu_looseHybridIso/I", "mu_looseHybridIso[pt/F,eta/F,phi/F,mT/F,hybridIso/F]", "met_pt/F"]
-def makeLeptons( event, sample ):
+read_variables += ["n%s_looseHybridIso/I"%args.mode, "%s_looseHybridIso[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F"]
 
+def makeLeptons( event, sample ):
     collVars = ["pt","eta","phi","mT","hybridIso"]
-    mu  = getObjDict(event, 'mu_looseHybridIso_', collVars, 0)
+    lep  = getObjDict(event, args.mode+'_looseHybridIso_', collVars, 0)
     for var in collVars:
-        setattr( event, "mu_"+var, mu[var]  )
+        setattr( event, "lep_"+var, lep[var]  )
 
 sequence.append( makeLeptons )
 
@@ -165,37 +170,37 @@ plots.append(Plot(
 ))
 
 plots.append(Plot(
-  name = 'mu_pt', texX = 'p_{T}', texY = 'Number of Events',
-  attribute = lambda event, sample: event.mu_pt,
+  name = args.mode+'_pt', texX = 'p_{T}', texY = 'Number of Events',
+  attribute = lambda event, sample: event.lep_pt,
   binning=[100,0,50],
   addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-  name = 'mu_eta', texX = '#eta', texY = 'Number of Events',
-  attribute = lambda event, sample: event.mu_eta,
+  name = args.mode+'_eta', texX = '#eta', texY = 'Number of Events',
+  attribute = lambda event, sample: event.lep_eta,
   binning=[30,-3,3],
   addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-  name = 'mu_mT', texX = 'm_{T}', texY = 'Number of Events',
-  attribute = lambda event, sample: event.mu_mT,
+  name = args.mode+'_mT', texX = 'm_{T}', texY = 'Number of Events',
+  attribute = lambda event, sample: event.lep_mT,
   binning=[40,0,200],
   addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-  name = 'mu_hybridIso_lowpT', texX = 'hybridIso (lowPt)', texY = 'Number of Events',
-  attribute = lambda event, sample: event.mu_hybridIso if event.mu_pt<25 else float('nan'),
+  name = args.mode+'_hybridIso_lowpT', texX = 'hybridIso (lowPt)', texY = 'Number of Events',
+  attribute = lambda event, sample: event.lep_hybridIso if event.lep_pt<25 else float('nan'),
   binning=[40,0,20],
   addOverFlowBin='none',
 ))
 
 plots.append(Plot(
-  name = 'mu_hybridIso_highpT', texX = 'hybridIso (highPt)', texY = 'Number of Events',
-  attribute = lambda event, sample: event.mu_hybridIso if event.mu_pt>25 else float('nan'),
-  binning=[40,0,2],
+  name = args.mode+'_hybridIso_highpT', texX = 'hybridIso (highPt)', texY = 'Number of Events',
+  attribute = lambda event, sample: event.lep_hybridIso if event.lep_pt>25 else float('nan'),
+  binning=[40,0,20],
   addOverFlowBin='none',
 ))
 

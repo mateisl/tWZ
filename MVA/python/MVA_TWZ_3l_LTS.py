@@ -189,77 +189,11 @@ all_mva_variables = {
      "mva_maxAbsEta_of_pt30jets" :(lambda event, sample: event.maxAbsEta_of_pt30jets),
                 }
 
-mva_variables_ = {
-    "mva_Z1_pt",
-    "mva_Z1_eta",
-    "mva_Z1_cosThetaStar",
-    "mva_ht",
-    "mva_met_pt",
-    "mva_nJetGood",
-    "mva_nBTag",
-    "mva_W_pt",
-    "mva_Z1_j1_deltaPhi",
-    "mva_nonZ1_l1_Z1_deltaPhi",
-}
+# Using all variables
+mva_variables_ = all_mva_variables.keys()
 
 mva_variables = {key:value for key, value in all_mva_variables.iteritems() if key in mva_variables_}
 
-nTr1000_maxD1_mNS5 = {
-    "type"                : ROOT.TMVA.Types.kBDT,
-    "name"                : 'nTr1000_maxD1_mNS5',
-    "color"               : ROOT.kGreen,
-    "options"             : ["!H","!V","NTrees=220", "BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=1", "MinNodeSize=5"],
-}
-
-nTr1000_maxD1_mNS10 = {
-    "type"                : ROOT.TMVA.Types.kBDT,
-    "name"                : 'nTr1000_maxD1_mNS10',
-    "color"               : ROOT.kGreen,
-    "options"             : ["!H","!V","NTrees=1000","BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=1", "MinNodeSize=10"],
-}
-
-nTr1000_maxD3_mNS10 = {
-    "type"                : ROOT.TMVA.Types.kBDT,
-    "name"                : 'nTr1000_maxD3_mNS10',
-    "color"               : ROOT.kGreen,
-    "options"             : ["!H","!V","NTrees=1000","BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=3", "MinNodeSize=10"],
-}
-
-nTr1000_maxD4_mNS20 = {
-    "type"                : ROOT.TMVA.Types.kBDT,
-    "name"                : 'nTr1000_maxD4_mNS20',
-    "color"               : ROOT.kGreen,
-    "options"             : ["!H","!V","NTrees=1000","BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=4", "MinNodeSize=20"],
-}
-
-mlp_np7 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'mlp_np7',
-    "layers"              : "N+7",
-    "color"               : ROOT.kMagenta+3,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
-mlp_np10 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'mlp_np10',
-    "layers"              : "N+10",
-    "color"               : ROOT.kMagenta+3,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
-mlp_np20 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'mlp_np20',
-    "layers"              : "N+20",
-    "color"               : ROOT.kMagenta+3,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
-mlp_np30 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'mlp_np30',
-    "layers"              : "N+30",
-    "color"               : ROOT.kMagenta+3,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
 mlp1 = {
     "type"                : ROOT.TMVA.Types.kMLP,
     "name"                : 'mlp1',

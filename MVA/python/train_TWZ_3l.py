@@ -56,7 +56,7 @@ for sample in samples:
         sample.reduceFiles(to = 1)
 
 #mvas = [mlp_np7,mlp_np10, mlp_np20, mlp_np30, mlp_np40]
-mvas = [ mlp_np40]
+mvas = [ mlp_tanh]
 #mvas = [nTr1000_maxD1_mNS5]#, nTr1000_maxD1_mNS10, nTr1000_maxD3_mNS10, nTr1000_maxD4_mNS20]
 
 ## TMVA Trainer instance
@@ -85,7 +85,7 @@ for mva in mvas:
     trainer.addMethod(method = mva)
 
 trainer.trainMVA( factory_settings = default_factory_settings )
-trainer.plotEvaluation(plot_directory = os.path.join( plot_directory, "MVA", "TWZ_3l_allTheSingleTrainings_allVars") )
+trainer.plotEvaluation(plot_directory = os.path.join( plot_directory, "MVA", "TWZ_3l_allTheSingleTrainings_allVars_tanh") )
 
 #reader.addMethod(method = bdt1)
 #reader.addMethod(method = default_methods["MLP"])

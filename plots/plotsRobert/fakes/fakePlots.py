@@ -30,7 +30,7 @@ argParser.add_argument('--logLevel',       action='store',      default='INFO', 
 argParser.add_argument('--small',                             action='store_true', help='Run only on a small subset of the data?', )
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 #argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
-argParser.add_argument('--plot_directory', action='store', default='tWZ_fakes')
+argParser.add_argument('--plot_directory', action='store', default='tWZ_fakes_v2_QCD_pt')
 argParser.add_argument('--era',            action='store', type=str, default="Run2016")
 argParser.add_argument('--mode',           action='store', type=str, default="mu", choices=["mu","ele"])
 #argParser.add_argument('--selection',      action='store', default='trilep-minDLmass12-onZ1-njet4p-btag2p')
@@ -52,11 +52,11 @@ if args.era == "Run2016":
     if args.mode=='mu':
         data_sample =  samples.DoubleMuon_Run2016
         triggers    = ["HLT_Mu3_PFJet40" ]#, "HLT_Mu8", "HLT_Mu17"]#, "HLT_Mu27"] HLT_Mu27 is actually in SingleMuon!
-        mc = [ samples.QCD_mu, samples.WJetsToLNu_mu, samples.TTbar_mu]
+        mc = [ samples.QCD_pt_mu, samples.WJetsToLNu_mu, samples.TTbar_mu]
     elif args.mode=='ele':
         data_sample =  samples.DoubleEG_Run2016
         triggers    = ["HLT_Ele8_CaloIdM_TrackIdM_PFJet30" ]
-        mc = [ samples.QCD_ele, samples.WJetsToLNu_ele, samples.TTbar_ele]
+        mc = [ samples.QCD_pt_ele, samples.WJetsToLNu_ele, samples.TTbar_ele]
 
     #mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 #elif args.era == "Run2017":

@@ -317,7 +317,7 @@ if options.year == 2017:
 
 #branches to be kept for MC samples only
 branchKeepStrings_MC = [ "Generator_*",  "genWeight", "Pileup_nTrueInt","GenMET_*", "nISR", "nGenJet", "GenJet_*"]
-branchKeepStrings_MC.extend([ "*LHEScaleWeight", "*LHEPdfWeight", "LHEWeight_originalXWGTUP"])
+#branchKeepStrings_MC.extend([ "*LHEScaleWeight", "*LHEPdfWeight", "LHEWeight_originalXWGTUP"]) # don't exist in QCD MC?
 
 #branches to be kept for data only
 branchKeepStrings_DATA = [ ]

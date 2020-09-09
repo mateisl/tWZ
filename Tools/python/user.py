@@ -41,3 +41,4 @@ if os.environ['USER'] in ['janik.andrejkovic']:
     analysis_results                = "/mnt/hephy/cms/janik.andrejkovic/tWZ/results/v1"
     mva_directory                   = "/mnt/hephy/cms/janik.andrejkovic/tWZ/MVA"
     cern_proxy_certificate          = "/users/janik.andrejkovic/.private/.proxy"
+    HistogramsForFakeStudies        = "/users/janik.andrejkovic/public/test/CMSSW_10_2_18/src/tWZ/fake/helperHistograms"

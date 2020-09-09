@@ -12,15 +12,13 @@ ROOT.gROOT.SetBatch(True)
 from RootTools.core.standard             import *
 
 # tWZ
-from tWZ.Tools.user                      import plot_directory
+from tWZ.Tools.user                      import plot_directory, cache_dir
 from tWZ.Tools.helpers                   import getObjDict, getVarValue
-#from tWZ.Tools.cutInterpreter            import cutInterpreter
-#from tWZ.Tools.objectSelection           import lepString 
 # Analysis
 from Analysis.Tools.helpers              import deltaPhi, deltaR
-#from Analysis.Tools.puProfileCache       import *
-#from Analysis.Tools.puReweighting        import getReweightingFunction
-import Analysis.Tools.syncer
+from Analysis.Tools.metFilters           import getFilterCut
+from Analysis.Tools.DirDB                import DirDB
+import Analysis.Tools.syncer             as syncer
 
 # Arguments
 import argparse
@@ -45,7 +43,8 @@ logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 if args.small:                        args.plot_directory += "_small"
 #if args.noData:                       args.plot_directory += "_noData"
 
-#logger.info( "Working in era %s", args.era)
+logger.info( "Working in era %s", args.era)
+year = int(args.era[3:]) # this is designed to fail for era "RunII"
 
 if args.era == "Run2016":
     import tWZ.samples.nanoTuples_fakes_2016_nanoAODv6_private_postProcessed as samples
@@ -70,11 +69,6 @@ triggerSelection = '('+"||".join(triggers)+')'
 leptonSelection  = 'n%s_looseHybridIso==1'%args.mode
 jetSelection     = 'Sum$(Jet_pt>40&&abs(Jet_eta)<2.4&&JetGood_cleaned_%s_looseHybridIso)>=1'%args.mode
 
-#lumi_scale                 = data_sample.lumi/1000
-data_sample.scale          = 1.
-#for sample in mc:
-#    sample.scale           = 1 # Scale MCs individually with lumi
-
 if args.small:
     for sample in [data_sample] + mc:
         sample.normalization = 1.
@@ -87,6 +81,45 @@ tex = ROOT.TLatex()
 tex.SetNDC()
 tex.SetTextSize(0.04)
 tex.SetTextAlign(11) # align right
+
+# fire up the cache
+cache_dir_ = os.path.join(cache_dir, 'fake_pu_cache')
+dirDB      = DirDB(cache_dir_)
+
+pu_key = ( triggerSelection, leptonSelection, jetSelection, args.era, args.small)
+if dirDB.contains( pu_key ):
+    reweight_histo = dirDB.get( pu_key )
+    logger.info( "Found PU reweight in cache %s", cache_dir_ )
+else:
+    logger.info( "Didn't find PU reweight histo %r. Obtaining it now.", pu_key)
+
+    data_selectionString = "&&".join([getFilterCut(isData=True, year=year), triggerSelection, leptonSelection, jetSelection])
+    data_nvtx_histo = data_sample.get1DHistoFromDraw( "PV_npvsGood", [100/5, 0, 100], selectionString=data_selectionString, weightString = "weight" )
+    data_nvtx_histo.Scale(1./data_nvtx_histo.Integral())
+
+    mc_selectionString = "&&".join([getFilterCut(isData=False, year=year), triggerSelection, leptonSelection, jetSelection])
+    mc_histos  = [ s.get1DHistoFromDraw( "PV_npvsGood", [100/5, 0, 100], selectionString=mc_selectionString, weightString = "weight*reweightBTag_SF") for s in mc]
+    mc_histo     = mc_histos[0]
+    for h in mc_histos[1:]:
+        mc_histo.Add( h )
+
+    mc_histo.Scale(1./mc_histo.Integral())
+
+    reweight_histo = data_nvtx_histo.Clone()
+    reweight_histo.Divide(mc_histo)
+    
+    dirDB.add( pu_key, reweight_histo ) 
+    logger.info( "Added PU reweight to cache %s", cache_dir_ )
+
+# define reweight
+def nvtx_puRW( event, sample ):
+    return reweight_histo.GetBinContent(reweight_histo.FindBin( event.PV_npvsGood ))
+
+#lumi_scale                 = data_sample.lumi/1000
+data_sample.scale   = 1.
+for sample in mc:
+    sample.weight   = nvtx_puRW
+
 
 def drawObjects():
     lines = [
@@ -118,7 +151,7 @@ def drawPlots(plots):
 # Read variables and sequences
 
 read_variables = [
-    "weight/F",
+    "weight/F", "PV_npvsGood/I"
 #    "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I]",
 #    "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
     ]

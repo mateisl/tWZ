@@ -6,7 +6,7 @@
 #
 import ROOT, os
 ROOT.gROOT.SetBatch(True)
-#from math                                import sqrt, cos, sin, pi, atan2, cosh
+from math                                import sqrt, cos, sin, pi, atan2, cosh
 
 # RootTools
 from RootTools.core.standard             import *
@@ -14,6 +14,7 @@ from RootTools.core.standard             import *
 # tWZ
 from tWZ.Tools.user                      import plot_directory, cache_dir
 from tWZ.Tools.helpers                   import getObjDict, getVarValue
+from tWZ.Tools.cutInterpreter            import cutInterpreter
 # Analysis
 from Analysis.Tools.helpers              import deltaPhi, deltaR
 from Analysis.Tools.metFilters           import getFilterCut
@@ -26,12 +27,13 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--logLevel',       action='store',      default='INFO', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
 #argParser.add_argument('--noData',         action='store_true', default=False, help='also plot data?')
 argParser.add_argument('--small',                             action='store_true', help='Run only on a small subset of the data?', )
+argParser.add_argument('--overwrite',                         action='store_true', help='Overwrite cache?', )
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 #argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
-argParser.add_argument('--plot_directory', action='store', default='tWZ_fakes_v2_QCD_pt')
+argParser.add_argument('--plot_directory', action='store', default='tWZ_fakes_v2-v2')
 argParser.add_argument('--era',            action='store', type=str, default="Run2016")
 argParser.add_argument('--mode',           action='store', type=str, default="mu", choices=["mu","ele"])
-#argParser.add_argument('--selection',      action='store', default='trilep-minDLmass12-onZ1-njet4p-btag2p')
+argParser.add_argument('--selection',      action='store', default=None)
 args = argParser.parse_args()
 
 # Logger
@@ -65,16 +67,28 @@ if args.era == "Run2016":
 #elif args.era == "RunII":
 #    mc = [TWZ_NLO_DR, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
+bins = [ 
+    (2.5,5, -1.2, 1.2),
+    (5.,10.,  -1.2, 1.2),
+    (10.,999., -1.2, 1.2),
+    ]
+
 triggerSelection = '('+"||".join(triggers)+')'
 leptonSelection  = 'n%s_looseHybridIso==1'%args.mode
 jetSelection     = 'Sum$(Jet_pt>40&&abs(Jet_eta)<2.4&&JetGood_cleaned_%s_looseHybridIso)>=1'%args.mode
+if args.selection:
+    selection = cutInterpreter.cutString(args.selection).replace("mT", "%s_looseHybridIso_mT"%args.mode)
+else:
+    selection = "(1)"
 
+max_events = -1
 if args.small:
     for sample in [data_sample] + mc:
         sample.normalization = 1.
         #sample.reduceFiles( factor = 10 )
-        sample.reduceFiles( to=3)
+        sample.reduceFiles( to=3 )
         #sample.scale /= sample.normalization
+        max_events = 30000
 
 # Text on the plots
 tex = ROOT.TLatex()
@@ -87,18 +101,18 @@ cache_dir_ = os.path.join(cache_dir, 'fake_pu_cache')
 dirDB      = DirDB(cache_dir_)
 
 pu_key = ( triggerSelection, leptonSelection, jetSelection, args.era, args.small)
-if dirDB.contains( pu_key ):
+if dirDB.contains( pu_key ) and not args.overwrite:
     reweight_histo = dirDB.get( pu_key )
     logger.info( "Found PU reweight in cache %s", cache_dir_ )
 else:
     logger.info( "Didn't find PU reweight histo %r. Obtaining it now.", pu_key)
 
     data_selectionString = "&&".join([getFilterCut(isData=True, year=year), triggerSelection, leptonSelection, jetSelection])
-    data_nvtx_histo = data_sample.get1DHistoFromDraw( "PV_npvsGood", [100/5, 0, 100], selectionString=data_selectionString, weightString = "weight" )
+    data_nvtx_histo = data_sample.get1DHistoFromDraw( "PV_npvsGood", [100, 0, 100], selectionString=data_selectionString, weightString = "weight" )
     data_nvtx_histo.Scale(1./data_nvtx_histo.Integral())
 
     mc_selectionString = "&&".join([getFilterCut(isData=False, year=year), triggerSelection, leptonSelection, jetSelection])
-    mc_histos  = [ s.get1DHistoFromDraw( "PV_npvsGood", [100/5, 0, 100], selectionString=mc_selectionString, weightString = "weight*reweightBTag_SF") for s in mc]
+    mc_histos  = [ s.get1DHistoFromDraw( "PV_npvsGood", [100, 0, 100], selectionString=mc_selectionString, weightString = "weight*reweightBTag_SF") for s in mc]
     mc_histo     = mc_histos[0]
     for h in mc_histos[1:]:
         mc_histo.Add( h )
@@ -130,7 +144,7 @@ def drawObjects():
 
 def drawPlots(plots):
   for log in [False, True]:
-    plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, ("log" if log else "lin"))
+    plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, args.selection if args.selection else "inclusive", args.mode, ("log" if log else "lin"))
     for plot in plots:
       if not max(l.GetMaximum() for l in sum(plot.histos,[])): continue # Empty plot
 
@@ -139,7 +153,7 @@ def drawPlots(plots):
       if isinstance( plot, Plot):
           plotting.draw(plot,
             plot_directory = plot_directory_,
-            #ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
+            ratio = {},
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
             scaling = {0:1},
@@ -151,7 +165,8 @@ def drawPlots(plots):
 # Read variables and sequences
 
 read_variables = [
-    "weight/F", "PV_npvsGood/I"
+    "weight/F", "PV_npvsGood/I",
+    "JetGood[pt/F,phi/F,eta/F]",
 #    "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I]",
 #    "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
     ]
@@ -178,9 +193,18 @@ data_sample.style   = styles.errorStyle(ROOT.kBlack)
 
 for sample in mc: sample.style = styles.fillStyle(sample.color)
 for sample in mc + [data_sample]:
-    sample.setSelectionString("&&".join( [ triggerSelection, leptonSelection, jetSelection]))
+    sample.setSelectionString("&&".join( [ triggerSelection, leptonSelection, jetSelection, selection]))
 
 stack = Stack(mc, [data_sample])
+
+def binWeight( pt_low, pt_high, eta_low, eta_high ):
+    def myweight(event, sample ):
+        if event.lep_pt>pt_low and event.lep_pt<pt_high and event.lep_eta>eta_low and event.lep_eta<eta_high:
+            return event.weight
+        else:
+            return 0
+    return myweight
+    
 
 weight_ = lambda event, sample: event.weight 
 # Use some defaults
@@ -203,40 +227,91 @@ plots.append(Plot(
 ))
 
 plots.append(Plot(
-  name = args.mode+'_pt', texX = 'p_{T}', texY = 'Number of Events',
+  name = 'pt', texX = 'p_{T}', texY = 'Number of Events',
   attribute = lambda event, sample: event.lep_pt,
   binning=[100,0,50],
   addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-  name = args.mode+'_eta', texX = '#eta', texY = 'Number of Events',
+  name = 'eta', texX = '#eta', texY = 'Number of Events',
   attribute = lambda event, sample: event.lep_eta,
   binning=[30,-3,3],
   addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-  name = args.mode+'_mT', texX = 'm_{T}', texY = 'Number of Events',
+  name = 'mT', texX = 'm_{T}', texY = 'Number of Events',
   attribute = lambda event, sample: event.lep_mT,
   binning=[40,0,200],
   addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-  name = args.mode+'_hybridIso_lowpT', texX = 'hybridIso (lowPt)', texY = 'Number of Events',
+  name = 'dR_jet0', texX = 'm_{T}', texY = 'Number of Events',
+  attribute = lambda event, sample: cos(event.lep_phi - event.JetGood_phi[0] ),
+  binning=[40,-1,1],
+  addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+  name = 'hybridIso_lowpT', texX = 'hybridIso (lowPt)', texY = 'Number of Events',
   attribute = lambda event, sample: event.lep_hybridIso if event.lep_pt<25 else float('nan'),
   binning=[40,0,20],
   addOverFlowBin='none',
 ))
 
 plots.append(Plot(
-  name = args.mode+'_hybridIso_highpT', texX = 'hybridIso (highPt)', texY = 'Number of Events',
+  name = 'hybridIso_highpT', texX = 'hybridIso (highPt)', texY = 'Number of Events',
   attribute = lambda event, sample: event.lep_hybridIso if event.lep_pt>25 else float('nan'),
   binning=[40,0,20],
   addOverFlowBin='none',
 ))
 
-plotting.fill(plots, read_variables = read_variables, sequence = sequence)
+def reformat( str_ ):
+    return str_.replace('.','p').replace('-','m') #-1.0  -> m1p0
+
+for bin_ in bins:
+    pt_low, pt_high, eta_low, eta_high = bin_
+
+    name = reformat("pt%sTo%s_eta%sTo%s"%tuple(map( lambda f: str(f).rstrip('0').rstrip('.'), bin_ ))) 
+#    plots.append(Plot(
+#      name = name, texX = 'hybridIso %f<p_{T}<%f %f<#eta<%f'%(pt_low, pt_high, eta_low, eta_high ), texY = 'Number of Events',
+#      attribute = lambda event, sample: event.lep_hybridIso if (event.lep_pt>pt_low and event.lep_pt<pt_high and event.lep_eta>eta_low and event.lep_eta<eta_high) else float('nan'),
+#      binning=[40,0,20],
+#      addOverFlowBin='none',
+#    ))
+
+    plots.append(Plot(
+      name = name, texX = 'hybridIso %f<p_{T}<%f %f<#eta<%f'%(pt_low, pt_high, eta_low, eta_high ), texY = 'Number of Events',
+      attribute = lambda event, sample: event.lep_hybridIso,
+      weight = binWeight( *bin_),
+      binning=[40,0,20],
+      addOverFlowBin='none',
+    ))
+    binning =  plots[-1].binning
+    assert 5.%((binning[2]-binning[1])/float(binning[0]))==0., "Binning has no threshold at 5!"
+
+    plots[-1].make_tl = True
+
+plotting.fill(plots, read_variables = read_variables, sequence = sequence, max_events=max_events)
 
 drawPlots(plots)
+
+def make_TL( histo ):
+    bin_th = histo.FindBin(5)
+    T = histo.Integral(1,bin_th-1) 
+    L = histo.Integral(bin_th,histo.GetNbinsX()) 
+    if L>0:
+        return T/L
+    else:
+        if T > 0:
+            return float('nan')
+        elif T==0:
+            return 0
+
+for plot in plots:
+    if hasattr( plot, "make_tl" ):
+        print "predicted TL:", make_TL(plot[0][0])
+
+

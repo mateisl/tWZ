@@ -28,7 +28,7 @@ from tWZ.Tools.mcTools import pdgToName, GenSearch, B_mesons, D_mesons, B_mesons
 genSearch = GenSearch()
 
 from Analysis.Tools.metFilters               import getFilterCut
-from Analysis.Tools.overlapRemovalTTG        import hasMesonMother, getParentIds
+# from Analysis.Tools.overlapRemovalTTG        import hasMesonMother, getParentIds
 from Analysis.Tools.puProfileDirDB           import puProfile
 from Analysis.Tools.L1PrefireWeight          import L1PrefireWeight
 from Analysis.Tools.LeptonTrackingEfficiency import LeptonTrackingEfficiency
@@ -53,6 +53,7 @@ def get_parser():
     argParser.add_argument('--targetDir',   action='store',         nargs='?',  type=str, default=user.postprocessing_output_directory, help="Name of the directory the post-processed files will be saved" )
     argParser.add_argument('--processingEra', action='store',       nargs='?',  type=str, default='postProcessed_80X_v22',              help="Name of the processing era" )
     argParser.add_argument('--skim',        action='store',         nargs='?',  type=str, default='1jmu',                               help="Skim conditions to be applied for post-processing" )
+    argParser.add_argument('--trigger',     action='store',         nargs='*',  type=str, default=['HLT_Mu3_PFJet40'],                  help="List of triggers" )
     argParser.add_argument('--LHEHTCut',    action='store',         nargs='?',  type=int, default=-1,                                   help="LHE cut." )
     argParser.add_argument('--year',        action='store',                     type=int,                                               help="Which year?" )
     argParser.add_argument('--overwriteJEC',action='store',                               default=None,                                 help="Overwrite JEC?" )
@@ -98,13 +99,16 @@ def fill_vector_collection( event, collection_name, collection_varnames, objects
                 getattr(event, collection_name+"_"+var)[i_obj] = obj[var]
 
 # Skim condition
-if options.skim == '1j1mu':
+if options.skim.startswith('1j1mu'):
     skimConds = ["Sum$(Jet_pt>40)>=1&&Sum$(Muon_pt>3.5)>=1"]
-    triggerCond  = "HLT_Mu3_PFJet40" 
-elif options.skim == '1j1ele':
+    #triggerCond  = "HLT_Mu3_PFJet40" 
+elif options.skim.startswith('1j1ele'):
     skimConds = ["Sum$(Jet_pt>40)>=1&&Sum$(Electron_pt>5)>=1"]
-    triggerCond  = "HLT_Ele8_CaloIdM_TrackIdM_PFJet30"
+    #triggerCond  = "HLT_Ele8_CaloIdM_TrackIdM_PFJet30"
     #triggerCond  = "HLT_Ele8_CaloIdM_TrackIdM_PFJet30", "_HLT_Ele12_CaloIdM_TrackIdM_PFJet30", "_HLT_Ele17_CaloIdM_TrackIdM_PFJet30", "_HLT_Ele23_CaloIdM_TrackIdM_PFJet30" 
+
+# trigger condition
+triggerCond = '('+'||'.join(options.trigger)+')'
 
 #Samples: Load samples
 maxN = 1 if options.small else None

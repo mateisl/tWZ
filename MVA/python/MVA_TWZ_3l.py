@@ -389,13 +389,13 @@ all_mlp_np30 = {
     "color"               : ROOT.kGray,
     "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
     }
-all_mlp_np40 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'all_mlp_np40',
-    "layers"              : "N+40",
-    "color"               : ROOT.kCyan+3,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
+#mlp1 = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'all_mlp_np40',
+#    "layers"              : "N+40",
+#    "color"               : ROOT.kCyan+3,
+#    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+#    }
 
 #oldconfig
 all_mlp_oldconfig_ncnp5c1s0c3e0c5 = {
@@ -425,4 +425,10 @@ all_mlp_oldconfig_np7c1s0c5e0c5 = {
     "layers"              : "N+7",
     "color"               : ROOT.kGreen-8,
     "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
-    }
+#mlp_tanh = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'mlp1',
+#    "layers"              : "N+40",
+#    "color"               : ROOT.kMagenta+3,
+#    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=tanh","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+#    }

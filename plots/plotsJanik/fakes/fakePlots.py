@@ -240,6 +240,18 @@ plots.append(Plot(
   addOverFlowBin='upper',
 ))
 
+
+plots2D = []
+
+plots2D.append(
+    Plot2D(
+        stack = Stack(samples.QCD_pt_mu),
+        name = "pt_eta",
+        texX = 'p_{T}', texY = '#eta',
+        attribute =(lambda event, sample: event.lep_pt,lambda event, sample: event.lep_eta), binning=[5,0.,50.0,6,-3.,3.]
+    )
+)
+
 plots.append(Plot(
   name = 'mT', texX = 'm_{T}', texY = 'Number of Events',
   attribute = lambda event, sample: event.lep_mT,
@@ -295,8 +307,12 @@ for bin_ in bins:
     plots[-1].make_tl = True
 
 plotting.fill(plots, read_variables = read_variables, sequence = sequence, max_events=max_events)
+plotting.fill(plots2D, read_variables = read_variables, sequence = sequence, max_events=max_events)
 
 drawPlots(plots)
+
+for plot2 in plots2D:
+    plotting.draw2D(plot2, plot_directory = plot_directory, logX = False, logY = False, logZ = True, drawObjects = drawObjects()  )
 
 def make_TL( histo ):
     bin_th = histo.FindBin(5)

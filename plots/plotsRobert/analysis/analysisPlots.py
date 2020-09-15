@@ -35,8 +35,8 @@ argParser.add_argument('--small',                             action='store_true
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
 argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
-argParser.add_argument('--era',            action='store', type=str, default="2016")
-argParser.add_argument('--selection',      action='store', default='trilep-minDLmass12-onZ1-njet4p-btag2p')
+argParser.add_argument('--era',            action='store', type=str, default="Run2016")
+argParser.add_argument('--selection',      action='store', default='trilepM-minDLmass12-onZ1-njet4p-btag1')
 args = argParser.parse_args()
 
 # Logger
@@ -164,36 +164,36 @@ read_variables = [
 read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F']
 # define 3l selections
 
-##MVA
-#from Analysis.TMVA.Reader   import Reader
-#from tWZ.MVA.MVA_TWZ_3l  import mva_variables, mlp
-#from tWZ.MVA.MVA_TWZ_3l  import sequence as mva_sequence
-#from tWZ.MVA.MVA_TWZ_3l  import read_variables as mva_read_variables
-#from tWZ.Tools.user      import mva_directory
+#MVA
+from Analysis.TMVA.Reader    import Reader
+from tWZ.MVA.MVA_TWZ_3l_LTS  import mva_variables, mlp1, mlp_tanh
+from tWZ.MVA.MVA_TWZ_3l_LTS  import sequence as mva_sequence
+from tWZ.MVA.MVA_TWZ_3l_LTS  import read_variables as mva_read_variables
+from tWZ.Tools.user          import mva_directory
 
-#sequence.extend( mva_sequence )
-#read_variables.extend( mva_read_variables )
-#
-#mva_reader = Reader(
-#    mva_variables     = mva_variables,
-#    weight_directory  = os.path.join( mva_directory, "TWZ_3l" ),
-#    label             = "TWZ_3l")
-#
-#def makeDiscriminator( mva ):
-#    def _getDiscriminator( event, sample ):
-#        kwargs = {name:func(event,None) for name, func in mva_variables.iteritems()}
-#        setattr( event, mva['name'], mva_reader.evaluate(mva['name'], **kwargs))
-#    return _getDiscriminator
-#
-#def discriminator_getter(name):
-#    def _disc_getter( event, sample ):
-#        return getattr( event, name )
-#    return _disc_getter
+sequence.extend( mva_sequence )
+read_variables.extend( mva_read_variables )
 
-#mvas = [mlp]
-#for mva in mvas:
-#    mva_reader.addMethod(method=mva)
-#    sequence.append( makeDiscriminator(mva) )
+mva_reader = Reader(
+    mva_variables     = mva_variables,
+    weight_directory  = os.path.join( mva_directory, "TWZ_3l" ),
+    label             = "TWZ_3l")
+
+def makeDiscriminator( mva ):
+    def _getDiscriminator( event, sample ):
+        kwargs = {name:func(event,None) for name, func in mva_variables.iteritems()}
+        setattr( event, mva['name'], mva_reader.evaluate(mva['name'], **kwargs))
+    return _getDiscriminator
+
+def discriminator_getter(name):
+    def _disc_getter( event, sample ):
+        return getattr( event, name )
+    return _disc_getter
+
+mvas = [mlp_tanh]
+for mva in mvas:
+    mva_reader.addMethod(method=mva)
+    sequence.append( makeDiscriminator(mva) )
 
 mu_string  = lepString('mu','VL')
 ele_string = lepString('ele','VL')
@@ -294,19 +294,19 @@ for i_mode, mode in enumerate(allModes):
       binning=[4, 0, 4],
     ))
 
-#    for mva in mvas:
-#        plots.append(Plot(
-#            texX = 'MVA_{3l}', texY = 'Number of Events',
-#            name = mva['name'], attribute = discriminator_getter(mva['name']),
-#            binning=[25, 0, 1],
-#        ))
-#
-#    for mva in mvas:
-#        plots.append(Plot(
-#            texX = 'MVA_{3l}', texY = 'Number of Events',
-#            name = mva['name']+'_coarse', attribute = discriminator_getter(mva['name']),
-#            binning=[10, 0, 1],
-#        ))
+    for mva in mvas:
+        plots.append(Plot(
+            texX = 'MVA_{3l}', texY = 'Number of Events',
+            name = mva['name'], attribute = discriminator_getter(mva['name']),
+            binning=[25, 0, 1],
+        ))
+
+    for mva in mvas:
+        plots.append(Plot(
+            texX = 'MVA_{3l}', texY = 'Number of Events',
+            name = mva['name']+'_coarse', attribute = discriminator_getter(mva['name']),
+            binning=[10, 0, 1],
+        ))
 
     plots.append(Plot(
       name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',

@@ -22,7 +22,7 @@ special_cuts = {
     "offZ2"  : "(!(abs(Z2_mass-91.2)<20))",
   }
 
-continous_variables = [ ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1mass", "Z1_mass"), ("minDLmass", "minDLmass")]
+continous_variables = [ ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1mass", "Z1_mass"), ("minDLmass", "minDLmass"), ("mT", "mT")]
 discrete_variables  = [ ("njet", "nJetGood"), ("btag", "nBTag")]
 
 class cutInterpreter:

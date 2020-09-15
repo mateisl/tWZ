@@ -189,56 +189,6 @@ all_mva_variables = {
      "mva_maxAbsEta_of_pt30jets" :(lambda event, sample: event.maxAbsEta_of_pt30jets),
                 }
 
-mva_variables_ = {
-
-# global event properties     
-     "mva_ht"                    :(lambda event, sample: sum( [event.JetGood_pt[i] for i in range(event.nJetGood) ])),
-     "mva_met_pt"                :(lambda event, sample: event.met_pt),
-     "mva_m3l"                   :(lambda event, sample: event.m3l),
-     "mva_nJetGood"              :(lambda event, sample: event.nJetGood),
-     "mva_nBTag"                 :(lambda event, sample: event.nBTag),
-
-# jet kinmatics
-     "mva_jet0_pt"               :(lambda event, sample: event.JetGood_pt[0]          if event.nJetGood >=1 else 0),
-     "mva_jet0_eta"              :(lambda event, sample: event.JetGood_eta[0]         if event.nJetGood >=1 else -10),
-     "mva_jet0_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[0] if (event.nJetGood >=1 and event.JetGood_btagDeepB[0]>-10) else -10),
-     "mva_jet1_pt"               :(lambda event, sample: event.JetGood_pt[1]          if event.nJetGood >=2 else 0),
-     "mva_jet1_eta"              :(lambda event, sample: event.JetGood_eta[1]         if event.nJetGood >=2 else -10),
-     "mva_jet1_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[1] if (event.nJetGood >=2 and event.JetGood_btagDeepB[1]>-10) else -10),
-     "mva_jet2_pt"               :(lambda event, sample: event.JetGood_pt[2]          if event.nJetGood >=3 else 0),
-     "mva_jet2_eta"              :(lambda event, sample: event.JetGood_eta[2]         if event.nJetGood >=3 else -10),
-     "mva_jet2_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[2]   if (event.nJetGood >=3 and event.JetGood_btagDeepB[1]>-10) else -10),
-
-# Z1 kinematics
-     "mva_Z1_pt"                 :(lambda event, sample: event.Z1_pt),
-     "mva_Z1_eta"                :(lambda event, sample: event.Z1_eta),
-     "mva_Z1_cosThetaStar"       :(lambda event, sample: event.Z1_cosThetaStar),
-
-# extra lepton kinematics
-     "mva_lnonZ1_pt"             :(lambda event, sample: event.lep_pt[event.nonZ1_l1_index]),
-     "mva_lnonZ1_eta"            :(lambda event, sample: event.lep_eta[event.nonZ1_l1_index]),
-
-# leptonic W     
-     "mva_W_pt"                  :(lambda event, sample: event.W_pt),
-
-# Z1 vs. other objects
-     "mva_nonZ1_l1_Z1_deltaPhi"  :(lambda event, sample: event.nonZ1_l1_Z1_deltaPhi     if event.nlep >= 1 else -1 ),
-     "mva_nonZ1_l1_Z1_deltaR"    :(lambda event, sample: event.nonZ1_l1_Z1_deltaR),
-     
-     "mva_jet0_Z1_deltaR"        :(lambda event, sample: event.jet0_Z1_deltaR         if event.nJetGood >=1 else -1),
-     "mva_jet1_Z1_deltaR"        :(lambda event, sample: event.jet1_Z1_deltaR         if event.nJetGood >=2 else -1),
-     "mva_jet2_Z1_deltaR"        :(lambda event, sample: event.jet2_Z1_deltaR         if event.nJetGood >=3 else -1),
-
-# nonZ1_l1 vs. other objects
-     "mva_jet0_nonZl1_deltaR"    :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),
-     "mva_jet1_nonZl1_deltaR"    :(lambda event, sample: event.jet1_nonZ1_l1_deltaR    if event.nJetGood >=2 else -1),
-
-     "mva_bJet_Z1_deltaR"        :(lambda event, sample: event.bJet_Z1_deltaR),
-     "mva_bJet_non_Z1l1_deltaR"  :(lambda event, sample: event.bJet_nonZ1l1_deltaR),
-
-     "mva_maxAbsEta_of_pt30jets" :(lambda event, sample: event.maxAbsEta_of_pt30jets),
-                }
-
 #varcon1
 #mva_variables_ = {
 #    "mva_Z1_pt",
@@ -252,7 +202,7 @@ mva_variables_ = {
 #    "mva_Z1_j1_deltaPhi",
 #    "mva_nonZ1_l1_Z1_deltaPhi",
 #}
-
+#
 #varcon2
 #mva_variables_ = {
 #    "mva_Z1_pt"                  :(lambda event, sample: event.Z1_pt),
@@ -305,6 +255,8 @@ mva_variables_ = {
 #    "mva_jet1_nonZl1_deltaR",
 #}
 
+# Using all variables
+mva_variables_ = all_mva_variables.keys()
 
 mva_variables = {key:value for key, value in all_mva_variables.iteritems() if key in mva_variables_}
 

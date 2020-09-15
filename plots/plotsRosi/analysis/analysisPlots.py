@@ -258,13 +258,10 @@ def getjets( event, sample ):
     # filter pt, but not eta (I store the list of jets in the event because I want to use it in the next function)
     event.jets_no_eta         = filter(lambda j:j['pt']>30, clean_jets)
     # very nice, Rosmarie. Here are all the python built on functions, so you get an idea what you can do: https://docs.python.org/2.7/library/functions.html
-    print "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    print (event.jets_no_eta)
-    print "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    #print (event.jets_no_eta)
     if event.jets_no_eta: 
         event.maxEta_of_pt30jets  = max( [ abs(j['eta']) for j in event.jets_no_eta ] )
-        print (event.maxEta_of_pt30jets)
-        print "yyyyyyyyyyyyyyyyyyyyyyyyyyy"
+        #print (event.maxEta_of_pt30jets)
 #    #bjets filtern( nur 2016 )
 #    bJets = filter(lambda j:isBJet(j, tagger=b_tagger, year=2016) and abs(j['eta'])<=2.4    , jets)
 #    # print bJets
@@ -294,10 +291,8 @@ def genJetStuff( event, sample ):
     # If you look up the max function you learn that you can give it a method that tells python how it should do the comparison. Let's use it to get the highest eta *jet* 
     if event.jets_no_eta:
         max_eta_jet = max( event.jets_no_eta, key = lambda j:abs(j['eta']) )
-        print "aaaaaaaaaaaaaaaaaaaaaaa"
-        print (max_eta_jet)
-        print "aaaaaaaaaaaaaaaaaaaaaa" 
-        print (max_eta_jet['genJetIdx'])
+        #print (max_eta_jet)
+        #print (max_eta_jet['genJetIdx'])
     # Let's see if it has a gen match:
     # Set default values
     event.partonsinfwdjets = -8
@@ -320,8 +315,7 @@ def genJetStuff( event, sample ):
         # Look at the numbers. Here is the dictionary: http://pdg.lbl.gov/2007/reviews/montecarlorpp.pdf
         #print max_eta_jet['genJetIdx'], max_eta_genjet
         # partonFlavour number 
-        print "GGGGGGGGGGGGGGGGGGGGGGGGGGGGG"
-        print max_eta_genjet['partonFlavour']
+        #print max_eta_genjet['partonFlavour']
         #in event schreiben 
         
         event.partonsinfwdjets =  max_eta_genjet['partonFlavour']
@@ -409,6 +403,39 @@ def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
 #
 #sequence.append( test )
 
+#MVA
+from Analysis.TMVA.Reader    import Reader
+from tWZ.MVA.MVA_TWZ_3l      import mva_variables, all_mlp_np5s0c3e0c5, all_mlp_ncnc1s0c3e0c5 
+from tWZ.MVA.MVA_TWZ_3l      import sequence as mva_sequence
+from tWZ.MVA.MVA_TWZ_3l      import read_variables as mva_read_variables
+from tWZ.Tools.user          import mva_directory
+
+sequence.extend( mva_sequence )
+read_variables.extend( mva_read_variables )
+
+mva_reader = Reader(
+    mva_variables     = mva_variables,
+    weight_directory  = os.path.join( mva_directory, "TWZ_3l" ),
+    label             = "TWZ_3l")
+
+def makeDiscriminator( mva ):
+    def _getDiscriminator( event, sample ):
+        kwargs = {name:func(event,None) for name, func in mva_variables.iteritems()}
+        setattr( event, mva['name'], mva_reader.evaluate(mva['name'], **kwargs))
+    return _getDiscriminator
+
+def discriminator_getter(name):
+    def _disc_getter( event, sample ):
+        return getattr( event, name )
+    return _disc_getter
+
+mvas = [all_mlp_np5s0c3e0c5 ] #, all_mlp_ncnc1s0c3e0c5]
+for mva in mvas:
+    mva_reader.addMethod(method=mva)
+    sequence.append( makeDiscriminator(mva) )
+
+
+
 # 3l trainign variables
 
 def make_training_observables_3l(event, sample):
@@ -438,8 +465,8 @@ for i_mode, mode in enumerate(allModes):
 
     weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
 
-    #for sample in mc: sample.style = styles.fillStyle(sample.color)
-    for sample in mc: sample.style = styles.lineStyle(sample.color)
+    for sample in mc: sample.style = styles.fillStyle(sample.color)
+    #for sample in mc: sample.style = styles.lineStyle(sample.color)
     
     if args.partonweightprivate: 
         tWZ_ud_match.style    = styles.lineStyle(ROOT.kBlue)
@@ -477,6 +504,20 @@ for i_mode, mode in enumerate(allModes):
 
     plots = []
 
+    for mva in mvas:
+        plots.append(Plot(
+            texX = 'MVA_{3l}', texY = 'Number of Events',
+            name = mva['name'], attribute = discriminator_getter(mva['name']),
+            binning=[25, 0, 1],
+        ))
+
+    for mva in mvas:
+        plots.append(Plot(
+            texX = 'MVA_{3l}', texY = 'Number of Events',
+            name = mva['name']+'_coarse', attribute = discriminator_getter(mva['name']),
+            binning=[10, 0, 1],
+        ))
+
 #    plots.append(Plot(
 #      name = 'maxpt',
 #      texX = 'maxpt',
@@ -501,13 +542,13 @@ for i_mode, mode in enumerate(allModes):
 #      binning=[28, -6, 22],
 #    ))
 #
-    plots.append(Plot(
-      name = 'partons in fwd jets maxeta',
-      texX = 'partons in fwd jets (maxeta)',
-      texY = 'Number of Events',
-      attribute = lambda event, sample: event.partonsinfwdjets,
-      binning=[28, -6, 22],
-    ))
+#    plots.append(Plot(
+#      name = 'partons in fwd jets maxeta',
+#      texX = 'partons in fwd jets (maxeta)',
+#      texY = 'Number of Events',
+#      attribute = lambda event, sample: event.partonsinfwdjets,
+#      binning=[28, -6, 22],
+#    ))
 
     plots.append(Plot(
       name = 'yield', texX = '', texY = 'Number of Events',

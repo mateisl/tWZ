@@ -202,7 +202,7 @@ all_mva_variables = {
 #    "mva_Z1_j1_deltaPhi",
 #    "mva_nonZ1_l1_Z1_deltaPhi",
 #}
-#
+
 #varcon2
 #mva_variables_ = {
 #    "mva_Z1_pt"                  :(lambda event, sample: event.Z1_pt),
@@ -288,15 +288,15 @@ mva_variables = {key:value for key, value in all_mva_variables.iteritems() if ke
 #    "color"               : ROOT.kGreen-10,
 #    "options"             : ["!H","!V","NTrees=1000","BoostType=AdaBoost","SeparationType=GiniIndex","nCuts=20","PruneMethod=NoPruning","MaxDepth=4", "MinNodeSize=20"],
 #}
-
+#
 #mlp
-all_mlp_np5s0c5e0c8 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'all_mlp_np5s0c5e0c8',
-    "layers"              : "N+5",
-    "color"               : ROOT.kMagenta+3,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
+#all_mlp_np5s0c5e0c8 = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'all_mlp_np5s0c5e0c8',
+#    "layers"              : "N+5",
+#    "color"               : ROOT.kMagenta+3,
+#    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+#    }
 all_mlp_np5s0c3e0c5 = {
     "type"                : ROOT.TMVA.Types.kMLP,
     "name"                : 'all_mlp_np5s0c3e0c5',
@@ -311,13 +311,13 @@ all_mlp_np5s0c5e1 = {
     "color"               : ROOT.kMagenta-10,
     "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=1","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
     }
-all_mlp_np7s0c3e0c5 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'all_mlp_np7s0c3e0c5',
-    "layers"              : "N+7",
-    "color"               : ROOT.kBlue+3,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
+#all_mlp_np7s0c3e0c5 = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'all_mlp_np7s0c3e0c5',
+#    "layers"              : "N+7",
+#    "color"               : ROOT.kBlue+3,
+#    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+#    }
 all_mlp_np7s0c5e1 = {
     "type"                : ROOT.TMVA.Types.kMLP,
     "name"                : 'all_mlp_np7s0c5e1',
@@ -339,13 +339,13 @@ all_mlp_ncnc1s0c3e0c5 = {
     "color"               : ROOT.kBlue-10,
     "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
     }
-all_mlp_ncnc1s0c5e1 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'all_mlp_ncnc1s0c5e1',
-    "layers"              : "N,N,1",
-    "color"               : ROOT.kRed,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=1","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
+#all_mlp_ncnc1s0c5e1 = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'all_mlp_ncnc1s0c5e1',
+#    "layers"              : "N,N,1",
+#    "color"               : ROOT.kRed,
+#    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=1","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+#    }
 all_mlp_ncnc1s0c5e0c8 = {
     "type"                : ROOT.TMVA.Types.kMLP,
     "name"                : 'all_mlp_ncnc1s0c5e0c8',
@@ -353,20 +353,20 @@ all_mlp_ncnc1s0c5e0c8 = {
     "color"               : ROOT.kRed+3,
     "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
     }
-all_mlp_ncnp5c1s0c3e0c5 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'all_mlp_ncnp5c1s0c3e0c5',
-    "layers"              : "N,N+5,1",
-    "color"               : ROOT.kRed-5,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
-all_mlp_ncnp5c1s0c5e1 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'all_mlp_ncnp5c1s0c5e1',
-    "layers"              : "N,N+5,1",
-    "color"               : ROOT.kRed-9,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=1","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
+#all_mlp_ncnp5c1s0c3e0c5 = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'all_mlp_ncnp5c1s0c3e0c5',
+#    "layers"              : "N,N+5,1",
+#    "color"               : ROOT.kRed-5,
+#    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+#    }
+#all_mlp_ncnp5c1s0c5e1 = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'all_mlp_ncnp5c1s0c5e1',
+#    "layers"              : "N,N+5,1",
+#    "color"               : ROOT.kRed-9,
+#    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=1","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+#    }
 all_mlp_ncnp5c1s0c5e0c8 = {
     "type"                : ROOT.TMVA.Types.kMLP,
     "name"                : 'all_mlp_ncnp5c1s0c5e0c8',
@@ -375,25 +375,54 @@ all_mlp_ncnp5c1s0c5e0c8 = {
     "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
     }
 
-all_mlp_np20 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'all_mlp_np20',
-    "layers"              : "N+20",
-    "color"               : ROOT.kYellow+3,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
-all_mlp_np30 = {
-    "type"                : ROOT.TMVA.Types.kMLP,
-    "name"                : 'all_mlp_np30',
-    "layers"              : "N+30",
-    "color"               : ROOT.kGray,
-    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
-    }
-#mlp1 = {
+#all_mlp_np20 = {
 #    "type"                : ROOT.TMVA.Types.kMLP,
-#    "name"                : 'all_mlp_np40',
-#    "layers"              : "N+40",
-#    "color"               : ROOT.kCyan+3,
+#    "name"                : 'all_mlp_np20',
+#    "layers"              : "N+20",
+#    "color"               : ROOT.kYellow+3,
 #    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
 #    }
+#all_mlp_np30 = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'all_mlp_np30',
+#    "layers"              : "N+30",
+#    "color"               : ROOT.kGray,
+#    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+#    }
+all_mlp_np40 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_np40',
+    "layers"              : "N+40",
+    "color"               : ROOT.kCyan+3,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
 
+#oldconfig
+#all_mlp_oldconfig_ncnp5c1s0c3e0c5 = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'all_mlp_oldconfig_ncnp5c1s0c3e0c5',
+#    "layers"              : "N,N+5,1",
+#    "color"               : ROOT.kCyan-6,
+#    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
+#    }
+#all_mlp_oldconfig_ncnp5c1s0c3e0c3 = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'all_mlp_oldconfig_ncnp5c1s0c3e0c3',
+#    "layers"              : "N,N+5,1",
+#    "color"               : ROOT.kBlack,
+#    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.3","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
+#    }
+#all_mlp_oldconfig_np7s0c3e0c8 = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'all_mlp_oldconfig_np7s0c3e0c8',
+#    "layers"              : "N+7",
+#    "color"               : ROOT.kYellow,
+#    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.8","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
+#    }
+#all_mlp_oldconfig_np7c1s0c5e0c5 = {
+#    "type"                : ROOT.TMVA.Types.kMLP,
+#    "name"                : 'all_mlp_oldconfig_np7c1s0c5e0c5',
+#    "layers"              : "N+7",
+#    "color"               : ROOT.kGreen-8,
+#    "options"             : ["!H","!V","VarTransform=Norm,Deco","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.02", "DecayRate=0.01","Sampling=0.5","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=10" ],
+#    }

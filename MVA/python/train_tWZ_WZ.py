@@ -11,8 +11,8 @@ from tWZ.Tools.user              import plot_directory, mva_directory
 from tWZ.Tools.cutInterpreter    import cutInterpreter
 
 # MVA configuration
-from tWZ.MVA.MVA_TWZ_3l          import sequence, read_variables, mva_variables, all_mva_variables 
-from tWZ.MVA.MVA_TWZ_3l          import * 
+from tWZ.MVA.MVA_tWZ_WZ          import sequence, read_variables, mva_variables, all_mva_variables 
+from tWZ.MVA.MVA_tWZ_WZ          import * 
 
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
@@ -47,7 +47,7 @@ signal = TWZ_NLO_DR
 #TTZ.reduceFiles(factor=3)
 
 # TTZ
-backgrounds = [ TTZ ]
+backgrounds = [ TTZ, WZ ]
 
 samples = backgrounds + [signal]
 for sample in samples:
@@ -55,8 +55,7 @@ for sample in samples:
     if args.small:
         sample.reduceFiles(to = 1)
 
-mvas = [all_mlp_np5s0c3e0c5, all_mlp_ncnc1s0c3e0c5 ]
-#        all_mlp_ncnp5c1s0c3e0c5, all_mlp_ncnp5c1s0c5e1, all_mlp_ncnp5c1s0c5e0c8, all_mlp_np20, all_mlp_np30, all_mlp_np40, all_mlp_oldconfig_ncnp5c1s0c3e0c5, all_mlp_oldconfig_ncnp5c1s0c3e0c3, all_mlp_oldconfig_np7s0c3e0c8, all_mlp_oldconfig_np7c1s0c5e0c5 ]
+mvas  = [ all_mlp_ncnc1s0c3e0c5, all_mlp_np5s0c3e0c5 ] #, all_mlp_ncnc1s0c5e0c8, all_mlp_ncnp5c1s0c5e0c8, all_mlp_np40, all_mlp_np7s0c5e1 ]
 
 ## TMVA Trainer instance
 trainer = Trainer( 
@@ -84,8 +83,7 @@ for mva in mvas:
     trainer.addMethod(method = mva)
 
 trainer.trainMVA( factory_settings = default_factory_settings )
-#trainer.plotEvaluation(plot_directory = os.path.join( plot_directory, "MVA", "TWZ_3l_all") )
-trainer.plotEvaluation(plot_directory = os.path.join( plot_directory, "MVA", "TWZ_3l_allVars") )
+trainer.plotEvaluation(plot_directory = os.path.join( plot_directory, "MVA", "TWZ_WZ_3l_allVars") )
 
 #reader.addMethod(method = bdt1)
 #reader.addMethod(method = default_methods["MLP"])

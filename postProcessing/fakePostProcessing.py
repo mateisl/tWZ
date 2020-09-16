@@ -127,10 +127,10 @@ triggerCond = '('+'||'.join(options.trigger)+')'
 # root -l /eos/vbc/incoming///store/group/phys_susy/stops2l/topNanoAOD/v6-1-2/2016/JetHT/TopNanoAODv6-1-2-6_JetHT_Run2016B_ver2/200909_064328/0000/tree_857.root
 
 #Samples: Load samples
-maxN = 1 if options.small else None
+maxNFiles = 10 if options.small else None
 if options.small:
     options.job = 0
-    options.nJobs = 10000 # set high to just run over 1 input file
+    #options.nJobs = 10000 # set high to just run over 1 input file
 
 if options.year == 2016:
     from Samples.nanoAOD.Summer16_private_nanoAODv6         import allSamples as mcSamples
@@ -179,11 +179,13 @@ isr                 = ISRweight()
 if len(samples)>1:
     sample_name =  samples[0].name+"_comb"
     logger.info( "Combining samples %s to %s.", ",".join(s.name for s in samples), sample_name )
-    sample      = Sample.combine(sample_name, samples, maxN = maxN)
+    sample      = Sample.combine(sample_name, samples, maxN = maxNfiles)
     sampleForPU = Sample.combine(sample_name, samples, maxN = -1)
 elif len(samples)==1:
     sample      = samples[0]
     sampleForPU = samples[0]
+    if options.small:
+        sample.reduceFiles( to = maxNFiles )
 else:
     raise ValueError( "Need at least one sample. Got %r",samples )
 
@@ -733,7 +735,12 @@ for ievtRange, eventRange in enumerate( eventRanges ):
     reader.setEventRange( eventRange )
 
     clonedTree = reader.cloneTree( branchKeepStrings, newTreename = "Events", rootfile = outputfile )
-    clonedEvents += clonedTree.GetEntries()
+    nEvents = clonedTree.GetEntries()
+    if nEvents==0:
+        logger.info( "No Events found. Skip." )
+        continue
+        
+    clonedEvents += nEvents
 
     # Add the TTreeFormulas
     for formula in treeFormulas.keys():

@@ -30,6 +30,8 @@ if os.environ["USER"] in ["rosmarie.schoefbeck"]:
     # Analysis result files
     analysis_results                = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/results/v1"
     mva_directory                   = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/MVA"
+    mva_directory_twz_wz            = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ_WZ/MVA"
+    mva_directory_wz                = "/mnt/hephy/cms/rosmarie.schoefbeck/WZ/MVA"
     cern_proxy_certificate          = "/users/rosmarie.schoefbeck/.private/.proxy"
 
 if os.environ['USER'] in ['janik.andrejkovic']:

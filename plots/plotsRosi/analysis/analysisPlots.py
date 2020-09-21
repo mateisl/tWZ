@@ -40,13 +40,14 @@ argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
 argParser.add_argument('--era',            action='store', type=str, default="Run2016")
 argParser.add_argument('--selection',      action='store', default='trilepM-minDLmass12-onZ1-njet4p-btag2p')
 #argParser.add_argument('--nanoAODv4',   default=True, action='store_true',                                                                        help="Run on nanoAODv4?" )
-argParser.add_argument('--samples',     action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
+argParser.add_argument('--samples',        action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
 #flagg for parton selection
-argParser.add_argument('--partonweight', action='store_true', help='weight partons?', )
+argParser.add_argument('--partonweight',   action='store_true', help='weight partons?', )
 argParser.add_argument('--partonweightprivate', action='store_true', help='weight partons?', )
 argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize to 1" )
-argParser.add_argument('--privateTWZttZ', action='store_true', help='twzDR and ttZ', )
-argParser.add_argument('--scaled', action='store_true', help='scaling', )
+argParser.add_argument('--privateTWZttZ',  action='store_true', help='twzDR and ttZ', )
+argParser.add_argument('--scaled',         action='store_true', help='scaling', )
+argParser.add_argument('--mva',            action='store', type=str )
 
 args = argParser.parse_args()
 options = argParser.parse_args()
@@ -63,6 +64,7 @@ if args.partonweightprivate:          args.plot_directory += "_weightedpartons(p
 if args.privateTWZttZ:                args.plot_directory += "_privateTWZDR_ttZ"
 if args.normalize:                    args.plot_directory += "_normalize"
 if args.scaled:                       args.plot_directory += "_scaled"
+print (args.mva)
 logger.info( "Working in era %s", args.era)
 
 from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
@@ -135,7 +137,7 @@ def drawObjects( plotData, dataMCScale, lumi_scale ):
 
 def drawPlots(plots, mode, dataMCScale):
   for log in [False, True]:
-    plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, mode + ("_log" if log else ""), args.selection)
+    plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, mode + ("_log" if log else ""), args.mva, args.selection)
     for plot in plots:
       if not max(l.GetMaximum() for l in sum(plot.histos,[])): continue # Empty plot
       if not args.noData: 
@@ -405,10 +407,37 @@ def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
 
 #MVA
 from Analysis.TMVA.Reader    import Reader
-from tWZ.MVA.MVA_TWZ_3l      import mva_variables, all_mlp_np5s0c3e0c5, all_mlp_ncnc1s0c3e0c5 
-from tWZ.MVA.MVA_TWZ_3l      import sequence as mva_sequence
-from tWZ.MVA.MVA_TWZ_3l      import read_variables as mva_read_variables
 from tWZ.Tools.user          import mva_directory
+if args.mva == "varcon1":
+    from tWZ.MVA.mvavarcon1      import mva_variables, varcon1_mlp_ncnp5c1s0c5e0c8, varcon1_mlp_ncnc1s0c3e0c5 
+    from tWZ.MVA.mvavarcon1      import sequence as mva_sequence
+    from tWZ.MVA.mvavarcon1      import read_variables as mva_read_variables
+    mvas = [varcon1_mlp_ncnp5c1s0c5e0c8, varcon1_mlp_ncnc1s0c3e0c5]
+elif args.mva == "varcon2":
+    from tWZ.MVA.mvavarcon2      import mva_variables, varcon2_mlp_ncnp5c1s0c5e0c8, varcon2_mlp_ncnc1s0c5e0c8 
+    from tWZ.MVA.mvavarcon2      import sequence as mva_sequence
+    from tWZ.MVA.mvavarcon2      import read_variables as mva_read_variables
+    mvas = [varcon2_mlp_ncnp5c1s0c5e0c8, varcon2_mlp_ncnc1s0c5e0c8]
+elif args.mva == "varcon3":
+    from tWZ.MVA.mvavarcon3      import mva_variables, varcon3_mlp_np5s0c3e0c5, varcon3_mlp_ncnp5c1s0c5e0c8 
+    from tWZ.MVA.mvavarcon3      import sequence as mva_sequence
+    from tWZ.MVA.mvavarcon3      import read_variables as mva_read_variables
+    mvas = [varcon3_mlp_np5s0c3e0c5, varcon3_mlp_ncnp5c1s0c5e0c8]
+elif args.mva == "varcon4":
+    from tWZ.MVA.mvavarcon4      import mva_variables, varcon4_mlp_ncnp5c1s0c5e0c8, varcon4_mlp_ncnc1s0c3e0c5 
+    from tWZ.MVA.mvavarcon4      import sequence as mva_sequence
+    from tWZ.MVA.mvavarcon4      import read_variables as mva_read_variables
+    mvas = [varcon4_mlp_ncnp5c1s0c5e0c8, varcon4_mlp_ncnc1s0c3e0c5]
+elif args.mva == "varcon5":
+    from tWZ.MVA.mvavarcon5      import mva_variables, varcon5_mlp_ncnp5c1s0c5e0c8, varcon5_mlp_ncnc1s0c3e0c5 
+    from tWZ.MVA.mvavarcon5      import sequence as mva_sequence
+    from tWZ.MVA.mvavarcon5      import read_variables as mva_read_variables
+    mvas = [varcon5_mlp_ncnp5c1s0c5e0c8, varcon5_mlp_ncnc1s0c3e0c5]
+elif args.mva == "allvars": 
+    from tWZ.MVA.MVA_TWZ_3l      import mva_variables, all_mlp_np40, all_mlp_np5s0c3e0c5, all_mlp_ncnc1s0c3e0c5 
+    from tWZ.MVA.MVA_TWZ_3l      import sequence as mva_sequence
+    from tWZ.MVA.MVA_TWZ_3l      import read_variables as mva_read_variables
+    mvas = [all_mlp_np40, all_mlp_np5s0c3e0c5, all_mlp_ncnc1s0c3e0c5]
 
 sequence.extend( mva_sequence )
 read_variables.extend( mva_read_variables )
@@ -429,7 +458,7 @@ def discriminator_getter(name):
         return getattr( event, name )
     return _disc_getter
 
-mvas = [all_mlp_np5s0c3e0c5 ] #, all_mlp_ncnc1s0c3e0c5]
+#mvas = [all_mlp_np40, all_mlp_np5s0c3e0c5, all_mlp_ncnc1s0c3e0c5]
 for mva in mvas:
     mva_reader.addMethod(method=mva)
     sequence.append( makeDiscriminator(mva) )

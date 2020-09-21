@@ -7,12 +7,12 @@ from Analysis.TMVA.defaults      import default_methods, default_factory_setting
 import Analysis.Tools.syncer
 
 # TopEFT
-from tWZ.Tools.user              import plot_directory, mva_directory
+from tWZ.Tools.user              import plot_directory, mva_directory_twz_wz
 from tWZ.Tools.cutInterpreter    import cutInterpreter
 
 # MVA configuration
-from tWZ.MVA.MVA_tWZ_WZ          import sequence, read_variables, mva_variables, all_mva_variables 
-from tWZ.MVA.MVA_tWZ_WZ          import * 
+from tWZ.MVA.MVA_TWZ_3l          import sequence, read_variables, mva_variables, all_mva_variables 
+from tWZ.MVA.MVA_TWZ_3l          import * 
 
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
@@ -42,12 +42,12 @@ else:
 #from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed    import *
 from tWZ.samples.nanoTuples_Summer16_nanoAODv6_private_postProcessed import *
 
-signal = TWZ_NLO_DR 
+signal = WZ 
 #signal.reduceFiles(factor=20)
 #TTZ.reduceFiles(factor=3)
 
 # TTZ
-backgrounds = [ TTZ, WZ ]
+backgrounds = [ TTZ ]
 
 samples = backgrounds + [signal]
 for sample in samples:
@@ -55,13 +55,13 @@ for sample in samples:
     if args.small:
         sample.reduceFiles(to = 1)
 
-mvas  = [ all_mlp_ncnc1s0c3e0c5, all_mlp_np5s0c3e0c5 ] #, all_mlp_ncnc1s0c5e0c8, all_mlp_ncnp5c1s0c5e0c8, all_mlp_np40, all_mlp_np7s0c5e1 ]
+mvas  = [ all_mlp_ncnc1s0c3e0c5 ] #, all_mlp_np5s0c3e0c5 ] #, all_mlp_ncnc1s0c5e0c8, all_mlp_ncnp5c1s0c5e0c8, all_mlp_np40, all_mlp_np7s0c5e1 ]
 
 ## TMVA Trainer instance
 trainer = Trainer( 
     signal = signal, 
     backgrounds = backgrounds, 
-    output_directory = mva_directory, 
+    output_directory = mva_directory_twz_wz, 
     mva_variables    = mva_variables,
     label            = "TWZ_3l", 
     fractionTraining = args.trainingFraction, 
@@ -83,7 +83,7 @@ for mva in mvas:
     trainer.addMethod(method = mva)
 
 trainer.trainMVA( factory_settings = default_factory_settings )
-trainer.plotEvaluation(plot_directory = os.path.join( plot_directory, "MVA", "TWZ_WZ_3l_allVars") )
+trainer.plotEvaluation(plot_directory = os.path.join( plot_directory, "MVA", "TWZ_WZ_3l", "allVars") )
 
 #reader.addMethod(method = bdt1)
 #reader.addMethod(method = default_methods["MLP"])

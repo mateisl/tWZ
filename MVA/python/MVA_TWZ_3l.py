@@ -389,6 +389,13 @@ all_mlp_np30 = {
     "color"               : ROOT.kGray,
     "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
     }
+all_mlp_np40 = {
+    "type"                : ROOT.TMVA.Types.kMLP,
+    "name"                : 'all_mlp_np40',
+    "layers"              : "N+40",
+    "color"               : ROOT.kGray,
+    "options"             : ["!H","!V","VarTransform=Norm","NeuronType=sigmoid","NCycles=10000","TrainingMethod=BP","LearningRate=0.04", "DecayRate=0.01","Sampling=0.3","SamplingEpoch=0.5","ConvergenceTests=1","CreateMVAPdfs=True","TestRate=5" ],
+    }
 #mlp1 = {
 #    "type"                : ROOT.TMVA.Types.kMLP,
 #    "name"                : 'all_mlp_np40',

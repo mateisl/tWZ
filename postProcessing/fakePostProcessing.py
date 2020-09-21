@@ -76,6 +76,21 @@ def get_parser():
 
 options = get_parser().parse_args()
 
+# for t in options.trigger:
+#     print "{trigger}/O".format(trigger =t)
+
+# print TreeVariable.fromString("HLT_Ele8_CaloIdM_TrackIdM_PFJet30/O")
+# print "+"*90
+# print (
+#     [
+#         TreeVariable.fromString("{trigger}/O".format(trigger =t)) for t in options.trigger
+#     ]
+# )
+# exit(0)
+
+# print ["TreeVariable.fromString('{trigger}/I')".format(trigger =t) for t in options.trigger]
+# exit(0)
+
 # Logging
 import tWZ.Tools.logger as _logger
 logFile = '/tmp/%s_%s_%s_njob%s.txt'%(options.skim, '_'.join(options.samples), os.environ['USER'], str(0 if options.nJobs==1 else options.job))
@@ -109,6 +124,7 @@ elif options.skim.startswith('1j1ele'):
 
 # trigger condition
 triggerCond = '('+'||'.join(options.trigger)+')'
+# root -l /eos/vbc/incoming///store/group/phys_susy/stops2l/topNanoAOD/v6-1-2/2016/JetHT/TopNanoAODv6-1-2-6_JetHT_Run2016B_ver2/200909_064328/0000/tree_857.root
 
 #Samples: Load samples
 maxN = 1 if options.small else None
@@ -170,6 +186,10 @@ elif len(samples)==1:
     sampleForPU = samples[0]
 else:
     raise ValueError( "Need at least one sample. Got %r",samples )
+
+
+# print sample.files
+# exit(0)
 
 if options.reduceSizeBy > 1:
     logger.info("Sample size will be reduced by a factor of %s", options.reduceSizeBy)
@@ -386,6 +406,14 @@ read_variables += [\
     VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,dxy/F,dz/F,charge/I,mvaTOP/F,looseId/O,jetIdx/I,jetRelIso/F]'),
     TreeVariable.fromString('nJet/I'),
     VectorTreeVariable.fromString('Jet[%s]'% ( ','.join(jetVars) ) ) ]
+
+
+read_variables.extend(
+    [
+        TreeVariable.fromString("{trigger}/O".format(trigger =t)) for t in options.trigger
+    ]
+)
+
 
 if sample.isData: new_variables.extend( ['jsonPassed/I','isData/I'] )
 new_variables.extend( ['nBTag/I'] )

@@ -111,6 +111,7 @@ def fill_vector_collection( event, collection_name, collection_varnames, objects
                     obj[var] = int(ord(obj[var]))
                 if type(obj[var]) == type(True):
                     obj[var] = int(obj[var])
+                print collection_name+"_"+var, getattr(event, collection_name+"_"+var), i_obj, var, obj[var]
                 getattr(event, collection_name+"_"+var)[i_obj] = obj[var]
 
 # Skim condition
@@ -127,7 +128,7 @@ triggerCond = '('+'||'.join(options.trigger)+')'
 # root -l /eos/vbc/incoming///store/group/phys_susy/stops2l/topNanoAOD/v6-1-2/2016/JetHT/TopNanoAODv6-1-2-6_JetHT_Run2016B_ver2/200909_064328/0000/tree_857.root
 
 #Samples: Load samples
-maxNFiles = 10 if options.small else None
+maxNFiles = 1 if options.small else None
 if options.small:
     options.job = 0
     #options.nJobs = 10000 # set high to just run over 1 input file
@@ -370,8 +371,8 @@ jetVarNames    = [x.split('/')[0] for x in jetVars]
 genLepVars     = ['pt/F', 'phi/F', 'eta/F', 'pdgId/I', 'genPartIdxMother/I', 'status/I', 'statusFlags/I'] # some might have different types
 genLepVarNames = [x.split('/')[0] for x in genLepVars]
 
-muVars         = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F', 'mvaTOP/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','mediumId/I','index/I', 'mT/F', 'hybridIso/F', 'pt_corr/F']
-eleVars        = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F', 'mvaTOP/F', 'sip3d/F','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','index/I', 'mT/F', 'hybridIso/F', 'pt_corr/F']
+muVars         = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso04_all/F', 'mvaTOP/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','mediumId/I','index/I', 'mT/F', 'hybridIso/F', ]
+eleVars        = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F', 'mvaTOP/F', 'sip3d/F','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','index/I', 'mT/F', 'hybridIso/F', 'lostHits/I','sieie/F','hoe/F','eInvMinusPInv/F', 'mvaFall17V2noIso_WP80/O']
 
 muVarNames     = [x.split('/')[0] for x in muVars]
 eleVarNames    = [x.split('/')[0] for x in eleVars]
@@ -403,9 +404,9 @@ if isMC:
 
 read_variables += [\
     TreeVariable.fromString('nElectron/I'),
-    VectorTreeVariable.fromString('Electron[pt/F,eta/F,phi/F,pdgId/I,cutBased/I,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,lostHits/b,mvaFall17V2Iso_WP80/O,mvaFall17V2Iso_WP90/O,convVeto/O,dxy/F,dz/F,charge/I,deltaEtaSC/F,vidNestedWPBitmap/I,mvaTOP/F,jetIdx/I,jetRelIso/F]'),
+    VectorTreeVariable.fromString('Electron[pt/F,eta/F,phi/F,pdgId/I,cutBased/I,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,lostHits/b,mvaFall17V2Iso_WP80/O,mvaFall17V2Iso_WP90/O,convVeto/O,dxy/F,dz/F,charge/I,deltaEtaSC/F,vidNestedWPBitmap/I,mvaTOP/F,jetIdx/I,jetRelIso/F,lostHits/b,sieie/F,hoe/F,eInvMinusPInv/F,mvaFall17V2noIso_WP80/O]'),
     TreeVariable.fromString('nMuon/I'),
-    VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,dxy/F,dz/F,charge/I,mvaTOP/F,looseId/O,jetIdx/I,jetRelIso/F]'),
+    VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso04_all/F,sip3d/F,dxy/F,dz/F,charge/I,mvaTOP/F,looseId/O,jetIdx/I,jetRelIso/F,mvaId/b]'),
     TreeVariable.fromString('nJet/I'),
     VectorTreeVariable.fromString('Jet[%s]'% ( ','.join(jetVars) ) ) ]
 
@@ -427,10 +428,10 @@ ele_ids = ['FOmvaTOP', 'mvaTOPVL', 'hybridIso', 'looseHybridIso']
 L_T_pairs = {'looseHybridIso':'hybridIso', 'FOmvaTOP':'mvaTOPVL'}
 
 for mu_id in mu_ids:
-    new_variables.append( 'mu_%s[%s]'% (mu_id, ','.join(muVars) + ',mvaTOPWP/I,pt_corr/F' ) )
+    new_variables.append( 'mu_%s[%s]'% (mu_id, ','.join(muVars) + ',mvaTOPWP/I,pt_corr/F,deepJet/F' ) )
     new_variables.append( 'nmu_%s/I'%mu_id )
 for ele_id in ele_ids:
-    new_variables.append( 'ele_%s[%s]'% ( ele_id, ','.join(eleVars) + ',mvaTOPWP/I,pt_corr/F' ) )
+    new_variables.append( 'ele_%s[%s]'% ( ele_id, ','.join(eleVars) + ',mvaTOPWP/I,pt_corr/F,deepJet/F' ) )
     new_variables.append( 'nele_%s/I'%ele_id )
 
 cleaning_vars  = ["cleaned_mu_%s/I"%mu_id for mu_id in mu_ids]
@@ -603,21 +604,31 @@ def filler( event ):
 
     all_jets     = getJets(r, jetVars=jetVarNames)
 
+    all_muons      = getGoodMuons    (r, mu_selector = None )
+    for m in all_muons:
+        if m['jetIdx']>=0:
+            m['deepJet'] = all_jets[m['jetIdx']]['btagDeepFlavB']
+        else:
+            m['deepJet'] = float('nan') 
+
     for mu_id in mu_ids:
-        muons      = getGoodMuons    (r, mu_selector  = muSelector_[mu_id] )
+        muons      = filter( muSelector_[mu_id], all_muons)
+        print mu_id, len(muons)
         for m in muons:
             m['pdgId']      = int( -13*m['charge'] )
             m['mT']         = sqrt( 2*event.met_pt*m['pt']*(1-cos(event.met_phi-m['phi'])) )
-            m['hybridIso']  = m['pfRelIso03_all']*min(25, m['pt'])
+            m['hybridIso']  = m['pfRelIso04_all']*min(25, m['pt'])
             m['mvaTOPWP']   = mvaTopWP(m['mvaTOP'], m['pdgId'])
             if L_T_pairs.has_key(mu_id): # this mu_id has a tight ID that corresponds to it
                 is_tight = muSelector_[L_T_pairs[mu_id]](m)
                 if is_tight:# or m['jetIdx']<0:
                     m['pt_corr'] = m['pt'] 
                 else:
-                    m['pt_corr'] = 0.95*m['pt']*(1+m['jetRelIso'])
+                    m['pt_corr'] = 0.8*m['pt']*(1+m['jetRelIso'])
             else:
                     m['pt_corr'] = m['pt'] 
+
+        
         fill_vector_collection( event, "mu_%s"%mu_id,  muVarNames,  muons)
         setattr(event, "nmu_%s"%mu_id, len(muons) )
 
@@ -625,8 +636,15 @@ def filler( event ):
         for jet in all_jets:
             jet["cleaned_mu_%s"%mu_id] = (jet in clean_jets)
                 
+    all_electrons = getGoodElectrons(r, ele_selector = None)
+    for e in all_electrons:
+        if e['jetIdx']>=0:
+            e['deepJet'] = all_jets[e['jetIdx']]['btagDeepFlavB']
+        else:
+            e['deepJet'] = float('nan') 
     for ele_id in ele_ids:
-        electrons = getGoodElectrons(r, ele_selector = eleSelector_[ele_id])
+        electrons = filter(eleSelector_[ele_id], all_electrons)
+        print ele_id, len(electrons)
         for e in electrons:
             e['pdgId']      = int( -11*e['charge'] )
             e['mT']         = sqrt( 2*event.met_pt*e['pt']*(1-cos(event.met_phi-e['phi'])) )
@@ -637,7 +655,7 @@ def filler( event ):
                 if is_tight:# or e['jetIdx']<0:
                     e['pt_corr'] = e['pt'] 
                 else:
-                    e['pt_corr'] = 0.95*e['pt']*(1+e['jetRelIso'])
+                    e['pt_corr'] = 0.8*e['pt']*(1+e['jetRelIso'])
             else:
                     e['pt_corr'] = e['pt'] 
                 

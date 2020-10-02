@@ -105,6 +105,8 @@ def get_index_str( index ):
 
 ## MVA TOP lepton thresholds ##
 mvaTOP = {'mu':{'VL':-0.45, 'L':0.05, 'M':0.65, 'T':0.90}, 'ele':{'VL':-0.55, 'L':0.0, 'M':0.60, 'T':0.90}}
+muon_deepjet_FO_threshold   = {2016:0.015, 2017:0.02, 2018:0.02}
+muon_jetRelIso_FO_threshold = {2016:0.5, 2017:0.6, 2018:0.5}
 
 def lepString( eleMu = None, WP = 'VL', idx = None):
     idx_str = "[%s]"%idx if idx is not None else ""
@@ -153,17 +155,17 @@ def muonSelector( lepton_selection, year, ptCut = 10):
                 and l["mediumId"] 
     elif lepton_selection == 'FOmvaTOP':
         def func(l):
-            #assert False, "Please remove, Rosmarie!"
-            assert False, "Please use the stuff, Rosmarie!"
             #x = min( [1, max([])
             return \
-                l["pt"]                 >= ptCut 
-                #and abs(l["eta"])       < 2.4 \
-                ##and l["mvaTOP"]         > mvaTOP['ele']['VL']
-                #and abs(l["dxy"])       < 0.05 \
-                #and abs(l["dz"])        < 0.1 \
-                #and l["sip3d"]          < 8.0 \
-                #and l['pfRelIso03_all'] < 0.40 
+                l["pt"]                 >= ptCut \
+                and abs(l["eta"])       < 2.4 \
+                and abs(l["dxy"])       < 0.05 \
+                and abs(l["dz"])        < 0.1 \
+                and l["sip3d"]          < 8.0 \
+                and l['pfRelIso04_all'] < 0.40 \
+                and ord(l['mvaId'])     >= 2 \
+                and ( (l['mvaTOP'] >0.9) or (l['mvaTOP'] <= 0.9 and (l["deepJet"] < muon_deepjet_FO_threshold[year] and l["jetRelIso"]>muon_jetRelIso_FO_threshold[year])) )
+ 
     elif lepton_selection == 'mvaTOPVL':
         def func(l):
             return \
@@ -187,7 +189,12 @@ def muonSelector( lepton_selection, year, ptCut = 10):
             return \
                 l["pt"]                 >= ptCut \
                 and abs(l["eta"])       < 2.5 \
-                and l["mvaTOP"]         > mvaTOP['mu']['T']
+                and abs(l["dxy"])       < 0.05 \
+                and abs(l["dz"])        < 0.1 \
+                and l["sip3d"]          < 8.0 \
+                and l['pfRelIso04_all'] < 0.40 \
+                and ord(l['mvaId'])     >= 2 \
+                and (l['mvaTOP'] > 0.9)  
     elif lepton_selection == 'hybridIso':
         def func(l):
             if l["pt"] <= 25 and l["pt"] >3.5:
@@ -411,18 +418,34 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and abs(l["dxy"])       < 0.05 \
                 and abs(l["dz"])        < 0.1
     elif lepton_selection == 'FOmvaTOP':
+
         def func(l):
-            assert False, "Please use the stuff, Rosmarie!"
+
+            if year == 2016:
+                electron_deepjet_threshold = 0.1
+            elif year == 2017:
+                electron_deepjet_threshold = 0.1
+            elif year == 2018:
+                ptj = l['pt']*(1+l['jetRelIso']) 
+                if ptj<30:
+                    electron_deepjet_threshold = 0.15
+                else:
+                    electron_deepjet_threshold = 0.015 - (0.015-0.07)*(ptj-30)/30 if ptj<60 else 0.07  
+ 
             return \
-                l["pt"]                 >= ptCut 
-                #and abs(l["eta"])       < 2.5 \
-                ##and l["mvaTOP"]         > mvaTOP['ele']['VL']
-                #and abs(l["dxy"])       < 0.05 \
-                #and abs(l["dz"])        < 0.1 \
-                #and l["sip3d"]          < 8.0 \
-                #and l['pfRelIso03_all'] < 0.40 \
-                #and ord(l["lostHits"])  <= 1\
-                #and ( (l["sieie"] <=  0.011 and abs(l["eta"]+l["deltaEtaSC"])<=1.4442) or (l["sieie"] <=  0.03 and abs(l["eta"]+l["deltaEtaSC"])>1.566)) 
+                l["pt"]                 >= ptCut \
+                and abs(l["eta"])       < 2.5 \
+                and abs(l["dxy"])       < 0.05 \
+                and abs(l["dz"])        < 0.1 \
+                and l["sip3d"]          < 8.0 \
+                and l['pfRelIso03_all'] < 0.40 \
+                and ord(l["lostHits"])  < 2 \
+                and l['hoe']            < 0.1 \
+                and l['eInvMinusPInv']  > -0.04 \
+                and l["convVeto"] \
+                and l['mvaFall17V2noIso_WP80'] \
+                and ( (l["sieie"] <=  0.011 and abs(l["eta"]+l["deltaEtaSC"])<=1.4442) or (l["sieie"] <=  0.03 and abs(l["eta"]+l["deltaEtaSC"])>1.566)) \
+                and ( l['jetIdx']<0 or (l['mvaTOP'] > 0.9) or (l['mvaTOP'] <= 0.9 and (l["deepJet"] <  electron_deepjet_threshold and l["jetRelIso"]> 0.5 )) )
     elif lepton_selection == 'mvaTOPVL':
         def func(l):
             return \
@@ -446,7 +469,16 @@ def eleSelector( lepton_selection, year, ptCut = 10):
             return \
                 l["pt"]                 >= ptCut \
                 and abs(l["eta"])       < 2.5 \
-                and l["mvaTOP"]         > mvaTOP['ele']['T']
+                and l["mvaTOP"]         > mvaTOP['ele']['T'] \
+                and abs(l["dxy"])       < 0.05 \
+                and abs(l["dz"])        < 0.1 \
+                and l["sip3d"]          < 8.0 \
+                and l['pfRelIso03_all'] < 0.40 \
+                and ord(l["lostHits"])  < 2 \
+                and l['hoe']            < 0.1 \
+                and l['eInvMinusPInv']  > -0.04 \
+                and l["convVeto"] \
+                and ( (l["sieie"] <=  0.011 and abs(l["eta"]+l["deltaEtaSC"])<=1.4442) or (l["sieie"] <=  0.03 and abs(l["eta"]+l["deltaEtaSC"])>1.566)) 
     elif lepton_selection == 'hybridIso':
         def func(l):
             if l["pt"] <= 25 and l["pt"] >5:
@@ -507,10 +539,10 @@ def eleSelector( lepton_selection, year, ptCut = 10):
 #        return '&&'.join(string)
 
 
-electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','lostHits','convVeto','dxy','dz','charge','deltaEtaSC', 'mvaFall17V2Iso_WP80', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap','mvaTOP', 'jetRelIso', 'jetIdx', 'sieie']
+electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','lostHits','convVeto','dxy','dz','charge','deltaEtaSC', 'mvaFall17V2Iso_WP80', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap','mvaTOP', 'jetRelIso', 'jetIdx', 'sieie', 'hoe', 'eInvMinusPInv', 'pfRelIso03_all', 'mvaFall17V2noIso_WP80']
 electronVars = electronVars_data + []
 
-muonVars_data = ['pt','eta','phi','pdgId','mediumId','miniPFRelIso_all','pfRelIso03_all','sip3d','dxy','dz','charge','mvaTOP', 'looseId', 'jetRelIso', 'jetIdx']
+muonVars_data = ['pt','eta','phi','pdgId','mediumId','miniPFRelIso_all','pfRelIso04_all','sip3d','dxy','dz','charge','mvaTOP', 'looseId', 'jetRelIso', 'jetIdx', 'mvaId' ]
 muonVars = muonVars_data + []
 
 def getMuons(c, collVars=muonVars):
@@ -519,10 +551,10 @@ def getElectrons(c, collVars=electronVars):
     return [getObjDict(c, 'Electron_', collVars, i) for i in range(int(getVarValue(c, 'nElectron')))]
 
 def getGoodMuons(c, collVars=muonVars, mu_selector = None):
-    return [l for l in getMuons(c, collVars) if mu_selector(l)]
+    return [l for l in getMuons(c, collVars) if ( mu_selector is None or mu_selector(l))]
 
 def getGoodElectrons(c, collVars=electronVars, ele_selector = None):
-    return [l for l in getElectrons(c, collVars) if ele_selector(l)]
+    return [l for l in getElectrons(c, collVars) if ( ele_selector is None or ele_selector(l))]
 
 
 tauVars=['eta','pt','phi','pdgId','charge', 'dxy', 'dz', 'idDecayModeNewDMs', 'idCI3hit', 'idAntiMu','idAntiE','mcMatchId']

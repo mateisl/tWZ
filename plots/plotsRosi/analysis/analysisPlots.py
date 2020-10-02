@@ -415,7 +415,7 @@ from tWZ.MVA.MVA_TWZ_3l      import read_variables as mva_read_variables
 import tWZ.MVA.MVA_TWZ_3l as tWZ_vs_ttZ
 import tWZ.MVA.MVA_TWZ_WZ_3l as tWZ_vs_WZ
 
-mvas = [tWZ_vs_ttZ.all_mlp_ncnc1s0c3e0c5, tWZ_vs_WZ.wz_all_mlp_ncnc1s0c3e0c5, tWZ_vs_WZ.wz_all_mlp_np5s0c3e0c5, tWZ_vs_WZ.wz_all_mlp_np40 ]
+mvas = [tWZ_vs_ttZ.all_mlp_ncnc1s0c3e0c5 ] #, tWZ_vs_WZ.wz_all_mlp_ncnc1s0c3e0c5, tWZ_vs_WZ.wz_all_mlp_np5s0c3e0c5, tWZ_vs_WZ.wz_all_mlp_np40 ]
 wzmvas = [tWZ_vs_WZ.wz_all_mlp_ncnc1s0c3e0c5, tWZ_vs_WZ.wz_all_mlp_np5s0c3e0c5, tWZ_vs_WZ.wz_all_mlp_np40 ]
 
 from tWZ.Tools.user          import mva_directory
@@ -443,22 +443,26 @@ for mva in mvas:
     mva_reader.addMethod(method=mva)
     sequence.append( makeDiscriminator(mva) )
 
-def get_wzmva( threshold, weightmva ):
+def get_wzmva( threshold, weightmva,cut ):
     def wzmva(event, sample):
         mva = weightmva   
         passweight = discriminator_getter(mva['name'])(event, sample)
         event.wzpassweight = int(passweight > threshold)
+        mvareweight[mva['name']][cut][0] = event.wzpassweight
         #print event.wzpassweight  
     return wzmva
 
 thresholds = {'cut0p85':0.85, 'cut0p9':0.9, 'cut0p95':0.95}
-
+#mvareweight = {}
 for wzmva in wzmvas: 
     for cut in thresholds: 
-        sequence.append( get_wzmva(threshold=thresholds[cut], weightmva=wzmva) ) 
+        mvareweight = {wzmva['name']:{cut:[1.,1.]}}
+        sequence.append( get_wzmva(threshold=thresholds[cut], weightmva=wzmva, cut=cut ) ) 
         print ('passweight'+wzmva['name']+cut) 
         #event. 
-        passweight =  lambda event, sample: event.wzpassweight #if sample.isData else event.wzpassweight*lumi_year[event.year]/1000.
+        #passweight =  lambda event, sample: event.wzpassweight #if sample.isData else event.wzpassweight*lumi_year[event.year]/1000.
+        mvareweight[wzmva['name']][cut][1] = lambda event, sample: mvareweight[wzmva['name']][cut][0]
+
 
 weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
 
@@ -535,20 +539,25 @@ for i_mode, mode in enumerate(allModes):
     plots = []
 
     for mva in mvas:
-        for cut in thresholds: 
-            plots.append(Plot(
-                texX = 'MVA_{3l}'+'_'+cut, texY = 'Number of Events',
-                name = mva['name']+'_'+cut, attribute = discriminator_getter(mva['name']),
-                binning=[25, 0, 1],
-                weight = passweight , 
-            ))
-            
-            plots.append(Plot(
-                texX = 'MVA_{3l}'+'_'+cut, texY = 'Number of Events',
-                name = mva['name']+'_'+cut+'_coarse', attribute = discriminator_getter(mva['name']),
-                binning=[10, 0, 1],
-                weight = passweight, 
-            ))
+        for wzmva in wzmvas: 
+            for cut in thresholds: 
+                plots.append(Plot(
+                    texX = 'MVA_{3l}'+'_pass', texY = 'Number of Events',
+                    #name = mva['name']+'_'+cut, attribute = discriminator_getter(mva['name']),
+                    name = mva['name']+'_'+wzmva['name']+'_'+cut+'_coarse', attribute = discriminator_getter(mva['name']),
+                    binning=[25, 0, 1],
+                    #weight = passweight , 
+                    weight = mvareweight[mva['name']][cut][1],
+                ))
+                
+                plots.append(Plot(
+                    texX = 'MVA_{3l}'+'_pass', texY = 'Number of Events',
+                    #name = mva['name']+'_'+cut+'_coarse', attribute = discriminator_getter(mva['name']),
+                    name = mva['name']+'_'+wzmva['name']+'_'+cut+'_coarse', attribute = discriminator_getter(mva['name']),
+                    binning=[10, 0, 1],
+                    #weight = passweight, 
+                    weight = mvareweight[mva['name']][cut][1],
+                ))
 
     for mva in mvas:
         plots.append(Plot(

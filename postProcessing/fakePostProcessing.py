@@ -111,7 +111,7 @@ def fill_vector_collection( event, collection_name, collection_varnames, objects
                     obj[var] = int(ord(obj[var]))
                 if type(obj[var]) == type(True):
                     obj[var] = int(obj[var])
-                print collection_name+"_"+var, getattr(event, collection_name+"_"+var), i_obj, var, obj[var]
+                #print collection_name+"_"+var, getattr(event, collection_name+"_"+var), i_obj, var, obj[var]
                 getattr(event, collection_name+"_"+var)[i_obj] = obj[var]
 
 # Skim condition
@@ -371,7 +371,7 @@ jetVarNames    = [x.split('/')[0] for x in jetVars]
 genLepVars     = ['pt/F', 'phi/F', 'eta/F', 'pdgId/I', 'genPartIdxMother/I', 'status/I', 'statusFlags/I'] # some might have different types
 genLepVarNames = [x.split('/')[0] for x in genLepVars]
 
-muVars         = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso04_all/F', 'mvaTOP/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','mediumId/I','index/I', 'mT/F', 'hybridIso/F', ]
+muVars         = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso04_all/F', 'mvaTOP/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','mediumId/I','index/I', 'mT/F', 'hybridIso/F', 'pfRelIso03_all/F']
 eleVars        = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F', 'mvaTOP/F', 'sip3d/F','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','index/I', 'mT/F', 'hybridIso/F', 'lostHits/I','sieie/F','hoe/F','eInvMinusPInv/F', 'mvaFall17V2noIso_WP80/O']
 
 muVarNames     = [x.split('/')[0] for x in muVars]
@@ -422,10 +422,10 @@ if sample.isData: new_variables.extend( ['jsonPassed/I','isData/I'] )
 new_variables.extend( ['nBTag/I'] )
 
 # ids
-mu_ids  = ['FOmvaTOP', 'mvaTOPVL', 'hybridIso', 'looseHybridIso']
-ele_ids = ['FOmvaTOP', 'mvaTOPVL', 'hybridIso', 'looseHybridIso']
+mu_ids  = ['FOmvaTOPT', 'mvaTOPT', 'hybridIso', 'looseHybridIso']
+ele_ids = ['FOmvaTOPT', 'mvaTOPT', 'hybridIso', 'looseHybridIso']
 
-L_T_pairs = {'looseHybridIso':'hybridIso', 'FOmvaTOP':'mvaTOPVL'}
+L_T_pairs = {'looseHybridIso':'hybridIso', 'FOmvaTOPT':'mvaTOPT'}
 
 for mu_id in mu_ids:
     new_variables.append( 'mu_%s[%s]'% (mu_id, ','.join(muVars) + ',mvaTOPWP/I,pt_corr/F,deepJet/F' ) )
@@ -613,7 +613,7 @@ def filler( event ):
 
     for mu_id in mu_ids:
         muons      = filter( muSelector_[mu_id], all_muons)
-        print mu_id, len(muons)
+        #print mu_id, len(muons)
         for m in muons:
             m['pdgId']      = int( -13*m['charge'] )
             m['mT']         = sqrt( 2*event.met_pt*m['pt']*(1-cos(event.met_phi-m['phi'])) )

@@ -421,10 +421,10 @@ if sample.isData: new_variables.extend( ['jsonPassed/I','isData/I'] )
 new_variables.extend( ['nBTag/I'] )
 
 # ids
-mu_ids  = ['mvaTOPVL', 'hybridIso', 'looseHybridIso']
-ele_ids = ['mvaTOPVL', 'hybridIso', 'looseHybridIso']
+mu_ids  = ['FOmvaTOP', 'mvaTOPVL', 'hybridIso', 'looseHybridIso']
+ele_ids = ['FOmvaTOP', 'mvaTOPVL', 'hybridIso', 'looseHybridIso']
 
-L_T_pairs = {'looseHybridIso':'hybridIso'}
+L_T_pairs = {'looseHybridIso':'hybridIso', 'FOmvaTOP':'mvaTOPVL'}
 
 for mu_id in mu_ids:
     new_variables.append( 'mu_%s[%s]'% (mu_id, ','.join(muVars) + ',mvaTOPWP/I,pt_corr/F' ) )

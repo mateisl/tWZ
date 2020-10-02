@@ -151,6 +151,19 @@ def muonSelector( lepton_selection, year, ptCut = 10):
                 and abs(l["dxy"])       < 0.05 \
                 and abs(l["dz"])        < 0.1 \
                 and l["mediumId"] 
+    elif lepton_selection == 'FOmvaTOP':
+        def func(l):
+            #assert False, "Please remove, Rosmarie!"
+            assert False, "Please use the stuff, Rosmarie!"
+            #x = min( [1, max([])
+            return \
+                l["pt"]                 >= ptCut 
+                #and abs(l["eta"])       < 2.4 \
+                ##and l["mvaTOP"]         > mvaTOP['ele']['VL']
+                #and abs(l["dxy"])       < 0.05 \
+                #and abs(l["dz"])        < 0.1 \
+                #and l["sip3d"]          < 8.0 \
+                #and l['pfRelIso03_all'] < 0.40 
     elif lepton_selection == 'mvaTOPVL':
         def func(l):
             return \
@@ -175,7 +188,6 @@ def muonSelector( lepton_selection, year, ptCut = 10):
                 l["pt"]                 >= ptCut \
                 and abs(l["eta"])       < 2.5 \
                 and l["mvaTOP"]         > mvaTOP['mu']['T']
-
     elif lepton_selection == 'hybridIso':
         def func(l):
             if l["pt"] <= 25 and l["pt"] >3.5:
@@ -398,29 +410,42 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and l["sip3d"]          < 4.0 \
                 and abs(l["dxy"])       < 0.05 \
                 and abs(l["dz"])        < 0.1
+    elif lepton_selection == 'FOmvaTOP':
+        def func(l):
+            assert False, "Please use the stuff, Rosmarie!"
+            return \
+                l["pt"]                 >= ptCut 
+                #and abs(l["eta"])       < 2.5 \
+                ##and l["mvaTOP"]         > mvaTOP['ele']['VL']
+                #and abs(l["dxy"])       < 0.05 \
+                #and abs(l["dz"])        < 0.1 \
+                #and l["sip3d"]          < 8.0 \
+                #and l['pfRelIso03_all'] < 0.40 \
+                #and ord(l["lostHits"])  <= 1\
+                #and ( (l["sieie"] <=  0.011 and abs(l["eta"]+l["deltaEtaSC"])<=1.4442) or (l["sieie"] <=  0.03 and abs(l["eta"]+l["deltaEtaSC"])>1.566)) 
     elif lepton_selection == 'mvaTOPVL':
         def func(l):
             return \
                 l["pt"]                 >= ptCut \
-                and abs(l["eta"])       < 2.4 \
+                and abs(l["eta"])       < 2.5 \
                 and l["mvaTOP"]         > mvaTOP['ele']['VL']
     elif lepton_selection == 'mvaTOPL':
         def func(l):
             return \
                 l["pt"]                 >= ptCut \
-                and abs(l["eta"])       < 2.4 \
+                and abs(l["eta"])       < 2.5 \
                 and l["mvaTOP"]         > mvaTOP['ele']['L']
     elif lepton_selection == 'mvaTOPM':
         def func(l):
             return \
                 l["pt"]                 >= ptCut \
-                and abs(l["eta"])       < 2.4 \
+                and abs(l["eta"])       < 2.5 \
                 and l["mvaTOP"]         > mvaTOP['ele']['M']
     elif lepton_selection == 'mvaTOPT':
         def func(l):
             return \
                 l["pt"]                 >= ptCut \
-                and abs(l["eta"])       < 2.4 \
+                and abs(l["eta"])       < 2.5 \
                 and l["mvaTOP"]         > mvaTOP['ele']['T']
     elif lepton_selection == 'hybridIso':
         def func(l):
@@ -482,7 +507,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
 #        return '&&'.join(string)
 
 
-electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','lostHits','convVeto','dxy','dz','charge','deltaEtaSC', 'mvaFall17V2Iso_WP80', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap','mvaTOP', 'jetRelIso', 'jetIdx']
+electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','lostHits','convVeto','dxy','dz','charge','deltaEtaSC', 'mvaFall17V2Iso_WP80', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap','mvaTOP', 'jetRelIso', 'jetIdx', 'sieie']
 electronVars = electronVars_data + []
 
 muonVars_data = ['pt','eta','phi','pdgId','mediumId','miniPFRelIso_all','pfRelIso03_all','sip3d','dxy','dz','charge','mvaTOP', 'looseId', 'jetRelIso', 'jetIdx']

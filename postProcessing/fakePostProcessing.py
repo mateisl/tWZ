@@ -284,18 +284,19 @@ try:    #Avoid trouble with race conditions in multithreading
 except:
     pass
 
-filename, ext = os.path.splitext( os.path.join(tmp_output_directory, sample.name + '.root') )
-outfilename   = filename+ext
+target_outfilename = os.path.join(storage_directory, sample.name + '.root') 
+filename, ext      = os.path.splitext( os.path.join(tmp_output_directory, sample.name + '.root') )
+outfilename        = filename+ext
 
 if not options.overwrite:
-    if os.path.isfile(outfilename):
-        logger.info( "Output file %s found.", outfilename)
-        if checkRootFile( outfilename, checkForObjects=["Events"] ) and deepCheckRootFile( outfilename ) and deepCheckWeight( outfilename ):
+    if os.path.isfile(target_outfilename):
+        logger.info( "Output file %s found.", target_outfilename)
+        if checkRootFile( target_outfilename, checkForObjects=["Events"] ) and deepCheckRootFile( target_outfilename ) and deepCheckWeight( target_outfilename ):
             logger.info( "File already processed. Source: File check ok! Skipping." ) # Everything is fine, no overwriting
             sys.exit(0)
         else:
             logger.info( "File corrupt. Removing file from target." )
-            os.remove( outfilename )
+            os.remove( target_outfilename )
             logger.info( "Reprocessing." )
     else:
         logger.info( "Sample not processed yet." )
@@ -644,7 +645,7 @@ def filler( event ):
             e['deepJet'] = float('nan') 
     for ele_id in ele_ids:
         electrons = filter(eleSelector_[ele_id], all_electrons)
-        print ele_id, len(electrons)
+        #print ele_id, len(electrons)
         for e in electrons:
             e['pdgId']      = int( -11*e['charge'] )
             e['mT']         = sqrt( 2*event.met_pt*e['pt']*(1-cos(event.met_phi-e['phi'])) )

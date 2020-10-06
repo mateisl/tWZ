@@ -8,5 +8,5 @@ data_2017             = base+"/tWZ_nAODv6_private_v2/2017/trilep"
 mc_2018               = base+"/tWZ_nAODv6_private_v2/2018/trilep"
 data_2018             = base+"/tWZ_nAODv6_private_v2/2018/trilep"
 
-fakes_mu_2016         = base+"/tWZ_fakes_v2/2016/1j1mu"
-fakes_ele_2016        = base+"/tWZ_fakes_v2/2016/1j1ele"
+fakes_mu_2016         = base+"/tWZ_fakes_v3/2016/1j1mu"
+fakes_ele_2016        = base+"/tWZ_fakes_v3/2016/1j1ele"

@@ -128,7 +128,7 @@ triggerCond = '('+'||'.join(options.trigger)+')'
 # root -l /eos/vbc/incoming///store/group/phys_susy/stops2l/topNanoAOD/v6-1-2/2016/JetHT/TopNanoAODv6-1-2-6_JetHT_Run2016B_ver2/200909_064328/0000/tree_857.root
 
 #Samples: Load samples
-maxNFiles = 1 if options.small else None
+maxNfiles = 1 if options.small else None
 if options.small:
     options.job = 0
     #options.nJobs = 10000 # set high to just run over 1 input file
@@ -186,7 +186,7 @@ elif len(samples)==1:
     sample      = samples[0]
     sampleForPU = samples[0]
     if options.small:
-        sample.reduceFiles( to = maxNFiles )
+        sample.reduceFiles( to = maxNfiles )
 else:
     raise ValueError( "Need at least one sample. Got %r",samples )
 

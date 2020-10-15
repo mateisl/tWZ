@@ -1,6 +1,13 @@
+import logging
+logger = logging.getLogger(__name__)
+
 class triggerSelector:
     # ttH multilepton AN Run II
     # http://cms.cern.ch/iCMS/jsp/openfile.jsp?tp=draft&files=AN2019_111_v6.pdf
+
+    @staticmethod
+    def getTriggerList( sample ):
+        return [t.GetName() for t in sample.chain.GetListOfBranches() if t.GetName().startswith("HLT_")]
 
     def __init__(self, year):
         if year == 2016:
@@ -40,14 +47,6 @@ class triggerSelector:
         else:
             raise NotImplementedError("Trigger selection %r not implemented"%year)
 
-        # define which triggers should be used for which dataset
-        self.DoubleMuon     = "(%s)"%"||".join(["Alt$(%s,0)"%trigger for trigger in self.mmm + self.mm])
-        self.DoubleEG       = "(%s)"%"||".join(["Alt$(%s,0)"%trigger for trigger in self.eee + self.ee])
-        self.MuonEG         = "(%s)"%"||".join(["Alt$(%s,0)"%trigger for trigger in self.em + self.eem + self.emm])
-        self.SingleMuon     = "(%s)"%"||".join(["Alt$(%s,0)"%trigger for trigger in self.m])
-        self.SingleElectron = "(%s)"%"||".join(["Alt$(%s,0)"%trigger for trigger in self.e])
-        self.EGamma         = "(%s)"%"||".join(["Alt$(%s,0)"%trigger for trigger in self.ee+self.e ] )
-
         # define an arbitrary hierarchy
         if year == 2016 or year == 2017:
             self.PDHierarchy = [ "DoubleMuon", "DoubleEG", "MuonEG", "SingleMuon", "SingleElectron" ]
@@ -58,7 +57,26 @@ class triggerSelector:
     def __getVeto(self, cutString):
         return "!%s"%cutString
 
-    def getSelection(self, PD):
+    def getSelection(self, PD, triggerList = None):
+
+        # reduce the set of triggers in case 
+        for lst in [ "mmm", "mm", "m", "eee", "ee", "e", "em", "eem", "emm" ]:
+            res = []
+            for trig in getattr(self, lst):
+                if type(triggerList)==type([]) and not trig in triggerList:
+                    logger.warning( "Removing trigger %s", trig )
+                else:
+                    res.append(trig)
+            setattr( self, 'red_'+lst, res )
+
+        # define which triggers should be used for which dataset
+        self.DoubleMuon     = "(%s)"%"||".join(self.red_mmm + self.red_mm)
+        self.DoubleEG       = "(%s)"%"||".join(self.red_eee + self.red_ee)
+        self.MuonEG         = "(%s)"%"||".join(self.red_em + self.red_eem + self.red_emm)
+        self.SingleMuon     = "(%s)"%"||".join(self.red_m)
+        self.SingleElectron = "(%s)"%"||".join(self.red_e)
+        self.EGamma         = "(%s)"%"||".join(self.red_ee+self.red_e)
+
         found = False
         cutString = ""
         if PD == "MC":

@@ -183,16 +183,6 @@ xSection = samples[0].xSection if isMC else None
 
 L1PW = L1PrefireWeight(options.year)
 
-# Trigger selection
-from tWZ.Tools.triggerSelector import triggerSelector
-ts           = triggerSelector(options.year)
-triggerCond  = ts.getSelection(options.samples[0] if isData else "MC")
-treeFormulas = {"triggerDecision": {'string':triggerCond} }
-
-if isData and options.triggerSelection:
-    logger.info("Sample will have the following trigger skim: %s"%triggerCond)
-    skimConds.append( triggerCond )
-
 # apply MET filter
 skimConds.append( getFilterCut(options.year, isData=isData, ignoreJSON=True, skipWeight=True) )
 
@@ -210,6 +200,16 @@ elif len(samples)==1:
     sampleForPU = samples[0]
 else:
     raise ValueError( "Need at least one sample. Got %r",samples )
+
+# Trigger selection
+from tWZ.Tools.triggerSelector import triggerSelector
+ts           = triggerSelector(options.year)
+triggerCond  = ts.getSelection(options.samples[0] if isData else "MC", triggerList = ts.getTriggerList(sample) )
+treeFormulas = {"triggerDecision": {'string':triggerCond} }
+
+if isData and options.triggerSelection:
+    logger.info("Sample will have the following trigger skim: %s"%triggerCond)
+    skimConds.append( triggerCond )
 
 if options.reduceSizeBy > 1:
     logger.info("Sample size will be reduced by a factor of %s", options.reduceSizeBy)

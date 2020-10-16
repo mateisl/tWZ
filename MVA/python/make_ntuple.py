@@ -5,11 +5,10 @@ import os
 import ROOT
 
 # Analysis
-import Analysis.Tools.syncer
+#import Analysis.Tools.syncer
 # RootTools
 from RootTools.core.standard import *
 # TopEFT
-from tWZ.Tools.user              import plot_directory, mva_directory
 from tWZ.Tools.cutInterpreter    import cutInterpreter
 
 # MVA configuration
@@ -96,6 +95,10 @@ while reader.run():
 nEventsTotal = maker.tree.GetEntries()
 
 tmp_directory = ROOT.gDirectory
+dirname = os.path.dirname(output_file)
+if not os.path.exists(dirname):
+    os.makedirs(dirname)
+
 outputfile = ROOT.TFile.Open(output_file, 'recreate')
 maker.tree.Write()
 outputfile.Close()

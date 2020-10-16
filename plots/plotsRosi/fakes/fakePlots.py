@@ -53,11 +53,11 @@ if args.era == "Run2016":
     if args.mode=='mu':
         data_sample =  samples.DoubleMuon_Run2016
         triggers    = ["HLT_Mu3_PFJet40" ]#, "HLT_Mu8", "HLT_Mu17"]#, "HLT_Mu27"] HLT_Mu27 is actually in SingleMuon!
-        mc = [samples.WJetsToLNu_mu, samples.TTbar_mu]  #samples.QCD_pt_mu]
+        mc = [ samples.QCD_mu, samples.WJetsToLNu_mu, samples.TTbar_mu]  #samples.QCD_pt_mu]
     elif args.mode=='ele':
         data_sample =  samples.DoubleEG_Run2016
         triggers    = ["HLT_Ele8_CaloIdM_TrackIdM_PFJet30" ]
-        mc = [ samples.WJetsToLNu_ele, samples.TTbar_ele] # samples.QCD_pt_ele
+        mc = [ samples.QCD_ele, samples.WJetsToLNu_ele, samples.TTbar_ele] # samples.QCD_pt_ele
 
     #mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 #elif args.era == "Run2017":
@@ -74,10 +74,10 @@ bins = [
     ]
 
 triggerSelection = '('+"||".join(triggers)+')'
-leptonSelection  = 'n%s_looseHybridIso==1'%args.mode
-jetSelection     = 'Sum$(Jet_pt>40&&abs(Jet_eta)<2.4&&JetGood_cleaned_%s_looseHybridIso)>=1'%args.mode
+leptonSelection  = 'n%s_FOmvaTOPT==1'%args.mode
+jetSelection     = 'Sum$(Jet_pt>40&&abs(Jet_eta)<2.4&&JetGood_cleaned_%s_mvaTOPT)>=1'%args.mode
 if args.selection:
-    selection = cutInterpreter.cutString(args.selection).replace("mT", "%s_looseHybridIso_mT"%args.mode)
+    selection = cutInterpreter.cutString(args.selection).replace("mT", "%s_mvaTOPT_mT"%args.mode)
 else:
     selection = "(1)"
 
@@ -109,13 +109,6 @@ else:
 
     data_selectionString = "&&".join([getFilterCut(isData=True, year=year), triggerSelection, leptonSelection, jetSelection])
     data_nvtx_histo = data_sample.get1DHistoFromDraw( "PV_npvsGood", [100, 0, 100], selectionString=data_selectionString, weightString = "weight" )
-    print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-    print data_selectionString
-    print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-    print data_nvtx_histo
-    print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-    print (data_nvtx_histo.Integral()) 
-    print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
     data_nvtx_histo.Scale(1./data_nvtx_histo.Integral())
 
     mc_selectionString = "&&".join([getFilterCut(isData=False, year=year), triggerSelection, leptonSelection, jetSelection])
@@ -180,11 +173,12 @@ read_variables = [
 
 sequence       = []
 
-read_variables += ["n%s_looseHybridIso/I"%args.mode, "%s_looseHybridIso[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F"]
+#read_variables += ["n%s_looseHybridIso/I"%args.mode, "%s_looseHybridIso[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F"]
+read_variables += ["n%s_mvaTOPT/I"%args.mode, "%s_mvaTOPT[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I"]
 
 def makeLeptons( event, sample ):
-    collVars = ["pt","eta","phi","mT","hybridIso"]
-    lep  = getObjDict(event, args.mode+'_looseHybridIso_', collVars, 0)
+    collVars = ["pt","eta","phi","mT"]
+    lep  = getObjDict(event, args.mode+'_mvaTOPT_', collVars, 0)
     for var in collVars:
         setattr( event, "lep_"+var, lep[var]  )
 
@@ -255,33 +249,35 @@ plots.append(Plot(
 ))
 
 plots.append(Plot(
+  name = 'TL_mu', texX = 'TL_mu', texY = 'Number of Events',
+  attribute = lambda event, sample: event.nmu_mvaTOPT == 1,
+  binning=[2,0,2],
+  addOverFlowBin='upper',
+))
+
+plots.append(Plot(
   name = 'dR_jet0', texX = 'm_{T}', texY = 'Number of Events',
   attribute = lambda event, sample: cos(event.lep_phi - event.JetGood_phi[0] ),
   binning=[40,-1,1],
   addOverFlowBin='upper',
 ))
 
-plots.append(Plot(
-  name = 'hybridIso_lowpT', texX = 'hybridIso (lowPt)', texY = 'Number of Events',
-  attribute = lambda event, sample: event.lep_hybridIso if event.lep_pt<25 else float('nan'),
-  binning=[40,0,20],
-  addOverFlowBin='none',
-))
-
-plots.append(Plot(
-  name = 'hybridIso_highpT', texX = 'hybridIso (highPt)', texY = 'Number of Events',
-  attribute = lambda event, sample: event.lep_hybridIso if event.lep_pt>25 else float('nan'),
-  binning=[40,0,20],
-  addOverFlowBin='none',
-))
+#plots.append(Plot(
+#  name = 'hybridIso_lowpT', texX = 'hybridIso (lowPt)', texY = 'Number of Events',
+#  attribute = lambda event, sample: event.lep_hybridIso if event.lep_pt<25 else float('nan'),
+#  name = 'hybridIso_highpT', texX = 'hybridIso (highPt)', texY = 'Number of Events',
+#  attribute = lambda event, sample: event.lep_hybridIso if event.lep_pt>25 else float('nan'),
+#  binning=[40,0,20],
+#  addOverFlowBin='none',
+#))
 
 def reformat( str_ ):
     return str_.replace('.','p').replace('-','m') #-1.0  -> m1p0
 
-for bin_ in bins:
-    pt_low, pt_high, eta_low, eta_high = bin_
-
-    name = reformat("pt%sTo%s_eta%sTo%s"%tuple(map( lambda f: str(f).rstrip('0').rstrip('.'), bin_ ))) 
+#for bin_ in bins:
+#    pt_low, pt_high, eta_low, eta_high = bin_
+#
+#    name = reformat("pt%sTo%s_eta%sTo%s"%tuple(map( lambda f: str(f).rstrip('0').rstrip('.'), bin_ ))) 
 #    plots.append(Plot(
 #      name = name, texX = 'hybridIso %f<p_{T}<%f %f<#eta<%f'%(pt_low, pt_high, eta_low, eta_high ), texY = 'Number of Events',
 #      attribute = lambda event, sample: event.lep_hybridIso if (event.lep_pt>pt_low and event.lep_pt<pt_high and event.lep_eta>eta_low and event.lep_eta<eta_high) else float('nan'),
@@ -289,17 +285,17 @@ for bin_ in bins:
 #      addOverFlowBin='none',
 #    ))
 
-    plots.append(Plot(
-      name = name, texX = 'hybridIso %f<p_{T}<%f %f<#eta<%f'%(pt_low, pt_high, eta_low, eta_high ), texY = 'Number of Events',
-      attribute = lambda event, sample: event.lep_hybridIso,
-      weight = binWeight( *bin_),
-      binning=[40,0,20],
-      addOverFlowBin='none',
-    ))
-    binning =  plots[-1].binning
-    assert 5.%((binning[2]-binning[1])/float(binning[0]))==0., "Binning has no threshold at 5!"
+#    plots.append(Plot(
+#      name = name, texX = 'hybridIso %f<p_{T}<%f %f<#eta<%f'%(pt_low, pt_high, eta_low, eta_high ), texY = 'Number of Events',
+#      attribute = lambda event, sample: event.lep_hybridIso,
+#      weight = binWeight( *bin_),
+#      binning=[40,0,20],
+#      addOverFlowBin='none',
+#    ))
+#    binning =  plots[-1].binning
+#    assert 5.%((binning[2]-binning[1])/float(binning[0]))==0., "Binning has no threshold at 5!"
 
-    plots[-1].make_tl = True
+#    plots[-1].make_tl = True
 
 plotting.fill(plots, read_variables = read_variables, sequence = sequence, max_events=max_events)
 

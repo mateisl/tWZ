@@ -28,10 +28,15 @@ def merge(pd, totalRunName, listOfRuns):
     dirs[pd + '_' + totalRunName] = []
     for run in listOfRuns: dirs[pd + '_' + totalRunName].extend(dirs[pd + '_' + run])
 
-for pd in ['MuonEG', 'DoubleMuon', 'DoubleEG', 'SingleElectron', 'SingleMuon']:
-    merge(pd, 'Run2017',    ['Run2017B', 'Run2017C', 'Run2017D', 'Run2017E', 'Run2017F'])
-    merge(pd, 'Run2017CDE', ['Run2017C', 'Run2017D', 'Run2017E'])
-    merge(pd, 'Run2017BCDE',['Run2017B', 'Run2017C', 'Run2017D', 'Run2017E'])
+for pd in ['MuonEG', 'DoubleMuon',  'SingleElectron', 'SingleMuon']:  #'DoubleEG',
+    merge(pd, 'Run2017',    ['Run2017B', 'Run2017D', 'Run2017C', 'Run2017E', 'Run2017F']) 
+    merge(pd, 'Run2017CDE', ['Run2017C', 'Run2017D', 'Run2017E'])  
+    merge(pd, 'Run2017BCDE',['Run2017B', 'Run2017D', 'Run2017C', 'Run2017E'])
+
+for pd in ['DoubleEG']:
+    merge(pd, 'Run2017',    ['Run2017B', 'Run2017C', 'Run2017E', 'Run2017F']) #'Run2017D',
+    merge(pd, 'Run2017CDE', ['Run2017C', 'Run2017E']) #'Run2017D', 
+    merge(pd, 'Run2017BCDE',['Run2017B', 'Run2017C', 'Run2017E']) #'Run2017D',
 
 for key in dirs:
     dirs[key] = [ os.path.join( directory_, dir) for dir in dirs[key]]

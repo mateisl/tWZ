@@ -407,7 +407,7 @@ read_variables += [\
     TreeVariable.fromString('nElectron/I'),
     VectorTreeVariable.fromString('Electron[pt/F,eta/F,phi/F,pdgId/I,cutBased/I,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,lostHits/b,mvaFall17V2Iso_WP80/O,mvaFall17V2Iso_WP90/O,convVeto/O,dxy/F,dz/F,charge/I,deltaEtaSC/F,vidNestedWPBitmap/I,mvaTOP/F,jetIdx/I,jetRelIso/F,lostHits/b,sieie/F,hoe/F,eInvMinusPInv/F,mvaFall17V2noIso_WP80/O]'),
     TreeVariable.fromString('nMuon/I'),
-    VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso04_all/F,sip3d/F,dxy/F,dz/F,charge/I,mvaTOP/F,looseId/O,jetIdx/I,jetRelIso/F,mvaId/b]'),
+    VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso03_all/F,pfRelIso04_all/F,sip3d/F,dxy/F,dz/F,charge/I,mvaTOP/F,looseId/O,jetIdx/I,jetRelIso/F,mvaId/b]'),
     TreeVariable.fromString('nJet/I'),
     VectorTreeVariable.fromString('Jet[%s]'% ( ','.join(jetVars) ) ) ]
 
@@ -614,7 +614,6 @@ def filler( event ):
 
     for mu_id in mu_ids:
         muons      = filter( muSelector_[mu_id], all_muons)
-        #print mu_id, len(muons)
         for m in muons:
             m['pdgId']      = int( -13*m['charge'] )
             m['mT']         = sqrt( 2*event.met_pt*m['pt']*(1-cos(event.met_phi-m['phi'])) )
@@ -628,7 +627,6 @@ def filler( event ):
                     m['pt_corr'] = 0.8*m['pt']*(1+m['jetRelIso'])
             else:
                     m['pt_corr'] = m['pt'] 
-
         
         fill_vector_collection( event, "mu_%s"%mu_id,  muVarNames,  muons)
         setattr(event, "nmu_%s"%mu_id, len(muons) )
@@ -636,7 +634,7 @@ def filler( event ):
         clean_jets,_ = cleanJetsAndLeptons( all_jets, muons ) 
         for jet in all_jets:
             jet["cleaned_mu_%s"%mu_id] = (jet in clean_jets)
-                
+
     all_electrons = getGoodElectrons(r, ele_selector = None)
     for e in all_electrons:
         if e['jetIdx']>=0:

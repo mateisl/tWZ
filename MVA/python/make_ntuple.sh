@@ -1,2 +1,4 @@
 #!/bin/sh
-python make_ntuple.py --small --output /scratch/$USER/tWZ/ --sample TWZ_NLO_DR 
+python make_ntuple.py  --output /scratch/$USER/tWZ/ --sample TWZ_NLO_DR 
+python make_ntuple.py  --output /scratch/$USER/tWZ/ --sample WZ 
+python make_ntuple.py  --output /scratch/$USER/tWZ/ --sample TTZ 

@@ -57,7 +57,7 @@ if args.era == "Run2016":
     elif args.mode=='ele':
         data_sample =  samples.DoubleEG_Run2016
         triggers    = ["HLT_Ele8_CaloIdM_TrackIdM_PFJet30" ]
-        mc = [ samples.QCD_ele, samples.WJetsToLNu_ele, samples.TTbar_ele] # samples.QCD_pt_ele
+        mc = [ samples.WJetsToLNu_ele, samples.TTbar_ele] # samples.QCD_pt_ele, samples.QCD_ele
 
     #mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 #elif args.era == "Run2017":
@@ -174,7 +174,7 @@ read_variables = [
 sequence       = []
 
 #read_variables += ["n%s_looseHybridIso/I"%args.mode, "%s_looseHybridIso[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F"]
-read_variables += ["n%s_mvaTOPT/I"%args.mode, "%s_mvaTOPT[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I"]
+read_variables += ["n%s_mvaTOPT/I"%args.mode, "%s_mvaTOPT[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I", "nele_mvaTOPT/I"]
 
 def makeLeptons( event, sample ):
     collVars = ["pt","eta","phi","mT"]

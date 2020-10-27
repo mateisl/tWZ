@@ -405,7 +405,7 @@ if isMC:
 
 read_variables += [\
     TreeVariable.fromString('nElectron/I'),
-    VectorTreeVariable.fromString('Electron[pt/F,eta/F,phi/F,pdgId/I,cutBased/I,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,lostHits/b,mvaFall17V2Iso_WP80/O,mvaFall17V2Iso_WP90/O,convVeto/O,dxy/F,dz/F,charge/I,deltaEtaSC/F,vidNestedWPBitmap/I,mvaTOP/F,jetIdx/I,jetRelIso/F,lostHits/b,sieie/F,hoe/F,eInvMinusPInv/F,mvaFall17V2noIso_WP80/O]'),
+    VectorTreeVariable.fromString('Electron[pt/F,eta/F,phi/F,pdgId/I,cutBased/I,miniPFRelIso_all/F,pfRelIso03_all/F,pfRelIso04_all/F,sip3d/F,lostHits/b,mvaFall17V2Iso_WP80/O,mvaFall17V2Iso_WP90/O,convVeto/O,dxy/F,dz/F,charge/I,deltaEtaSC/F,vidNestedWPBitmap/I,mvaTOP/F,jetIdx/I,jetRelIso/F,lostHits/b,sieie/F,hoe/F,eInvMinusPInv/F,mvaFall17V2noIso_WP80/O]'),
     TreeVariable.fromString('nMuon/I'),
     VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso03_all/F,pfRelIso04_all/F,sip3d/F,dxy/F,dz/F,charge/I,mvaTOP/F,looseId/O,jetIdx/I,jetRelIso/F,mvaId/b]'),
     TreeVariable.fromString('nJet/I'),

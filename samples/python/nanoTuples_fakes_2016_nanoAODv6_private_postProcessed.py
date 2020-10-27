@@ -27,10 +27,9 @@ QCD_mu = Sample.fromDirectory(name="QCD_mu", treeName="Events", isData=False, co
 #QCD_pt_mu = Sample.fromDirectory(name="QCD_pt_mu", treeName="Events", isData=False, color=color.QCD, texName="QCD p_{T} (#mu)", directory=make_dirs( locations.fakes_mu_2016, dirs['QCD_pt']))
 
 # EM enriched QCD (bcToE missing!)
-###not working with janiks pp : "QCD_Ele_pt20to30"
-#dirs['QCD_ele'] = [ "QCD_Ele_pt30to50_comb", "QCD_Ele_pt50to80_comb", "QCD_Ele_pt80to120_comb", "QCD_Ele_pt120to170_comb", "QCD_Ele_pt170to300", "QCD_Ele_pt300toInf" ] # "QCD_Ele_pt20to30"
+dirs['QCD_ele'] = [ "QCD_Ele_pt20to30", "QCD_Ele_pt30to50_comb", "QCD_Ele_pt50to80_comb", "QCD_Ele_pt80to120_comb", "QCD_Ele_pt120to170_comb", "QCD_Ele_pt170to300", "QCD_Ele_pt300toInf" ] # "QCD_Ele_pt20to30"
 
-#QCD_ele = Sample.fromDirectory(name="QCD_ele", treeName="Events", isData=False, color=color.QCD, texName="QCD(e)", directory=make_dirs( locations.fakes_ele_2016, dirs['QCD_ele']))
+QCD_ele = Sample.fromDirectory(name="QCD_ele", treeName="Events", isData=False, color=color.QCD, texName="QCD(e)", directory=make_dirs( locations.fakes_ele_2016, dirs['QCD_ele']))
 
 # pt binned inclusive QCD (ele)
 #QCD_pt_ele = Sample.fromDirectory(name="QCD_pt_ele", treeName="Events", isData=False, color=color.QCD, texName="QCD p_{T} (e)", directory=make_dirs( locations.fakes_ele_2016, dirs['QCD_pt']))

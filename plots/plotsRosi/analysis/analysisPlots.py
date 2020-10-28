@@ -409,8 +409,8 @@ def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
 #from Analysis.TMVA.Reader    import Reader
 #
 #from tWZ.MVA.MVA_TWZ_3l      import mva_variables #, all_mlp_np40, all_mlp_np5s0c3e0c5, all_mlp_ncnc1s0c3e0c5 
-#from tWZ.MVA.MVA_TWZ_3l      import sequence as mva_sequence
-#from tWZ.MVA.MVA_TWZ_3l      import read_variables as mva_read_variables
+from tWZ.MVA.MVA_TWZ_3l      import sequence as mva_sequence
+from tWZ.MVA.MVA_TWZ_3l      import read_variables as mva_read_variables
 #
 #import tWZ.MVA.MVA_TWZ_3l as tWZ_vs_ttZ
 #import tWZ.MVA.MVA_TWZ_WZ_3l as tWZ_vs_WZ
@@ -420,8 +420,8 @@ def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
 #
 #from tWZ.Tools.user          import mva_directory
 #
-#sequence.extend( mva_sequence )
-#read_variables.extend( mva_read_variables )
+sequence.extend( mva_sequence )
+read_variables.extend( mva_read_variables )
 #
 #mva_reader = Reader(
 #    mva_variables     = mva_variables,
@@ -483,6 +483,15 @@ def make_training_observables_3l(event, sample):
 
 sequence.append( make_training_observables_3l )
 
+from ML.models.tWZ.tWZ_multiclass import variables as keras_varnames
+from ML.models.tWZ.tWZ_multiclass import model     as keras_multiclass 
+from tWZ.MVA.MVA_TWZ_3l      import mva_variables
+
+def keras_predict( event, sample ):
+    #print [mva_variables[varname](event, sample) for varname in keras_varnames] 
+    event.keras_multiclass_prediction = keras_multiclass.predict( [[mva_variables[varname](event, sample) for varname in keras_varnames]]) ) 
+    print event.keras_multiclass_prediction
+sequence.append( keras_predict )
 
 yields     = {}
 allPlots   = {}
@@ -494,7 +503,7 @@ for i_mode, mode in enumerate(allModes):
         data_sample.setSelectionString([getLeptonSelection(mode)])
         data_sample.name           = "data"
         data_sample.style          = styles.errorStyle(ROOT.kBlack)
-        data_sample.read_variables = read_variables_data
+        data_sample.read_variables = read_variables_data 
         lumi_scale                 = data_sample.lumi/1000
 
     for sample in mc: sample.style = styles.fillStyle(sample.color)

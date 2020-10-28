@@ -25,6 +25,7 @@ from Analysis.Tools.helpers              import deltaPhi, deltaR
 from Analysis.Tools.puProfileCache       import *
 from Analysis.Tools.puReweighting        import getReweightingFunction
 import Analysis.Tools.syncer
+import numpy as np
 
 # Arguments
 import argparse
@@ -77,7 +78,7 @@ for sample in mc:
 if args.small:
     for sample in mc + [data_sample]:
         sample.normalization = 1.
-        sample.reduceFiles( factor = 10 )
+        sample.reduceFiles( to = 1 )
         #sample.reduceFiles( to=1)
         sample.scale /= sample.normalization
 
@@ -118,7 +119,7 @@ def drawPlots(plots, mode, dataMCScale):
             scaling = {0:1} if args.dataMCScaling else {},
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
-            copyIndexPHP = True, extensions = ["png"],
+            copyIndexPHP = True, extensions = ["pdf"],
           )
             
 # Read variables and sequences
@@ -165,8 +166,8 @@ read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F',
 # define 3l selections
 
 #MVA
-from Analysis.TMVA.Reader    import Reader
-from tWZ.MVA.MVA_TWZ_3l_LTS  import mva_variables, mlp1, mlp_tanh
+#from Analysis.TMVA.Reader    import Reader
+from tWZ.MVA.MVA_TWZ_3l_LTS  import mva_variables#, mlp1, mlp_tanh
 from tWZ.MVA.MVA_TWZ_3l_LTS  import sequence as mva_sequence
 from tWZ.MVA.MVA_TWZ_3l_LTS  import read_variables as mva_read_variables
 from tWZ.Tools.user          import mva_directory
@@ -174,26 +175,43 @@ from tWZ.Tools.user          import mva_directory
 sequence.extend( mva_sequence )
 read_variables.extend( mva_read_variables )
 
-mva_reader = Reader(
-    mva_variables     = mva_variables,
-    weight_directory  = os.path.join( mva_directory, "TWZ_3l" ),
-    label             = "TWZ_3l")
-
-def makeDiscriminator( mva ):
-    def _getDiscriminator( event, sample ):
-        kwargs = {name:func(event,None) for name, func in mva_variables.iteritems()}
-        setattr( event, mva['name'], mva_reader.evaluate(mva['name'], **kwargs))
-    return _getDiscriminator
-
+#mva_reader = Reader(
+#    mva_variables     = mva_variables,
+#    weight_directory  = os.path.join( mva_directory, "TWZ_3l" ),
+#    label             = "TWZ_3l")
+#
+#def makeDiscriminator( mva ):
+#    def _getDiscriminator( event, sample ):
+#        kwargs = {name:func(event,None) for name, func in mva_variables.iteritems()}
+#        setattr( event, mva['name'], mva_reader.evaluate(mva['name'], **kwargs))
+#    return _getDiscriminator
+#
 def discriminator_getter(name):
     def _disc_getter( event, sample ):
         return getattr( event, name )
     return _disc_getter
 
-mvas = [mlp_tanh]
-for mva in mvas:
-    mva_reader.addMethod(method=mva)
-    sequence.append( makeDiscriminator(mva) )
+#mvas = [mlp_tanh]
+#for mva in mvas:
+#    mva_reader.addMethod(method=mva)
+#    sequence.append( makeDiscriminator(mva) )
+
+from ML.models.tWZ.tWZ_multiclass import variables as keras_varnames
+from ML.models.tWZ.tWZ_multiclass import output_specification as keras_output_specification 
+from ML.models.tWZ.tWZ_multiclass import model     as keras_multiclass
+
+def keras_predict( event, sample ):
+    #print np.array([[mva_variables[varname](event, sample) for varname in keras_varnames]])
+    event.keras_multiclass_prediction = keras_multiclass.predict( np.array([[mva_variables[varname](event, sample) for varname in keras_varnames]])) 
+    event.keras_multiclass_prediction = event.keras_multiclass_prediction[0]
+    #for i in xrange( len(keras_output_specification) ):
+    #    print "keras_multiclass_"+keras_output_specification[i]
+    #    print  event.keras_multiclass_prediction, i
+    #    print  event.keras_multiclass_prediction[i]
+    for i in xrange( len(keras_output_specification) ):
+        setattr( event, "keras_multiclass_"+keras_output_specification[i], event.keras_multiclass_prediction[i] ) 
+    #print event.keras_multiclass_prediction
+sequence.append( keras_predict )
 
 mu_string  = lepString('mu','VL')
 ele_string = lepString('ele','VL')
@@ -294,19 +312,26 @@ for i_mode, mode in enumerate(allModes):
       binning=[4, 0, 4],
     ))
 
-    for mva in mvas:
+    for output in keras_output_specification:
         plots.append(Plot(
-            texX = 'MVA_{3l}', texY = 'Number of Events',
-            name = mva['name'], attribute = discriminator_getter(mva['name']),
-            binning=[25, 0, 1],
+            texX = 'keras multiclass '+output, texY = 'Number of Events',
+            name = 'keras_multiclass_'+output, attribute = discriminator_getter('keras_multiclass_'+output),
+            binning=[50, -1, 1],
         ))
 
-    for mva in mvas:
-        plots.append(Plot(
-            texX = 'MVA_{3l}', texY = 'Number of Events',
-            name = mva['name']+'_coarse', attribute = discriminator_getter(mva['name']),
-            binning=[10, 0, 1],
-        ))
+    #for mva in mvas:
+    #    plots.append(Plot(
+    #        texX = 'MVA_{3l}', texY = 'Number of Events',
+    #        name = mva['name'], attribute = discriminator_getter(mva['name']),
+    #        binning=[25, 0, 1],
+    #    ))
+
+    #for mva in mvas:
+    #    plots.append(Plot(
+    #        texX = 'MVA_{3l}', texY = 'Number of Events',
+    #        name = mva['name']+'_coarse', attribute = discriminator_getter(mva['name']),
+    #        binning=[10, 0, 1],
+    #    ))
 
     plots.append(Plot(
       name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',

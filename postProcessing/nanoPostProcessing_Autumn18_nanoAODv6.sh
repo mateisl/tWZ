@@ -29,11 +29,11 @@ python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processin
 # top
 #python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --reduceSizeBy 3 --sample TTLep_pow #SPLIT50
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --flagTTBar --sample TTLep_pow  #SPLIT59
-#python nanoPostProcessing.py  --overwrite --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --flagTTBar --sample TTSingleLep_pow #SPLIT80
+#python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --flagTTBar --sample TTSingleLep_pow #SPLIT80
 #python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --flagTTGamma --sample TTGLep #SPLIT20
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --reduceSizeBy 5 --sample TToLeptons_sch_amcatnlo #SPLIT5
-python nanoPostProcessing.py --overwrite --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample T_tWch #SPLIT3
-python nanoPostProcessing.py --overwrite --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample TBar_tWch #SPLIT3
+python nanoPostProcessing.py --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample T_tWch #SPLIT3
+python nanoPostProcessing.py --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample TBar_tWch #SPLIT3
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --reduceSizeBy 15 --sample T_tch_pow #SPLIT8
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --reduceSizeBy 15 --sample TBar_tch_pow #SPLIT5
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample tZq_ll #SPLIT17

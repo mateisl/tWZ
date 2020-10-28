@@ -438,7 +438,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and abs(l["dz"])        < 0.1 \
                 and l["sip3d"]          < 8.0 \
                 and l['pfRelIso03_all'] < 0.40 \
-                and l["lostHits"]       < 2 \
+                and ord(l["lostHits"])  < 2 \
                 and l['hoe']            < 0.1 \
                 and l['eInvMinusPInv']  > -0.04 \
                 and l["convVeto"] \
@@ -473,7 +473,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and abs(l["dz"])        < 0.1 \
                 and l["sip3d"]          < 8.0 \
                 and l['pfRelIso03_all'] < 0.40 \
-                and l["lostHits"]       < 2 \
+                and ord(l["lostHits"])  < 2 \
                 and l['hoe']            < 0.1 \
                 and l['eInvMinusPInv']  > -0.04 \
                 and l["convVeto"] \
@@ -538,7 +538,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
 #        return '&&'.join(string)
 
 
-electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','lostHits','convVeto','dxy','dz','charge','deltaEtaSC', 'mvaFall17V2Iso_WP80', 'jetRelIso', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap','mvaTOP', 'jetRelIso', 'jetIdx', 'sieie', 'hoe', 'eInvMinusPInv', 'pfRelIso04_all', 'mvaFall17V2noIso_WP80']
+electronVars_data = ['pt','eta','phi','pdgId','cutBased','miniPFRelIso_all','pfRelIso03_all','sip3d','convVeto','dxy','dz','charge','deltaEtaSC', 'jetRelIso', 'mvaFall17V2Iso_WP90', 'vidNestedWPBitmap','mvaTOP', 'jetIdx', 'sieie', 'hoe', 'eInvMinusPInv', 'pfRelIso04_all', 'mvaFall17V2noIso_WP80']
 electronVars = electronVars_data + []
 
 muonVars_data = ['pt','eta','phi','pdgId','mediumId','miniPFRelIso_all','pfRelIso04_all','sip3d','dxy','dz','charge','mvaTOP', 'looseId', 'jetRelIso', 'jetIdx', 'mvaId', 'pfRelIso03_all']

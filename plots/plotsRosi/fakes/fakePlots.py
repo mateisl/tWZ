@@ -75,9 +75,9 @@ bins = [
 
 triggerSelection = '('+"||".join(triggers)+')'
 leptonSelection  = 'n%s_FOmvaTOPT==1'%args.mode
-jetSelection     = 'Sum$(Jet_pt>40&&abs(Jet_eta)<2.4&&JetGood_cleaned_%s_mvaTOPT)>=1'%args.mode
+jetSelection     = 'Sum$(Jet_pt>40&&abs(Jet_eta)<2.4&&JetGood_cleaned_%s_FOmvaTOPT)>=1'%args.mode
 if args.selection:
-    selection = cutInterpreter.cutString(args.selection).replace("mT", "%s_mvaTOPT_mT"%args.mode)
+    selection = cutInterpreter.cutString(args.selection).replace("mT", "%s_FOmvaTOPT_mT"%args.mode)
 else:
     selection = "(1)"
 
@@ -178,7 +178,7 @@ read_variables += ["n%s_mvaTOPT/I"%args.mode, "%s_mvaTOPT[pt/F,eta/F,phi/F,mT/F,
 
 def makeLeptons( event, sample ):
     collVars = ["pt","eta","phi","mT"]
-    lep  = getObjDict(event, args.mode+'_mvaTOPT_', collVars, 0)
+    lep  = getObjDict(event, args.mode+'_FOmvaTOPT_', collVars, 0)
     for var in collVars:
         setattr( event, "lep_"+var, lep[var]  )
 
@@ -247,6 +247,20 @@ plots.append(Plot(
   binning=[40,0,200],
   addOverFlowBin='upper',
 ))
+
+#plots.append(Plot(
+#  name = 'mu_mvaTOPT_mT', texX = 'mu_m_{T}', texY = 'Number of Events',
+#  attribute = lambda event, sample: event.mu_mvaTOPT_mT,
+#  binning=[40,0,200],
+#  addOverFlowBin='upper',
+#))
+#
+#plots.append(Plot(
+#  name = 'ele_mvaTOPT_mT', texX = 'ele_m_{T}', texY = 'Number of Events',
+#  attribute = lambda event, sample: event.ele_mvaTOPT_mT,
+#  binning=[40,0,200],
+#  addOverFlowBin='upper',
+#))
 
 plots.append(Plot(
   name = 'LT_mu', texX = 'LT_mu', texY = 'Number of Events',

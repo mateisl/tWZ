@@ -174,7 +174,7 @@ read_variables = [
 sequence       = []
 
 #read_variables += ["n%s_looseHybridIso/I"%args.mode, "%s_looseHybridIso[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F"]
-read_variables += ["n%s_mvaTOPT/I"%args.mode, "%s_mvaTOPT[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I", "nele_mvaTOPT/I"]
+read_variables += ["n%s_FOmvaTOPT/I"%args.mode, "%s_FOmvaTOPT[pt/F,eta/F,phi/F,mT/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I", "nele_mvaTOPT/I"]
 
 def makeLeptons( event, sample ):
     collVars = ["pt","eta","phi","mT"]
@@ -247,20 +247,6 @@ plots.append(Plot(
   binning=[40,0,200],
   addOverFlowBin='upper',
 ))
-
-#plots.append(Plot(
-#  name = 'mu_mvaTOPT_mT', texX = 'mu_m_{T}', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.mu_mvaTOPT_mT,
-#  binning=[40,0,200],
-#  addOverFlowBin='upper',
-#))
-#
-#plots.append(Plot(
-#  name = 'ele_mvaTOPT_mT', texX = 'ele_m_{T}', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.ele_mvaTOPT_mT,
-#  binning=[40,0,200],
-#  addOverFlowBin='upper',
-#))
 
 plots.append(Plot(
   name = 'LT_mu', texX = 'LT_mu', texY = 'Number of Events',

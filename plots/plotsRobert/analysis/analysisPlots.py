@@ -6,6 +6,9 @@
 #
 import ROOT, os
 ROOT.gROOT.SetBatch(True)
+c1 = ROOT.TCanvas() # do this to avoid version conflict in png.h with keras import ...
+c1.Draw()
+c1.Print('delete.png')
 import itertools
 import copy
 import array
@@ -37,7 +40,7 @@ argParser.add_argument('--small',                             action='store_true
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
 argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
 argParser.add_argument('--era',            action='store', type=str, default="Run2016")
-argParser.add_argument('--selection',      action='store', default='trilepM-minDLmass12-onZ1-njet4p-btag1')
+argParser.add_argument('--selection',      action='store', default='trilepT-minDLmass12-onZ1-njet4p-btag1')
 args = argParser.parse_args()
 
 # Logger
@@ -119,7 +122,7 @@ def drawPlots(plots, mode, dataMCScale):
             scaling = {0:1} if args.dataMCScaling else {},
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
-            copyIndexPHP = True, extensions = ["pdf"],
+            copyIndexPHP = True, extensions = ["png"],
           )
             
 # Read variables and sequences
@@ -316,7 +319,7 @@ for i_mode, mode in enumerate(allModes):
         plots.append(Plot(
             texX = 'keras multiclass '+output, texY = 'Number of Events',
             name = 'keras_multiclass_'+output, attribute = discriminator_getter('keras_multiclass_'+output),
-            binning=[50, -1, 1],
+            binning=[50, 0, 1],
         ))
 
     #for mva in mvas:

@@ -52,12 +52,12 @@ if args.era == "Run2016":
     import tWZ.samples.nanoTuples_fakes_2016_nanoAODv6_private_postProcessed as samples
     if args.mode=='mu':
         data_sample =  samples.DoubleMuon_Run2016
-        triggers    = ["HLT_Mu3_PFJet40" ]#, "HLT_Mu8", "HLT_Mu17"]#, "HLT_Mu27"] HLT_Mu27 is actually in SingleMuon!
+        triggers    = ["HLT_Mu3_PFJet40" ] #, "HLT_Mu8", "HLT_Mu17"]#, "HLT_Mu27"] HLT_Mu27 is actually in SingleMuon!
         mc = [ samples.QCD_mu, samples.WJetsToLNu_mu, samples.TTbar_mu]  #samples.QCD_pt_mu]
     elif args.mode=='ele':
         data_sample =  samples.DoubleEG_Run2016
         triggers    = ["HLT_Ele8_CaloIdM_TrackIdM_PFJet30" ]
-        mc = [ samples.WJetsToLNu_ele, samples.TTbar_ele] # samples.QCD_pt_ele, samples.QCD_ele
+        mc = [ samples.QCD_ele, samples.WJetsToLNu_ele, samples.TTbar_ele] # samples.QCD_pt_ele
 
     #mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 #elif args.era == "Run2017":
@@ -75,9 +75,9 @@ bins = [
 
 triggerSelection = '('+"||".join(triggers)+')'
 leptonSelection  = 'n%s_FOmvaTOPT==1'%args.mode
-jetSelection     = 'Sum$(Jet_pt>40&&abs(Jet_eta)<2.4&&JetGood_cleaned_%s_mvaTOPT)>=1'%args.mode
+jetSelection     = 'Sum$(Jet_pt>40&&abs(Jet_eta)<2.4&&JetGood_cleaned_%s_FOmvaTOPT)>=1'%args.mode
 if args.selection:
-    selection = cutInterpreter.cutString(args.selection).replace("mT", "%s_mvaTOPT_mT"%args.mode)
+    selection = cutInterpreter.cutString(args.selection).replace("mT", "%s_FOmvaTOPT_mT"%args.mode)
 else:
     selection = "(1)"
 
@@ -174,11 +174,11 @@ read_variables = [
 sequence       = []
 
 #read_variables += ["n%s_looseHybridIso/I"%args.mode, "%s_looseHybridIso[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F"]
-read_variables += ["n%s_mvaTOPT/I"%args.mode, "%s_mvaTOPT[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I", "nele_mvaTOPT/I"]
+read_variables += ["n%s_FOmvaTOPT/I"%args.mode, "%s_FOmvaTOPT[pt/F,eta/F,phi/F,mT/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I", "nele_mvaTOPT/I"]
 
 def makeLeptons( event, sample ):
     collVars = ["pt","eta","phi","mT"]
-    lep  = getObjDict(event, args.mode+'_mvaTOPT_', collVars, 0)
+    lep  = getObjDict(event, args.mode+'_FOmvaTOPT_', collVars, 0)
     for var in collVars:
         setattr( event, "lep_"+var, lep[var]  )
 
@@ -198,13 +198,13 @@ for sample in mc + [data_sample]:
 
 stack = Stack(mc, [data_sample])
 
-def binWeight( pt_low, pt_high, eta_low, eta_high ):
-    def myweight(event, sample ):
-        if event.lep_pt>pt_low and event.lep_pt<pt_high and event.lep_eta>eta_low and event.lep_eta<eta_high:
-            return event.weight
-        else:
-            return 0
-    return myweight
+#def binWeight( pt_low, pt_high, eta_low, eta_high ):
+#    def myweight(event, sample ):
+#        if event.lep_pt>pt_low and event.lep_pt<pt_high and event.lep_eta>eta_low and event.lep_eta<eta_high:
+#            return event.weight
+#        else:
+#            return 0
+#    return myweight
     
 
 weight_ = lambda event, sample: event.weight 
@@ -249,18 +249,25 @@ plots.append(Plot(
 ))
 
 plots.append(Plot(
-  name = 'TL_mu', texX = 'TL_mu', texY = 'Number of Events',
+  name = 'LT_mu', texX = 'LT_mu', texY = 'Number of Events',
   attribute = lambda event, sample: event.nmu_mvaTOPT == 1,
   binning=[2,0,2],
   addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-  name = 'dR_jet0', texX = 'm_{T}', texY = 'Number of Events',
-  attribute = lambda event, sample: cos(event.lep_phi - event.JetGood_phi[0] ),
-  binning=[40,-1,1],
+  name = 'LT_ele', texX = 'LT_ele', texY = 'Number of Events',
+  attribute = lambda event, sample: event.nele_mvaTOPT == 1,
+  binning=[2,0,2],
   addOverFlowBin='upper',
 ))
+
+#plots.append(Plot(
+#  name = 'dR_jet0', texX = 'm_{T}', texY = 'Number of Events',
+#  attribute = lambda event, sample: cos(event.lep_phi - event.JetGood_phi[0] ),
+#  binning=[40,-1,1],
+#  addOverFlowBin='upper',
+#))
 
 #plots.append(Plot(
 #  name = 'hybridIso_lowpT', texX = 'hybridIso (lowPt)', texY = 'Number of Events',
@@ -271,8 +278,8 @@ plots.append(Plot(
 #  addOverFlowBin='none',
 #))
 
-def reformat( str_ ):
-    return str_.replace('.','p').replace('-','m') #-1.0  -> m1p0
+#def reformat( str_ ):
+#    return str_.replace('.','p').replace('-','m') #-1.0  -> m1p0
 
 #for bin_ in bins:
 #    pt_low, pt_high, eta_low, eta_high = bin_
@@ -301,20 +308,20 @@ plotting.fill(plots, read_variables = read_variables, sequence = sequence, max_e
 
 drawPlots(plots)
 
-def make_TL( histo ):
-    bin_th = histo.FindBin(5)
-    T = histo.Integral(1,bin_th-1) 
-    L = histo.Integral(bin_th,histo.GetNbinsX()) 
-    if L>0:
-        return T/L
-    else:
-        if T > 0:
-            return float('nan')
-        elif T==0:
-            return 0
-
-for plot in plots:
-    if hasattr( plot, "make_tl" ):
-        print "predicted TL:", make_TL(plot[0][0])
+#def make_TL( histo ):
+#    bin_th = histo.FindBin(5)
+#    T = histo.Integral(1,bin_th-1) 
+#    L = histo.Integral(bin_th,histo.GetNbinsX()) 
+#    if L>0:
+#        return T/L
+#    else:
+#        if T > 0:
+#            return float('nan')
+#        elif T==0:
+#            return 0
+#
+#for plot in plots:
+#    if hasattr( plot, "make_tl" ):
+#        print "predicted TL:", make_TL(plot[0][0])
 
 

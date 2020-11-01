@@ -53,7 +53,7 @@ if args.era == "Run2016":
     if args.mode=='mu':
         data_sample =  samples.DoubleMuon_Run2016
         triggers    = ["HLT_Mu3_PFJet40" ]#, "HLT_Mu8", "HLT_Mu17"]#, "HLT_Mu27"] HLT_Mu27 is actually in SingleMuon!
-        mc = [ samples.QCD_pt_mu, samples.WJetsToLNu_mu, samples.TTbar_mu]
+        mc = [ samples.QCD_mu, samples.WJetsToLNu_mu, samples.TTbar_mu]
     elif args.mode=='ele':
         data_sample =  samples.DoubleEG_Run2016
         triggers    = ["HLT_Ele8_CaloIdM_TrackIdM_PFJet30" ]

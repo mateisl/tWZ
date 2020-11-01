@@ -120,7 +120,10 @@ def cosThetaStar( Z_mass, Z_pt, Z_eta, Z_phi, l_pt, l_eta, l_phi ):
         return -1 # (-1+ct)/(1-ct) 
     gamma   = sqrt( 1 + Z_pt**2/Z_mass**2 * cosh(Z_eta)**2 )
     beta    = sqrt( 1 - 1/gamma**2 )
-    return (-beta + cosTheta) / (1 - beta*cosTheta)
+    if 1 - beta*cosTheta !=0:
+        return (-beta + cosTheta) / (1 - beta*cosTheta)
+    else:
+        return -1
 
 def checkRootFile(f, checkForObjects=[]):
     rf = ROOT.TFile.Open(f)

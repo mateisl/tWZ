@@ -59,14 +59,6 @@ if args.era == "Run2016":
         triggers    = ["HLT_Ele8_CaloIdM_TrackIdM_PFJet30" ]
         mc = [ samples.QCD_ele, samples.WJetsToLNu_ele, samples.TTbar_ele] # samples.QCD_pt_ele
 
-    #mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
-#elif args.era == "Run2017":
-#    mc = [Fall17.TWZ_NLO_DR, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
-#elif args.era == "Run2018":
-#    mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
-#elif args.era == "RunII":
-#    mc = [TWZ_NLO_DR, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
-
 bins = [ 
     (2.5,5, -1.2, 1.2),
     (5.,10.,  -1.2, 1.2),
@@ -80,6 +72,12 @@ if args.selection:
     selection = cutInterpreter.cutString(args.selection).replace("mT", "%s_FOmvaTOPT_mT"%args.mode)
 else:
     selection = "(1)"
+
+data_selectionString = "&&".join([getFilterCut(isData=True, year=year), triggerSelection, leptonSelection, jetSelection])
+data_sample.setSelectionString( data_selectionString )
+mc_selectionString   = "&&".join([getFilterCut(isData=False, year=year), triggerSelection, leptonSelection, jetSelection])
+for s in mc:
+    s.setSelectionString( mc_selectionString )
 
 max_events = -1
 if args.small:
@@ -107,12 +105,10 @@ if dirDB.contains( pu_key ) and not args.overwrite:
 else:
     logger.info( "Didn't find PU reweight histo %r. Obtaining it now.", pu_key)
 
-    data_selectionString = "&&".join([getFilterCut(isData=True, year=year), triggerSelection, leptonSelection, jetSelection])
-    data_nvtx_histo = data_sample.get1DHistoFromDraw( "PV_npvsGood", [100, 0, 100], selectionString=data_selectionString, weightString = "weight" )
+    data_nvtx_histo = data_sample.get1DHistoFromDraw( "PV_npvsGood", [100, 0, 100], weightString = "weight" )
     data_nvtx_histo.Scale(1./data_nvtx_histo.Integral())
 
-    mc_selectionString = "&&".join([getFilterCut(isData=False, year=year), triggerSelection, leptonSelection, jetSelection])
-    mc_histos  = [ s.get1DHistoFromDraw( "PV_npvsGood", [100, 0, 100], selectionString=mc_selectionString, weightString = "weight*reweightBTag_SF") for s in mc]
+    mc_histos  = [ s.get1DHistoFromDraw( "PV_npvsGood", [100, 0, 100], weightString = "weight*reweightBTag_SF") for s in mc]
     mc_histo     = mc_histos[0]
     for h in mc_histos[1:]:
         mc_histo.Add( h )
@@ -133,7 +129,6 @@ def nvtx_puRW( event, sample ):
 data_sample.scale   = 1.
 for sample in mc:
     sample.weight   = nvtx_puRW
-
 
 def drawObjects():
     lines = [
@@ -194,7 +189,7 @@ data_sample.style   = styles.errorStyle(ROOT.kBlack)
 
 for sample in mc: sample.style = styles.fillStyle(sample.color)
 for sample in mc + [data_sample]:
-    sample.setSelectionString("&&".join( [ triggerSelection, leptonSelection, jetSelection, selection]))
+    sample.addSelectionString(selection)
 
 stack = Stack(mc, [data_sample])
 

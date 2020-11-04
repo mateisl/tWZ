@@ -13,7 +13,7 @@ python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processin
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50_HT70to100 #SPLIT16
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50_HT100to200 #SPLIT12
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50_HT200to400 #SPLIT12
-python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50_HT400to600 DYJetsToLL_M50_HT400to600_ext #SPLIT20
+python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50_HT400to600 #SPLIT20
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50_HT600to800 #SPLIT13
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50_HT800to1200 #SPLIT6
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50_HT1200to2500 #SPLIT2

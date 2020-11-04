@@ -163,9 +163,9 @@ elif options.year == 2018:
 #        raise NotImplementedError
 
 samples = []
-for selectedSamples in options.samples:
+for selected in options.samples:
     for sample in allSamples:
-        if selectedSamples == sample.name:
+        if selected == sample.name:
             samples.append(sample)
 
 if len(samples)==0:

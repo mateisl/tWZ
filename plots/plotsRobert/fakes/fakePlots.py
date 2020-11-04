@@ -312,6 +312,6 @@ def make_TL( histo ):
 
 for plot in plots:
     if hasattr( plot, "make_tl" ):
-        print "predicted TL:", make_TL(plot[0][0])
+        print "predicted TL:", make_TL(plot.histos[0][0])
 
 

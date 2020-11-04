@@ -33,7 +33,8 @@ argParser.add_argument('--overwrite',                         action='store_true
 argParser.add_argument('--plot_directory', action='store', default='tWZ_fakes_v3') # -v2')
 argParser.add_argument('--era',            action='store', type=str, default="Run2016")
 argParser.add_argument('--mode',           action='store', type=str, default="mu", choices=["mu","ele"])
-argParser.add_argument('--selection',      action='store', default=None)
+argParser.add_argument('--mT',             action='store', type=int, default=-1)
+argParser.add_argument('--met',            action='store', type=int, default=-1)
 args = argParser.parse_args()
 
 # Logger
@@ -68,14 +69,26 @@ bins = [
 triggerSelection = '('+"||".join(triggers)+')'
 leptonSelection  = 'n%s_FOmvaTOPT==1'%args.mode
 jetSelection     = 'Sum$(Jet_pt>40&&abs(Jet_eta)<2.4&&JetGood_cleaned_%s_FOmvaTOPT)>=1'%args.mode
-if args.selection:
-    selection = cutInterpreter.cutString(args.selection).replace("mT", "%s_FOmvaTOPT_mT"%args.mode)
-else:
-    selection = "(1)"
 
-data_selectionString = "&&".join([getFilterCut(isData=True, year=year), triggerSelection, leptonSelection, jetSelection])
+selectionName    = "inclusive"
+eventSelection   = "(1)"
+if args.met>0:   
+    selectionName = "metTo{met}".format(met=args.met)
+    eventSelection= "met_pt<={met}".format(met=args.met)
+if args.mT>0:
+    mT_str = "Sum$({mode}_FOmvaTOPT_mT<{mT})==1".format(**args.__dict__) 
+    if args.met>0:
+        eventSelection+= "&&"+mT_str
+        selectionName += "-mTTo{mT}".format(mT=args.mT)
+    else: 
+        eventSelection = mT_str 
+        selectionName  = "mTTo{mT}".format(mT=args.mT)
+
+logger.info("selection %s -> %s", selectionName, eventSelection)
+
+data_selectionString = "&&".join([getFilterCut(isData=True, year=year), triggerSelection, leptonSelection, jetSelection, eventSelection])
 data_sample.setSelectionString( data_selectionString )
-mc_selectionString   = "&&".join([getFilterCut(isData=False, year=year), triggerSelection, leptonSelection, jetSelection])
+mc_selectionString   = "&&".join([getFilterCut(isData=False, year=year), triggerSelection, leptonSelection, jetSelection, eventSelection])
 for s in mc:
     s.setSelectionString( mc_selectionString )
 
@@ -127,8 +140,8 @@ def nvtx_puRW( event, sample ):
 
 #lumi_scale                 = data_sample.lumi/1000
 data_sample.scale   = 1.
-for sample in mc:
-    sample.weight   = nvtx_puRW
+#for sample in mc:
+#    sample.weight   = nvtx_puRW
 
 def drawObjects():
     lines = [
@@ -139,7 +152,7 @@ def drawObjects():
 
 def drawPlots(plots):
   for log in [False, True]:
-    plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, args.selection if args.selection else "inclusive", args.mode, ("log" if log else "lin"))
+    plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, selectionName, args.mode, ("log" if log else "lin"))
     for plot in plots:
       if not max(l.GetMaximum() for l in sum(plot.histos,[])): continue # Empty plot
 
@@ -172,11 +185,10 @@ sequence       = []
 read_variables += ["n%s_FOmvaTOPT/I"%args.mode, "%s_FOmvaTOPT[pt/F,eta/F,phi/F,mT/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I", "nele_mvaTOPT/I"]
 
 def makeLeptons( event, sample ):
-    collVars = ["pt","eta","phi","mT"]
+    collVars = ["pt","eta","phi","mT","mvaTOPT"]
     lep  = getObjDict(event, args.mode+'_FOmvaTOPT_', collVars, 0)
     for var in collVars:
         setattr( event, "lep_"+var, lep[var]  )
-
 sequence.append( makeLeptons )
 
 allPlots   = {}
@@ -188,8 +200,6 @@ data_sample.style   = styles.errorStyle(ROOT.kBlack)
 
 
 for sample in mc: sample.style = styles.fillStyle(sample.color)
-for sample in mc + [data_sample]:
-    sample.addSelectionString(selection)
 
 stack = Stack(mc, [data_sample])
 
@@ -200,7 +210,6 @@ stack = Stack(mc, [data_sample])
 #        else:
 #            return 0
 #    return myweight
-    
 
 weight_ = lambda event, sample: event.weight 
 # Use some defaults
@@ -243,13 +252,20 @@ plots.append(Plot(
   addOverFlowBin='upper',
 ))
 
+
 plots.append(Plot(
   name = 'LT_mu', texX = 'LT_mu', texY = 'Number of Events',
   attribute = lambda event, sample: event.nmu_mvaTOPT == 1,
   binning=[2,0,2],
   addOverFlowBin='upper',
 ))
-
+#plots.append(Plot(
+#  name = 'LT', texX = 'LT_mu', texY = 'Number of Events',
+#  attribute = lambda event, sample: event.lep_mvaTOPT == 1,
+#  binning=[2,0,2],
+#  addOverFlowBin='upper',
+#))
+#
 plots.append(Plot(
   name = 'LT_ele', texX = 'LT_ele', texY = 'Number of Events',
   attribute = lambda event, sample: event.nele_mvaTOPT == 1,

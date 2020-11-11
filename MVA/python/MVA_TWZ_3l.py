@@ -38,6 +38,9 @@ read_variables = [\
                     "nlep/I",
                     "Z1_lldPhi/F",
                     "Z1_lldR/F",
+                    "l1_mvaTOP/F", "l1_mvaTOPWP/I"
+                    "l2_mvaTOP/F", "l2_mvaTOPWP/I",
+                    "l3_mvaTOP/F", "l3_mvaTOPWP/I",
                     ]
 
 #b tagger
@@ -187,6 +190,15 @@ all_mva_variables = {
      "mva_bJet_non_Z1l1_deltaR"  :(lambda event, sample: event.bJet_nonZ1l1_deltaR),
 
      "mva_maxAbsEta_of_pt30jets" :(lambda event, sample: event.maxAbsEta_of_pt30jets),
+
+#leptonMVA 
+     "mva_l1_mvaTOP"             :(lambda event, sample: event.l1_mvaTOP),   
+     "mva_l2_mvaTOP"             :(lambda event, sample: event.l2_mvaTOP),   
+     "mva_l3_mvaTOP"             :(lambda event, sample: event.l3_mvaTOP),   
+
+     "mva_l1_mvaTOPWP"           :(lambda event, sample: event.l1_mvaTOPWP),   
+     "mva_l2_mvaTOPWP"           :(lambda event, sample: event.l2_mvaTOPWP),   
+     "mva_l3_mvaTOPWP"           :(lambda event, sample: event.l3_mvaTOPWP),   
                 }
 
 #varcon1

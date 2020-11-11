@@ -30,7 +30,7 @@ import Analysis.Tools.logger as logger_an
 logger_an = logger_an.get_logger("INFO", logFile = None )
 
 # get samples
-import tWZ.samples.nanoTuples_Summer16_nanoAODv6_private_postProcessed as samples
+import tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed as samples
 sample = getattr(samples, args.sample)
 
 if args.small:

@@ -23,7 +23,8 @@ if os.environ["USER"] in ["robert.schoefbeck"]:
     cern_proxy_certificate          = "/users/robert.schoefbeck/.private/.proxy"
 
 if os.environ["USER"] in ["rosmarie.schoefbeck"]:
-    postprocessing_output_directory = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/nanoTuples"
+    #postprocessing_output_directory = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/nanoTuples"
+    postprocessing_output_directory = "/scratch-cbe/users/rosmarie.schoefbeck/tWZ/nanoTuples"
     postprocessing_tmp_directory    = "/scratch/hephy/cms/rosmarie.schoefbeck/tWZ/tmp/"
     plot_directory                  = "/mnt/hephy/cms/rosmarie.schoefbeck/www/tWZ/plots"
     cache_dir                       = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/caches"

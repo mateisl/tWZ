@@ -217,33 +217,33 @@ Plot.setDefaults(stack = stack, weight = staticmethod(weight_))
 
 plots = []
 
-plots.append(Plot(
-  name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',
-  attribute = TreeVariable.fromString( "PV_npvsGood/I" ),
-  binning=[50,0,50],
-  addOverFlowBin='upper',
-))
-
-plots.append(Plot(
-  name = 'met_pt', texX = 'MET', texY = 'Number of Events',
-  attribute = TreeVariable.fromString( "met_pt/F" ),
-  binning=[50,0,250],
-  addOverFlowBin='upper',
-))
-
-plots.append(Plot(
-  name = 'pt', texX = 'p_{T}', texY = 'Number of Events',
-  attribute = lambda event, sample: event.lep_pt,
-  binning=[100,0,50],
-  addOverFlowBin='upper',
-))
-
-plots.append(Plot(
-  name = 'eta', texX = '#eta', texY = 'Number of Events',
-  attribute = lambda event, sample: event.lep_eta,
-  binning=[30,-3,3],
-  addOverFlowBin='upper',
-))
+#plots.append(Plot(
+#  name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',
+#  attribute = TreeVariable.fromString( "PV_npvsGood/I" ),
+#  binning=[50,0,50],
+#  addOverFlowBin='upper',
+#))
+#
+#plots.append(Plot(
+#  name = 'met_pt', texX = 'MET', texY = 'Number of Events',
+#  attribute = TreeVariable.fromString( "met_pt/F" ),
+#  binning=[50,0,250],
+#  addOverFlowBin='upper',
+#))
+#
+#plots.append(Plot(
+#  name = 'pt', texX = 'p_{T}', texY = 'Number of Events',
+#  attribute = lambda event, sample: event.lep_pt,
+#  binning=[100,0,50],
+#  addOverFlowBin='upper',
+#))
+#
+#plots.append(Plot(
+#  name = 'eta', texX = '#eta', texY = 'Number of Events',
+#  attribute = lambda event, sample: event.lep_eta,
+#  binning=[30,-3,3],
+#  addOverFlowBin='upper',
+#))
 
 plots.append(Plot(
   name = 'mT', texX = 'm_{T}', texY = 'Number of Events',
@@ -253,12 +253,12 @@ plots.append(Plot(
 ))
 
 
-plots.append(Plot(
-  name = 'LT_mu', texX = 'LT_mu', texY = 'Number of Events',
-  attribute = lambda event, sample: event.nmu_mvaTOPT == 1,
-  binning=[2,0,2],
-  addOverFlowBin='upper',
-))
+#plots.append(Plot(
+#  name = 'LT_mu', texX = 'LT_mu', texY = 'Number of Events',
+#  attribute = lambda event, sample: event.nmu_mvaTOPT == 1,
+#  binning=[2,0,2],
+#  addOverFlowBin='upper',
+#))
 #plots.append(Plot(
 #  name = 'LT', texX = 'LT_mu', texY = 'Number of Events',
 #  attribute = lambda event, sample: event.lep_mvaTOPT == 1,
@@ -266,12 +266,12 @@ plots.append(Plot(
 #  addOverFlowBin='upper',
 #))
 #
-plots.append(Plot(
-  name = 'LT_ele', texX = 'LT_ele', texY = 'Number of Events',
-  attribute = lambda event, sample: event.nele_mvaTOPT == 1,
-  binning=[2,0,2],
-  addOverFlowBin='upper',
-))
+#plots.append(Plot(
+#  name = 'LT_ele', texX = 'LT_ele', texY = 'Number of Events',
+#  attribute = lambda event, sample: event.nele_mvaTOPT == 1,
+#  binning=[2,0,2],
+#  addOverFlowBin='upper',
+#))
 
 #plots.append(Plot(
 #  name = 'dR_jet0', texX = 'm_{T}', texY = 'Number of Events',
@@ -340,6 +340,7 @@ drawPlots(plots)
 ##fit mc to data https://root.cern.ch/doc/v606/classTFractionFitter.html
 #get histograms 
 #QCD first sample in mc 
+
 for plot in plots: 
     data_histo    = plot.histos[1][0] 
     QCD_histo     = plot.histos[0][0].Clone()
@@ -351,7 +352,19 @@ for plot in plots:
 #data_histo.Scale(1./data_histo.Integral())
 #mc_histo.Scale(1./mc_histo.Integral())
 
-tarray = ROOT.TObjArray(3)
+# go to EWK dominated region to make some first scaling in order to make the template fit work
+    i_low = data_histo.GetXaxis().FindBin(80)
+    i_up  = data_histo.GetXaxis().FindBin(100)
+
+    I_data = data_histo.Integral(i_low,i_up)
+    I_QCD = QCD_histo.Integral(i_low,i_up)
+    I_EWK = EWK_template.Integral(i_low,i_up)
+
+    I_scale = I_data / (I_QCD + I_EWK)
+    QCD_histo.Scale(I_scale)
+    EWK_template.Scale(I_scale)
+
+tarray = ROOT.TObjArray(2)
 tarray.Add( QCD_histo )
 tarray.Add( EWK_template )
 
@@ -359,24 +372,41 @@ fit = ROOT.TFractionFitter( data_histo, tarray ) #initialise
 #fit.Constrain(0,0.0,1.0)                           #constrain(parameter #, lower bound, upper bound)) #fit->Constrain(1,0.0,1.0); // constrain fraction 1 to be between 0 and 1
 #fit.Constrain(1,0.0,1.0)                           #constrain(parameter #, lower bound, upper bound)) #fit->Constrain(1,0.0,1.0); // constrain fraction 1 to be between 0 and 1
 #fit.Constrain(2,0.0,1.0)                           #constrain(parameter #, lower bound, upper bound)) #fit->Constrain(1,0.0,1.0); // constrain fraction 1 to be between 0 and 1
-fit.SetRangeX(1,200)                                 #random range; #fit->SetRangeX(1,15);  // use only the first 15 bins in the fit
+fit.SetRangeX(5,30)                                 #random range; #fit->SetRangeX(1,15);  // use only the first 15 bins in the fit
 print 'fittig'
 status = fit.Fit()                                # perform the fit 
 print status  
+if (int(status) != 0) :
+      logger.info("The template fit failed - aborting")
+      exit(0)
 
-fitVal,   fitErr   = ROOT.Double(0), ROOT.Double(0)
-result      = fit.GetResult(0, fitVal, fitErr)                               #GetResult(int parm, double& value, double& error) 
-print result 
+#fitVal,   fitErr   = ROOT.Double(0), ROOT.Double(0)
+#result      = fit.GetResult(0, fitVal, fitErr)                               #GetResult(int parm, double& value, double& error) 
+#print result 
 mTfit_histo = fit.GetPlot()
+
+QCD_histo.SetLineColor(2)
+QCD_histo.SetMarkerSize( 0 )
+QCD_histo.SetMarkerStyle( 0 )
+QCD_histo.SetFillColor( 0 )
+EWK_template.SetLineColor(3)
+mTfit_histo.SetLineColor(4)
+#EWK_sf.SetLineColor(6)
+QCD_histo.SetLineStyle(1)
+QCD_histo.SetMarkerStyle(False)
+EWK_template.SetLineStyle(1)
+mTfit_histo.SetLineStyle(0)
+#EWK_sf.SetFillStyle(3001)
 
 plotsfromHisto = []
 
 plotsfromHisto.append(Plot.fromHisto(
   name = 'mtfit', 
-  histos = [[mTfit_histo]],
+  histos = [[mTfit_histo],[data_histo]],
   texX = 'mTfit', 
   texY = 'events',
 ))
+
 
 for histoplot in plotsfromHisto :
 
@@ -386,3 +416,6 @@ for histoplot in plotsfromHisto :
     sorting = False, ratio = None,   
     )
 
+
+
+    

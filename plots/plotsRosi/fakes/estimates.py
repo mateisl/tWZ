@@ -353,16 +353,16 @@ for plot in plots:
 #mc_histo.Scale(1./mc_histo.Integral())
 
 # go to EWK dominated region to make some first scaling in order to make the template fit work
-    i_low = data_histo.GetXaxis().FindBin(80)
-    i_up  = data_histo.GetXaxis().FindBin(100)
+i_low = data_histo.GetXaxis().FindBin(80)
+i_up  = data_histo.GetXaxis().FindBin(100)
 
-    I_data = data_histo.Integral(i_low,i_up)
-    I_QCD = QCD_histo.Integral(i_low,i_up)
-    I_EWK = EWK_template.Integral(i_low,i_up)
+I_data = data_histo.Integral(i_low,i_up)
+I_QCD = QCD_histo.Integral(i_low,i_up)
+I_EWK = EWK_template.Integral(i_low,i_up)
 
-    I_scale = I_data / (I_QCD + I_EWK)
-    QCD_histo.Scale(I_scale)
-    EWK_template.Scale(I_scale)
+I_scale = I_data / (I_QCD + I_EWK)
+QCD_histo.Scale(I_scale)
+EWK_template.Scale(I_scale)
 
 tarray = ROOT.TObjArray(2)
 tarray.Add( QCD_histo )
@@ -384,25 +384,22 @@ if (int(status) != 0) :
 #result      = fit.GetResult(0, fitVal, fitErr)                               #GetResult(int parm, double& value, double& error) 
 #print result 
 mTfit_histo = fit.GetPlot()
-
+    
+#data_histo.SetLineColor(1)
+data_histo.SetOption("HIST")
 QCD_histo.SetLineColor(2)
-QCD_histo.SetMarkerSize( 0 )
-QCD_histo.SetMarkerStyle( 0 )
-QCD_histo.SetFillColor( 0 )
 EWK_template.SetLineColor(3)
 mTfit_histo.SetLineColor(4)
-#EWK_sf.SetLineColor(6)
 QCD_histo.SetLineStyle(1)
-QCD_histo.SetMarkerStyle(False)
 EWK_template.SetLineStyle(1)
-mTfit_histo.SetLineStyle(0)
-#EWK_sf.SetFillStyle(3001)
+mTfit_histo.SetLineStyle(1)
+mTfit_histo.SetTitle("TemplateFit")
 
 plotsfromHisto = []
 
 plotsfromHisto.append(Plot.fromHisto(
   name = 'mtfit', 
-  histos = [[mTfit_histo],[data_histo]],
+  histos = [[mTfit_histo],[data_histo]], #EWK_template],
   texX = 'mTfit', 
   texY = 'events',
 ))
@@ -413,7 +410,7 @@ for histoplot in plotsfromHisto :
     plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, selectionName, args.mode, 'log') 
     plotting.draw(histoplot, plot_directory = plot_directory_, 
     logX = False, logY = True, 
-    sorting = False, ratio = None,   
+    sorting = False, ratio = None,
     )
 
 

@@ -140,8 +140,8 @@ def nvtx_puRW( event, sample ):
 
 #lumi_scale                 = data_sample.lumi/1000
 data_sample.scale   = 1.
-#for sample in mc:
-#    sample.weight   = nvtx_puRW
+for sample in mc:
+    sample.weight   = nvtx_puRW
 
 def drawObjects():
     lines = [
@@ -164,7 +164,7 @@ def drawPlots(plots):
             ratio = {},
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
-            scaling = {0:1},
+            #scaling = {0:1},
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects() + _drawObjects,
             copyIndexPHP = True, extensions = ["png"],
@@ -185,7 +185,7 @@ sequence       = []
 read_variables += ["n%s_FOmvaTOPT/I"%args.mode, "%s_FOmvaTOPT[pt/F,eta/F,phi/F,mT/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I", "nele_mvaTOPT/I"]
 
 def makeLeptons( event, sample ):
-    collVars = ["pt","eta","phi","mT","mvaTOPT"]
+    collVars = ["pt","eta","phi","mT"]
     lep  = getObjDict(event, args.mode+'_FOmvaTOPT_', collVars, 0)
     for var in collVars:
         setattr( event, "lep_"+var, lep[var]  )

@@ -30,7 +30,7 @@ argParser.add_argument('--small',                             action='store_true
 argParser.add_argument('--overwrite',                         action='store_true', help='Overwrite cache?', )
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 #argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
-argParser.add_argument('--plot_directory', action='store', default='tWZ_fakes_v3') # -v2')
+argParser.add_argument('--plot_directory', action='store', default='tWZ_fake_estimates') # -v2')
 argParser.add_argument('--era',            action='store', type=str, default="Run2016")
 argParser.add_argument('--mode',           action='store', type=str, default="mu", choices=["mu","ele"])
 argParser.add_argument('--mT',             action='store', type=int, default=-1)
@@ -217,19 +217,19 @@ Plot.setDefaults(stack = stack, weight = staticmethod(weight_))
 
 plots = []
 
-#plots.append(Plot(
-#  name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',
-#  attribute = TreeVariable.fromString( "PV_npvsGood/I" ),
-#  binning=[50,0,50],
-#  addOverFlowBin='upper',
-#))
+plots.append(Plot(
+  name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',
+  attribute = TreeVariable.fromString( "PV_npvsGood/I" ),
+  binning=[50,0,50],
+  addOverFlowBin='upper',
+))
 #
-#plots.append(Plot(
-#  name = 'met_pt', texX = 'MET', texY = 'Number of Events',
-#  attribute = TreeVariable.fromString( "met_pt/F" ),
-#  binning=[50,0,250],
-#  addOverFlowBin='upper',
-#))
+plots.append(Plot(
+  name = 'met_pt', texX = 'MET', texY = 'Number of Events',
+  attribute = TreeVariable.fromString( "met_pt/F" ),
+  binning=[50,0,250],
+  addOverFlowBin='upper',
+))
 #
 #plots.append(Plot(
 #  name = 'pt', texX = 'p_{T}', texY = 'Number of Events',
@@ -245,12 +245,12 @@ plots = []
 #  addOverFlowBin='upper',
 #))
 
-plots.append(Plot(
-  name = 'mT', texX = 'm_{T}', texY = 'Number of Events',
-  attribute = lambda event, sample: event.lep_mT,
-  binning=[40,0,200],
-  addOverFlowBin='upper',
-))
+#plots.append(Plot(
+#  name = 'mT', texX = 'm_{T}', texY = 'Number of Events',
+#  attribute = lambda event, sample: event.lep_mT,
+#  binning=[40,0,200],
+#  addOverFlowBin='upper',
+#))
 
 
 #plots.append(Plot(
@@ -338,10 +338,20 @@ drawPlots(plots)
 
 
 ##fit mc to data https://root.cern.ch/doc/v606/classTFractionFitter.html
-#get histograms 
-#QCD first sample in mc 
+fitplots = []
+fitplots.append(Plot(
+  name = 'mT', texX = 'm_{T}', texY = 'Number of Events',
+  attribute = lambda event, sample: event.lep_mT,
+  binning=[40,0,200],
+  addOverFlowBin='upper',
+))
+plotting.fill(fitplots, read_variables = read_variables, sequence = sequence, max_events=max_events)
 
-for plot in plots: 
+drawPlots(fitplots)
+
+#get histograms 
+
+for plot in fitplots: 
     data_histo    = plot.histos[1][0] 
     QCD_histo     = plot.histos[0][0].Clone()
     EWK_histos    = [plot.histos[0][pos].Clone()  for pos in range(len(mc)) if pos!=0]
@@ -369,10 +379,13 @@ tarray.Add( QCD_histo )
 tarray.Add( EWK_template )
 
 fit = ROOT.TFractionFitter( data_histo, tarray ) #initialise
-#fit.Constrain(0,0.0,1.0)                           #constrain(parameter #, lower bound, upper bound)) #fit->Constrain(1,0.0,1.0); // constrain fraction 1 to be between 0 and 1
-#fit.Constrain(1,0.0,1.0)                           #constrain(parameter #, lower bound, upper bound)) #fit->Constrain(1,0.0,1.0); // constrain fraction 1 to be between 0 and 1
-#fit.Constrain(2,0.0,1.0)                           #constrain(parameter #, lower bound, upper bound)) #fit->Constrain(1,0.0,1.0); // constrain fraction 1 to be between 0 and 1
-fit.SetRangeX(5,30)                                 #random range; #fit->SetRangeX(1,15);  // use only the first 15 bins in the fit
+
+#########ROOT.SetOwnership( fit, False ) 
+#for i in xrange(len(tarray)) :
+#  templateFit.Constrain(i,0.0,1.0) # each mc template is allowed to be only between [0,1]
+
+fit.SetRangeX(5,30)                               #random range; #fit->SetRangeX(1,15);  // use only the first 15 bins in the fit
+
 print 'fittig'
 status = fit.Fit()                                # perform the fit 
 print status  
@@ -383,36 +396,83 @@ if (int(status) != 0) :
 #fitVal,   fitErr   = ROOT.Double(0), ROOT.Double(0)
 #result      = fit.GetResult(0, fitVal, fitErr)                               #GetResult(int parm, double& value, double& error) 
 #print result 
+
 mTfit_histo = fit.GetPlot()
+QCD_sf      = fit.GetMCPrediction(0)
+EWK_sf      = fit.GetMCPrediction(1)
     
 #data_histo.SetLineColor(1)
-data_histo.SetOption("HIST")
-QCD_histo.SetLineColor(2)
-EWK_template.SetLineColor(3)
-mTfit_histo.SetLineColor(4)
-QCD_histo.SetLineStyle(1)
-EWK_template.SetLineStyle(1)
-mTfit_histo.SetLineStyle(1)
-mTfit_histo.SetTitle("TemplateFit")
+#format histos 
+data_histo.legendText = "data"
+QCD_histo.legendText = "QCD"
+EWK_template.legendText = "EWK"
+mTfit_histo.legendText = "mT_fit"
+QCD_histo.SetLineColor(618)
+QCD_histo.SetFillColor(0)
+EWK_template.SetLineColor(420)
+EWK_template.SetFillColor(0)
+mTfit_histo.SetLineColor(862)
+mTfit_histo.SetMarkerStyle(0)
+EWK_sf.SetLineColor(6)
+QCD_sf.SetLineColor(7)
 
+#mTfit_histo.SetTitle("TemplateFit")
+histos = [[mTfit_histo],[data_histo]] #,[QCD_histo],[EWK_template]]
 plotsfromHisto = []
 
 plotsfromHisto.append(Plot.fromHisto(
-  name = 'mtfit', 
-  histos = [[mTfit_histo],[data_histo]], #EWK_template],
-  texX = 'mTfit', 
+  name = 'mtdata', 
+  histos = [[data_histo]],
+  texX = 'mT_data', 
   texY = 'events',
 ))
 
+plotsfromHisto.append(Plot.fromHisto(
+  name = 'mtqcd',
+  histos = [[QCD_histo]],
+  texX = 'mT_QCD',
+  texY = 'events',
+))
+
+plotsfromHisto.append(Plot.fromHisto(
+  name = 'mtEWK',
+  histos = [[EWK_template]],
+  texX = 'mT_EWK',
+  texY = 'events',
+))
+
+plotsfromHisto.append(Plot.fromHisto(
+  name = 'mtfit',
+  histos = [[mTfit_histo]],
+  texX = 'mTfit',
+  texY = 'events',
+))
+
+plotsfromHisto.append(Plot.fromHisto(
+  name = 'fittemplate',
+  histos = histos,
+  texX = 'mT_templatefit',
+  texY = 'events',
+))
 
 for histoplot in plotsfromHisto :
-
     plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, selectionName, args.mode, 'log') 
-    plotting.draw(histoplot, plot_directory = plot_directory_, 
-    logX = False, logY = True, 
-    sorting = False, ratio = None,
+    plotting.draw(histoplot, 
+                  plot_directory = plot_directory_, 
+                  logX = False, 
+                  logY = True, 
+                  sorting = False, 
+                  ratio = None,
     )
 
+#pGr4 = plot.fromHisto(  hGr5  ,style={'legendText':'W + Jets, njets #geq 4 ',        'style':"l", 'lineThickNess':1, 'errorBars':True, 'color':ROOT.kRed, 'markerStyle':None, 'markerSize':None})
+#p2To3 = plot.fromHisto( h2To4 ,style={'legendText':'W + Jets, 2 #leq njets #leq 3',  'style':"l", 'lineThickNess':1, 'errorBars':True, 'color':ROOT.kBlack, 'markerStyle':None, 'markerSize':None})
+#p2 = plot.fromHisto(    h2    ,style={'legendText':'W + Jets, njets = 2',  'style':"l", 'lineThickNess':1, 'errorBars':True, 'color':ROOT.kGreen, 'markerStyle':None, 'markerSize':None})
+#p3 = plot.fromHisto(    h3,style={'legendText':'W + Jets, njets = 3',  'style':"l", 'lineThickNess':1, 'errorBars':True, 'color':ROOT.kMagenta, 'markerStyle':None, 'markerSize':None})
+##p4 = plot.fromHisto(    h4,style={'legendText':'W + Jets, njets = 4',  'style':"l", 'lineThickNess':1, 'errorBars':True, 'color':ROOT.kAzure, 'markerStyle':None, 'markerSize':None})
+#
+#plotLists = [[pGr4],[p2To3],\
+#  [p2],[p3]#,[p4]
+#]
 
 
-    

@@ -15,6 +15,7 @@ from RootTools.core.standard             import *
 from tWZ.Tools.user                      import plot_directory, cache_dir
 from tWZ.Tools.helpers                   import getObjDict, getVarValue
 from tWZ.Tools.cutInterpreter            import cutInterpreter
+from estimates import qcd_sf, ewk_sf
 # Analysis
 from Analysis.Tools.helpers              import deltaPhi, deltaR
 from Analysis.Tools.metFilters           import getFilterCut
@@ -140,8 +141,11 @@ def nvtx_puRW( event, sample ):
 
 #lumi_scale                 = data_sample.lumi/1000
 data_sample.scale   = 1.
-for sample in mc:
-    sample.weight   = nvtx_puRW
+#for sample in mc:
+#    sample.weight   = nvtx_puRW
+mc[0].weight = qcd_sf 
+for sample in mc[1:]:
+    sample.weight   = ewk_sf 
 
 def drawObjects():
     lines = [

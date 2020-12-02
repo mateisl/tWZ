@@ -134,7 +134,6 @@ else:
     dirDB.add( pu_key, reweight_histo ) 
     logger.info( "Added PU reweight to cache %s", cache_dir_ )
 
-# define reweight
 def nvtx_puRW( event, sample ):
     return reweight_histo.GetBinContent(reweight_histo.FindBin( event.PV_npvsGood ))
 
@@ -245,12 +244,12 @@ plots.append(Plot(
 #  addOverFlowBin='upper',
 #))
 
-#plots.append(Plot(
-#  name = 'mT', texX = 'm_{T}', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.lep_mT,
-#  binning=[40,0,200],
-#  addOverFlowBin='upper',
-#))
+plots.append(Plot(
+  name = 'mT', texX = 'm_{T}', texY = 'Number of Events',
+  attribute = lambda event, sample: event.lep_mT,
+  binning=[40,0,200],
+  addOverFlowBin='upper',
+))
 
 
 #plots.append(Plot(
@@ -335,44 +334,34 @@ drawPlots(plots)
 #    if hasattr( plot, "make_tl" ):
 #        print "predicted TL:", make_TL(plot[0][0])
 
-
-
-##fit mc to data https://root.cern.ch/doc/v606/classTFractionFitter.html
-fitplots = []
-fitplots.append(Plot(
-  name = 'mT', texX = 'm_{T}', texY = 'Number of Events',
-  attribute = lambda event, sample: event.lep_mT,
-  binning=[40,0,200],
-  addOverFlowBin='upper',
-))
-plotting.fill(fitplots, read_variables = read_variables, sequence = sequence, max_events=max_events)
-
-drawPlots(fitplots)
-
 #get histograms 
+for plot in plots:
+    print plot.name
 
-for plot in fitplots: 
-    data_histo    = plot.histos[1][0] 
+if plot.name == 'mT' :
+    data_histo    = plot.histos[1][0]
     QCD_histo     = plot.histos[0][0].Clone()
     EWK_histos    = [plot.histos[0][pos].Clone()  for pos in range(len(mc)) if pos!=0]
     EWK_template  = EWK_histos[0]
     EWK_template.Add(EWK_histos[1])
     #for i in range(1, len(mc)) : EWK_template.Add(EWK_template[i])
 
-#data_histo.Scale(1./data_histo.Integral())
+#I_data = data_histo.Integral()
+#I_EWK  = EWK_template.Integral()
+#I_QCD  = QCD_histo.Intergral()
 #mc_histo.Scale(1./mc_histo.Integral())
 
 # go to EWK dominated region to make some first scaling in order to make the template fit work
-i_low = data_histo.GetXaxis().FindBin(80)
-i_up  = data_histo.GetXaxis().FindBin(100)
-
-I_data = data_histo.Integral(i_low,i_up)
-I_QCD = QCD_histo.Integral(i_low,i_up)
-I_EWK = EWK_template.Integral(i_low,i_up)
-
-I_scale = I_data / (I_QCD + I_EWK)
-QCD_histo.Scale(I_scale)
-EWK_template.Scale(I_scale)
+#i_low = data_histo.GetXaxis().FindBin(80)
+#i_up  = data_histo.GetXaxis().FindBin(100)
+#
+#I_data = data_histo.Integral(i_low,i_up)
+#I_QCD = QCD_histo.Integral(i_low,i_up)
+#I_EWK = EWK_template.Integral(i_low,i_up)
+#
+#I_scale = I_data / (I_QCD + I_EWK)
+#QCD_histo.Scale(I_scale)
+#EWK_template.Scale(I_scale)
 
 tarray = ROOT.TObjArray(2)
 tarray.Add( QCD_histo )
@@ -384,24 +373,22 @@ fit = ROOT.TFractionFitter( data_histo, tarray ) #initialise
 #for i in xrange(len(tarray)) :
 #  templateFit.Constrain(i,0.0,1.0) # each mc template is allowed to be only between [0,1]
 
-fit.SetRangeX(5,30)                               #random range; #fit->SetRangeX(1,15);  // use only the first 15 bins in the fit
+fit.SetRangeX(0,40)                               #random range; #fit->SetRangeX(1,15);  // use only the first 15 bins in the fit
+#fit.SetRangeX(5,30)                               #random range; #fit->SetRangeX(1,15);  // use only the first 15 bins in the fit
 
 print 'fittig'
 status = fit.Fit()                                # perform the fit 
-print status  
+print status
 if (int(status) != 0) :
       logger.info("The template fit failed - aborting")
       exit(0)
 
-#fitVal,   fitErr   = ROOT.Double(0), ROOT.Double(0)
-#result      = fit.GetResult(0, fitVal, fitErr)                               #GetResult(int parm, double& value, double& error) 
-#print result 
-
 mTfit_histo = fit.GetPlot()
 QCD_sf      = fit.GetMCPrediction(0)
 EWK_sf      = fit.GetMCPrediction(1)
-    
-#data_histo.SetLineColor(1)
+print QCD_sf
+print EWK_sf
+
 #format histos 
 data_histo.legendText = "data"
 QCD_histo.legendText = "QCD"
@@ -417,62 +404,58 @@ EWK_sf.SetLineColor(6)
 QCD_sf.SetLineColor(7)
 
 #mTfit_histo.SetTitle("TemplateFit")
-histos = [[mTfit_histo],[data_histo]] #,[QCD_histo],[EWK_template]]
+histos = [[data_histo], [mTfit_histo]]
 plotsfromHisto = []
 
-plotsfromHisto.append(Plot.fromHisto(
-  name = 'mtdata', 
-  histos = [[data_histo]],
-  texX = 'mT_data', 
-  texY = 'events',
-))
+#plotsfromHisto.append(Plot.fromHisto(
+#  name = 'mtdata', 
+#  histos = [[data_histo]],
+#  texX = 'mT_data', 
+#  texY = 'events',
+#))
+#
+#plotsfromHisto.append(Plot.fromHisto(
+#  name = 'mtqcd',
+#  histos = [[QCD_histo]],
+#  texX = 'mT_QCD',
+#  texY = 'events',
+#))
+#
+#plotsfromHisto.append(Plot.fromHisto(
+#  name = 'mtfit',
+#  histos = [[mTfit_histo]],
+#  texX = 'mTfit',
+#  texY = 'events',
+#))
 
-plotsfromHisto.append(Plot.fromHisto(
-  name = 'mtqcd',
-  histos = [[QCD_histo]],
-  texX = 'mT_QCD',
-  texY = 'events',
-))
-
-plotsfromHisto.append(Plot.fromHisto(
-  name = 'mtEWK',
-  histos = [[EWK_template]],
-  texX = 'mT_EWK',
-  texY = 'events',
-))
-
-plotsfromHisto.append(Plot.fromHisto(
-  name = 'mtfit',
-  histos = [[mTfit_histo]],
-  texX = 'mTfit',
-  texY = 'events',
-))
-
-plotsfromHisto.append(Plot.fromHisto(
+fitresultplot = Plot.fromHisto(
   name = 'fittemplate',
   histos = histos,
   texX = 'mT_templatefit',
   texY = 'events',
-))
+)
 
-for histoplot in plotsfromHisto :
-    plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, selectionName, args.mode, 'log') 
-    plotting.draw(histoplot, 
-                  plot_directory = plot_directory_, 
-                  logX = False, 
-                  logY = True, 
-                  sorting = False, 
-                  ratio = None,
-    )
+plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, selectionName, args.mode, 'log')
+plotting.draw(fitresultplot,
+              plot_directory = plot_directory_,
+              logX    = False,
+              logY    = True,
+              sorting = False,
+              #ratio   = None,
+              ratio   = {},
+              scaling =  {i+1:0 for i in range(len(histos)-1)},
+)
 
-#pGr4 = plot.fromHisto(  hGr5  ,style={'legendText':'W + Jets, njets #geq 4 ',        'style':"l", 'lineThickNess':1, 'errorBars':True, 'color':ROOT.kRed, 'markerStyle':None, 'markerSize':None})
-#p2To3 = plot.fromHisto( h2To4 ,style={'legendText':'W + Jets, 2 #leq njets #leq 3',  'style':"l", 'lineThickNess':1, 'errorBars':True, 'color':ROOT.kBlack, 'markerStyle':None, 'markerSize':None})
-#p2 = plot.fromHisto(    h2    ,style={'legendText':'W + Jets, njets = 2',  'style':"l", 'lineThickNess':1, 'errorBars':True, 'color':ROOT.kGreen, 'markerStyle':None, 'markerSize':None})
-#p3 = plot.fromHisto(    h3,style={'legendText':'W + Jets, njets = 3',  'style':"l", 'lineThickNess':1, 'errorBars':True, 'color':ROOT.kMagenta, 'markerStyle':None, 'markerSize':None})
-##p4 = plot.fromHisto(    h4,style={'legendText':'W + Jets, njets = 4',  'style':"l", 'lineThickNess':1, 'errorBars':True, 'color':ROOT.kAzure, 'markerStyle':None, 'markerSize':None})
-#
-#plotLists = [[pGr4],[p2To3],\
-#  [p2],[p3]#,[p4]
-#]
+EWK_sf.Divide(EWK_template)
+#EWK_sf.Scale(I_scale)
 
+QCD_sf.Divide(QCD_histo)
+#QCD_sf.Scale(I_scale)
+
+# define reweight
+def qcd_sf(event, sample):
+    return QCD_sf.GetBinContent(QCD_sf.FindBin( event.lep_mT ))*nvtx_puRW( event, sample )
+
+def ewk_sf(event, sample):
+    return EWK_sf.GetBinContent(EWK_sf.FindBin( event.lep_mT ))*nvtx_puRW( event, sample )
 

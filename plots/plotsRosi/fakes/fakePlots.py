@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-''' Analysis script for standard plots
-'''
-#
 # Standard imports and batch mode
-#
+
 import ROOT, os
 ROOT.gROOT.SetBatch(True)
 from math                                import sqrt, cos, sin, pi, atan2, cosh
@@ -15,7 +12,7 @@ from RootTools.core.standard             import *
 from tWZ.Tools.user                      import plot_directory, cache_dir
 from tWZ.Tools.helpers                   import getObjDict, getVarValue
 from tWZ.Tools.cutInterpreter            import cutInterpreter
-from estimates import qcd_sf, ewk_sf
+from estimates                           import qcd_sf, ewk_sf  #import sf
 # Analysis
 from Analysis.Tools.helpers              import deltaPhi, deltaR
 from Analysis.Tools.metFilters           import getFilterCut
@@ -143,6 +140,7 @@ def nvtx_puRW( event, sample ):
 data_sample.scale   = 1.
 #for sample in mc:
 #    sample.weight   = nvtx_puRW
+#mc[0].weight = nvtx_puRW 
 mc[0].weight = qcd_sf 
 for sample in mc[1:]:
     sample.weight   = ewk_sf 
@@ -263,13 +261,7 @@ plots.append(Plot(
   binning=[2,0,2],
   addOverFlowBin='upper',
 ))
-#plots.append(Plot(
-#  name = 'LT', texX = 'LT_mu', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.lep_mvaTOPT == 1,
-#  binning=[2,0,2],
-#  addOverFlowBin='upper',
-#))
-#
+
 plots.append(Plot(
   name = 'LT_ele', texX = 'LT_ele', texY = 'Number of Events',
   attribute = lambda event, sample: event.nele_mvaTOPT == 1,

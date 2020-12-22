@@ -202,14 +202,6 @@ for sample in mc: sample.style = styles.fillStyle(sample.color)
 
 stack = Stack(mc, [data_sample])
 
-#def binWeight( pt_low, pt_high, eta_low, eta_high ):
-#    def myweight(event, sample ):
-#        if event.lep_pt>pt_low and event.lep_pt<pt_high and event.lep_eta>eta_low and event.lep_eta<eta_high:
-#            return event.weight
-#        else:
-#            return 0
-#    return myweight
-
 weight_ = lambda event, sample: event.weight 
 # Use some defaults
 Plot.setDefaults(stack = stack, weight = staticmethod(weight_))
@@ -222,27 +214,13 @@ plots.append(Plot(
   binning=[50,0,50],
   addOverFlowBin='upper',
 ))
-#
+
 plots.append(Plot(
   name = 'met_pt', texX = 'MET', texY = 'Number of Events',
   attribute = TreeVariable.fromString( "met_pt/F" ),
   binning=[50,0,250],
   addOverFlowBin='upper',
 ))
-#
-#plots.append(Plot(
-#  name = 'pt', texX = 'p_{T}', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.lep_pt,
-#  binning=[100,0,50],
-#  addOverFlowBin='upper',
-#))
-#
-#plots.append(Plot(
-#  name = 'eta', texX = '#eta', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.lep_eta,
-#  binning=[30,-3,3],
-#  addOverFlowBin='upper',
-#))
 
 plots.append(Plot(
   name = 'mT', texX = 'm_{T}', texY = 'Number of Events',
@@ -251,88 +229,9 @@ plots.append(Plot(
   addOverFlowBin='upper',
 ))
 
-
-#plots.append(Plot(
-#  name = 'LT_mu', texX = 'LT_mu', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.nmu_mvaTOPT == 1,
-#  binning=[2,0,2],
-#  addOverFlowBin='upper',
-#))
-#plots.append(Plot(
-#  name = 'LT', texX = 'LT_mu', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.lep_mvaTOPT == 1,
-#  binning=[2,0,2],
-#  addOverFlowBin='upper',
-#))
-#
-#plots.append(Plot(
-#  name = 'LT_ele', texX = 'LT_ele', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.nele_mvaTOPT == 1,
-#  binning=[2,0,2],
-#  addOverFlowBin='upper',
-#))
-
-#plots.append(Plot(
-#  name = 'dR_jet0', texX = 'm_{T}', texY = 'Number of Events',
-#  attribute = lambda event, sample: cos(event.lep_phi - event.JetGood_phi[0] ),
-#  binning=[40,-1,1],
-#  addOverFlowBin='upper',
-#))
-
-#plots.append(Plot(
-#  name = 'hybridIso_lowpT', texX = 'hybridIso (lowPt)', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.lep_hybridIso if event.lep_pt<25 else float('nan'),
-#  name = 'hybridIso_highpT', texX = 'hybridIso (highPt)', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.lep_hybridIso if event.lep_pt>25 else float('nan'),
-#  binning=[40,0,20],
-#  addOverFlowBin='none',
-#))
-
-#def reformat( str_ ):
-#    return str_.replace('.','p').replace('-','m') #-1.0  -> m1p0
-
-#for bin_ in bins:
-#    pt_low, pt_high, eta_low, eta_high = bin_
-#
-#    name = reformat("pt%sTo%s_eta%sTo%s"%tuple(map( lambda f: str(f).rstrip('0').rstrip('.'), bin_ ))) 
-#    plots.append(Plot(
-#      name = name, texX = 'hybridIso %f<p_{T}<%f %f<#eta<%f'%(pt_low, pt_high, eta_low, eta_high ), texY = 'Number of Events',
-#      attribute = lambda event, sample: event.lep_hybridIso if (event.lep_pt>pt_low and event.lep_pt<pt_high and event.lep_eta>eta_low and event.lep_eta<eta_high) else float('nan'),
-#      binning=[40,0,20],
-#      addOverFlowBin='none',
-#    ))
-
-#    plots.append(Plot(
-#      name = name, texX = 'hybridIso %f<p_{T}<%f %f<#eta<%f'%(pt_low, pt_high, eta_low, eta_high ), texY = 'Number of Events',
-#      attribute = lambda event, sample: event.lep_hybridIso,
-#      weight = binWeight( *bin_),
-#      binning=[40,0,20],
-#      addOverFlowBin='none',
-#    ))
-#    binning =  plots[-1].binning
-#    assert 5.%((binning[2]-binning[1])/float(binning[0]))==0., "Binning has no threshold at 5!"
-
-#    plots[-1].make_tl = True
-
 plotting.fill(plots, read_variables = read_variables, sequence = sequence, max_events=max_events)
 
 drawPlots(plots)
-
-#def make_TL( histo ):
-#    bin_th = histo.FindBin(5)
-#    T = histo.Integral(1,bin_th-1) 
-#    L = histo.Integral(bin_th,histo.GetNbinsX()) 
-#    if L>0:
-#        return T/L
-#    else:
-#        if T > 0:
-#            return float('nan')
-#        elif T==0:
-#            return 0
-#
-#for plot in plots:
-#    if hasattr( plot, "make_tl" ):
-#        print "predicted TL:", make_TL(plot[0][0])
 
 #get histograms 
 for plot in plots:
@@ -346,35 +245,27 @@ if plot.name == 'mT' :
     EWK_template.Add(EWK_histos[1])
     #for i in range(1, len(mc)) : EWK_template.Add(EWK_template[i])
 
-#I_data = data_histo.Integral()
-#I_EWK  = EWK_template.Integral()
-#I_QCD  = QCD_histo.Intergral()
-#mc_histo.Scale(1./mc_histo.Integral())
+#go to EWK dominated region to make some first scaling in order to make the template fit work
+if args.small : 
+   i_low = data_histo.GetXaxis().FindBin(80)
+   i_up  = data_histo.GetXaxis().FindBin(100)
+   
+   I_data = data_histo.Integral(i_low,i_up)
+   I_QCD = QCD_histo.Integral(i_low,i_up)
+   I_EWK = EWK_template.Integral(i_low,i_up)
+   
+   I_scale = I_data / (I_QCD + I_EWK)
+   QCD_histo.Scale(I_scale)
+   EWK_template.Scale(I_scale)
 
-# go to EWK dominated region to make some first scaling in order to make the template fit work
-#i_low = data_histo.GetXaxis().FindBin(80)
-#i_up  = data_histo.GetXaxis().FindBin(100)
-#
-#I_data = data_histo.Integral(i_low,i_up)
-#I_QCD = QCD_histo.Integral(i_low,i_up)
-#I_EWK = EWK_template.Integral(i_low,i_up)
-#
-#I_scale = I_data / (I_QCD + I_EWK)
-#QCD_histo.Scale(I_scale)
-#EWK_template.Scale(I_scale)
-
+#tfractionfitting
 tarray = ROOT.TObjArray(2)
 tarray.Add( QCD_histo )
 tarray.Add( EWK_template )
 
 fit = ROOT.TFractionFitter( data_histo, tarray ) #initialise
 
-#########ROOT.SetOwnership( fit, False ) 
-#for i in xrange(len(tarray)) :
-#  templateFit.Constrain(i,0.0,1.0) # each mc template is allowed to be only between [0,1]
-
 fit.SetRangeX(0,40)                               #random range; #fit->SetRangeX(1,15);  // use only the first 15 bins in the fit
-#fit.SetRangeX(5,30)                               #random range; #fit->SetRangeX(1,15);  // use only the first 15 bins in the fit
 
 print 'fittig'
 status = fit.Fit()                                # perform the fit 
@@ -386,8 +277,6 @@ if (int(status) != 0) :
 mTfit_histo = fit.GetPlot()
 QCD_sf      = fit.GetMCPrediction(0)
 EWK_sf      = fit.GetMCPrediction(1)
-print QCD_sf
-print EWK_sf
 
 #format histos 
 data_histo.legendText = "data"
@@ -403,30 +292,7 @@ mTfit_histo.SetMarkerStyle(0)
 EWK_sf.SetLineColor(6)
 QCD_sf.SetLineColor(7)
 
-#mTfit_histo.SetTitle("TemplateFit")
 histos = [[data_histo], [mTfit_histo]]
-plotsfromHisto = []
-
-#plotsfromHisto.append(Plot.fromHisto(
-#  name = 'mtdata', 
-#  histos = [[data_histo]],
-#  texX = 'mT_data', 
-#  texY = 'events',
-#))
-#
-#plotsfromHisto.append(Plot.fromHisto(
-#  name = 'mtqcd',
-#  histos = [[QCD_histo]],
-#  texX = 'mT_QCD',
-#  texY = 'events',
-#))
-#
-#plotsfromHisto.append(Plot.fromHisto(
-#  name = 'mtfit',
-#  histos = [[mTfit_histo]],
-#  texX = 'mTfit',
-#  texY = 'events',
-#))
 
 fitresultplot = Plot.fromHisto(
   name = 'fittemplate',
@@ -447,10 +313,8 @@ plotting.draw(fitresultplot,
 )
 
 EWK_sf.Divide(EWK_template)
-#EWK_sf.Scale(I_scale)
 
 QCD_sf.Divide(QCD_histo)
-#QCD_sf.Scale(I_scale)
 
 # define reweight
 def qcd_sf(event, sample):

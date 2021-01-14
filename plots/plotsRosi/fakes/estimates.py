@@ -244,7 +244,8 @@ if plot.name == 'mT' :
     EWK_template  = EWK_histos[0]
     EWK_template.Add(EWK_histos[1])
     #for i in range(1, len(mc)) : EWK_template.Add(EWK_template[i])
-
+EWK_weighted = EWK_template.Clone()
+QCD_weighted = QCD_histo.Clone()
 #go to EWK dominated region to make some first scaling in order to make the template fit work
 if args.small : 
    i_low = data_histo.GetXaxis().FindBin(80)
@@ -265,6 +266,9 @@ tarray.Add( EWK_template )
 
 fit = ROOT.TFractionFitter( data_histo, tarray ) #initialise
 
+#fit.Constrain(0,0.0,1.0)
+#fit.Constrain(1,0.0,1.0)
+
 fit.SetRangeX(0,40)                               #random range; #fit->SetRangeX(1,15);  // use only the first 15 bins in the fit
 
 print 'fittig'
@@ -278,6 +282,19 @@ mTfit_histo = fit.GetPlot()
 QCD_sf      = fit.GetMCPrediction(0)
 EWK_sf      = fit.GetMCPrediction(1)
 
+#getFitResults 
+print 'FIT RESULTS XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx'
+qcd   = ROOT.Double()
+qcd_e = ROOT.Double()
+fit.GetResult(0, qcd, qcd_e)
+print qcd 
+print qcd_e
+ewk   = ROOT.Double()
+ewk_e = ROOT.Double()
+fit.GetResult(1, ewk, ewk_e)
+print ewk
+print ewk_e
+
 #format histos 
 data_histo.legendText = "data"
 QCD_histo.legendText = "QCD"
@@ -289,8 +306,23 @@ EWK_template.SetLineColor(420)
 EWK_template.SetFillColor(0)
 mTfit_histo.SetLineColor(862)
 mTfit_histo.SetMarkerStyle(0)
-EWK_sf.SetLineColor(6)
-QCD_sf.SetLineColor(7)
+
+EWK_weighted.legendText = "EWK_weighted"
+QCD_weighted.legendText = "QCD_weighted"
+EWK_weighted.SetLineColor(6)
+EWK_weighted.SetFillColor(0)
+QCD_weighted.SetLineColor(7)
+QCD_weighted.SetFillColor(0)
+
+EWK_weighted.weight *= ewk
+QCD_weighted.weight *= qcd 
+
+#def ewk_RW( event, sample ):
+#    return ewk*reweight_histo.GetBinContent(reweight_histo.FindBin( event.PV_npvsGood ))
+#EWK_RW = EWK_template.Clone()
+#EWK_RW.weight   = ewk_RW
+#EWK_RW.legendText   = "EWK_RW"
+#EWK_RW.SetLineColor(10)
 
 histos = [[data_histo], [mTfit_histo]]
 
@@ -301,8 +333,40 @@ fitresultplot = Plot.fromHisto(
   texY = 'events',
 )
 
+ewkhistos = [[EWK_template],[EWK_weighted]]
+ewkhisto = Plot.fromHisto(
+  name = 'EWK',
+  histos = ewkhistos,
+  texX = 'EK_templatefit',
+  texY = 'events',
+)
+
+#histogramsewk = [[EWK_template],[EWK_RW]]
+#histogramsewk = Plot.fromHisto(
+#  name = 'EWK_RW',
+#  histos = ewkhistos,
+#  texX = 'EK_templatefit',
+#  texY = 'events',
+#)
+qcdhistos = [[QCD_histo],[QCD_weighted]]
+qcdhisto = Plot.fromHisto(
+  name = 'QCD',
+  histos = qcdhistos,
+  texX = 'QCD_templatefit',
+  texY = 'events',
+)
+
 plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, selectionName, args.mode, 'log')
 plotting.draw(fitresultplot,
+              plot_directory = plot_directory_,
+              logX    = False,
+              logY    = True,
+              sorting = False,
+              ratio   = None,
+              #ratio   = {},
+              #scaling =  {i+1:0 for i in range(len(histos)-1)},
+)
+plotting.draw(ewkhisto,
               plot_directory = plot_directory_,
               logX    = False,
               logY    = True,
@@ -312,14 +376,23 @@ plotting.draw(fitresultplot,
               scaling =  {i+1:0 for i in range(len(histos)-1)},
 )
 
-EWK_sf.Divide(EWK_template)
+#plotting.draw(histogramsewk,
+#              plot_directory = plot_directory_,
+#              logX    = False,
+#              logY    = True,
+#              sorting = False,
+#              ratio   = None,
+#              #ratio   = {},
+#              #scaling =  {i+1:0 for i in range(len(histos)-1)},
+#)
 
-QCD_sf.Divide(QCD_histo)
-
-# define reweight
-def qcd_sf(event, sample):
-    return QCD_sf.GetBinContent(QCD_sf.FindBin( event.lep_mT ))*nvtx_puRW( event, sample )
-
-def ewk_sf(event, sample):
-    return EWK_sf.GetBinContent(EWK_sf.FindBin( event.lep_mT ))*nvtx_puRW( event, sample )
+plotting.draw(qcdhisto,
+              plot_directory = plot_directory_,
+              logX    = False,
+              logY    = True,
+              sorting = False,
+              ratio   = None,
+              #ratio   = {},
+              #scaling =  {i+1:0 for i in range(len(histos)-1)},
+)
 

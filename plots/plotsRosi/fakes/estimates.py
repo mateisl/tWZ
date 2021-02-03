@@ -229,40 +229,68 @@ plots.append(Plot(
   addOverFlowBin='upper',
 ))
 
+plots.append(Plot(
+  name = 'pt', texX = 'p_{T}', texY = 'Number of Events',
+  attribute = lambda event, sample: event.lep_pt,
+  binning=[100,0,50],
+  addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+  name = 'eta', texX = '#eta', texY = 'Number of Events',
+  attribute = lambda event, sample: event.lep_eta,
+  binning=[30,-3,3],
+  addOverFlowBin='upper',
+))
+
+#tight-loose plots 
+plots.append(Plot(
+  name = 'LT_mu', texX = 'LT_mu', texY = 'Number of Events',
+  attribute = lambda event, sample: event.nmu_mvaTOPT == 1,
+  binning=[2,0,2],
+  addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+  name = 'LT_ele', texX = 'LT_ele', texY = 'Number of Events',
+  attribute = lambda event, sample: event.nele_mvaTOPT == 1,
+  binning=[2,0,2],
+  addOverFlowBin='upper',
+))
+
 plotting.fill(plots, read_variables = read_variables, sequence = sequence, max_events=max_events)
 
-drawPlots(plots)
+#drawPlots(plots)
 
 #get histograms 
 for plot in plots:
     print plot.name
+    if plot.name == 'mT' :
+        data_histo    = plot.histos[1][0]
+        QCD_histo     = plot.histos[0][0].Clone()
+        EWK_histos    = [plot.histos[0][pos].Clone()  for pos in range(len(mc)) if pos!=0]
+        EWK_histo     = EWK_histos[0]
+        EWK_histo.Add(EWK_histos[1])
 
-if plot.name == 'mT' :
-    data_histo    = plot.histos[1][0]
-    QCD_histo     = plot.histos[0][0].Clone()
-    EWK_histos    = [plot.histos[0][pos].Clone()  for pos in range(len(mc)) if pos!=0]
-    EWK_template  = EWK_histos[0]
-    EWK_template.Add(EWK_histos[1])
-    #for i in range(1, len(mc)) : EWK_template.Add(EWK_template[i])
-EWK_weighted = EWK_template.Clone()
+EWK_weighted = EWK_histo.Clone()
 QCD_weighted = QCD_histo.Clone()
 #go to EWK dominated region to make some first scaling in order to make the template fit work
-if args.small : 
-   i_low = data_histo.GetXaxis().FindBin(80)
-   i_up  = data_histo.GetXaxis().FindBin(100)
-   
-   I_data = data_histo.Integral(i_low,i_up)
-   I_QCD = QCD_histo.Integral(i_low,i_up)
-   I_EWK = EWK_template.Integral(i_low,i_up)
-   
-   I_scale = I_data / (I_QCD + I_EWK)
-   QCD_histo.Scale(I_scale)
-   EWK_template.Scale(I_scale)
+#if args.small : 
+#   i_low = data_histo.GetXaxis().FindBin(80)
+#   i_up  = data_histo.GetXaxis().FindBin(100)
+#   
+#   I_data = data_histo.Integral(i_low,i_up)
+#   I_QCD = QCD_histo.Integral(i_low,i_up)
+#   I_EWK = EWK_histo.Integral(i_low,i_up)
+#   
+#   I_scale = I_data / (I_QCD + I_EWK)
+#   QCD_histo.Scale(I_scale)
+#   EWK_histo.Scale(I_scale)
 
 #tfractionfitting
 tarray = ROOT.TObjArray(2)
 tarray.Add( QCD_histo )
-tarray.Add( EWK_template )
+tarray.Add( EWK_histo )
 
 fit = ROOT.TFractionFitter( data_histo, tarray ) #initialise
 
@@ -279,8 +307,8 @@ if (int(status) != 0) :
       exit(0)
 
 mTfit_histo = fit.GetPlot()
-QCD_sf      = fit.GetMCPrediction(0)
-EWK_sf      = fit.GetMCPrediction(1)
+#QCD_histopostfit      = fit.GetMCPrediction(0)
+#EWK_histopostfit      = fit.GetMCPrediction(1)
 
 #getFitResults 
 print 'FIT RESULTS XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx'
@@ -298,34 +326,34 @@ print ewk_e
 #format histos 
 data_histo.legendText = "data"
 QCD_histo.legendText = "QCD"
-EWK_template.legendText = "EWK"
+EWK_histo.legendText = "EWK"
 mTfit_histo.legendText = "mT_fit"
 QCD_histo.SetLineColor(618)
 QCD_histo.SetFillColor(0)
-EWK_template.SetLineColor(420)
-EWK_template.SetFillColor(0)
+EWK_histo.SetLineColor(420)
+EWK_histo.SetFillColor(0)
 mTfit_histo.SetLineColor(862)
 mTfit_histo.SetMarkerStyle(0)
 
 EWK_weighted.legendText = "EWK_weighted"
 QCD_weighted.legendText = "QCD_weighted"
-EWK_weighted.SetLineColor(6)
+EWK_weighted.SetLineColor(7)
 EWK_weighted.SetFillColor(0)
 QCD_weighted.SetLineColor(7)
 QCD_weighted.SetFillColor(0)
 
-EWK_weighted.weight *= ewk
-QCD_weighted.weight *= qcd 
+for p in plots: 
+    p.name += "_postFit"
+    p.histos[0][0].Scale(qcd)
+    p.histos[0][1].Scale(ewk)
+    p.histos[0][2].Scale(ewk)
 
-#def ewk_RW( event, sample ):
-#    return ewk*reweight_histo.GetBinContent(reweight_histo.FindBin( event.PV_npvsGood ))
-#EWK_RW = EWK_template.Clone()
-#EWK_RW.weight   = ewk_RW
-#EWK_RW.legendText   = "EWK_RW"
-#EWK_RW.SetLineColor(10)
+drawPlots(plots)
+
+EWK_weighted.Scale(ewk)
+QCD_weighted.Scale(qcd)
 
 histos = [[data_histo], [mTfit_histo]]
-
 fitresultplot = Plot.fromHisto(
   name = 'fittemplate',
   histos = histos,
@@ -333,21 +361,22 @@ fitresultplot = Plot.fromHisto(
   texY = 'events',
 )
 
-ewkhistos = [[EWK_template],[EWK_weighted]]
+ewkhistos = [[EWK_histo],[EWK_weighted]]
 ewkhisto = Plot.fromHisto(
   name = 'EWK',
   histos = ewkhistos,
-  texX = 'EK_templatefit',
+  texX = 'EWK_templatefit',
   texY = 'events',
 )
 
-#histogramsewk = [[EWK_template],[EWK_RW]]
-#histogramsewk = Plot.fromHisto(
-#  name = 'EWK_RW',
-#  histos = ewkhistos,
-#  texX = 'EK_templatefit',
-#  texY = 'events',
-#)
+ewkoriginal = [[EWK_histo]]
+EWKoriginal = Plot.fromHisto(
+  name = 'EWKoriginal',
+  histos = ewkoriginal,
+  texX = 'EWK_original',
+  texY = 'events',
+)
+
 qcdhistos = [[QCD_histo],[QCD_weighted]]
 qcdhisto = Plot.fromHisto(
   name = 'QCD',
@@ -362,29 +391,19 @@ plotting.draw(fitresultplot,
               logX    = False,
               logY    = True,
               sorting = False,
-              ratio   = None,
-              #ratio   = {},
-              #scaling =  {i+1:0 for i in range(len(histos)-1)},
+              #ratio   = None,
+              ratio   = {},
+              scaling =  {i+1:0 for i in range(len(histos)-1)},
 )
 plotting.draw(ewkhisto,
               plot_directory = plot_directory_,
               logX    = False,
               logY    = True,
               sorting = False,
-              #ratio   = None,
-              ratio   = {},
-              scaling =  {i+1:0 for i in range(len(histos)-1)},
+              ratio   = None,
+              #ratio   = {},
+              #scaling =  {i+1:0 for i in range(len(histos)-1)},
 )
-
-#plotting.draw(histogramsewk,
-#              plot_directory = plot_directory_,
-#              logX    = False,
-#              logY    = True,
-#              sorting = False,
-#              ratio   = None,
-#              #ratio   = {},
-#              #scaling =  {i+1:0 for i in range(len(histos)-1)},
-#)
 
 plotting.draw(qcdhisto,
               plot_directory = plot_directory_,
@@ -395,4 +414,14 @@ plotting.draw(qcdhisto,
               #ratio   = {},
               #scaling =  {i+1:0 for i in range(len(histos)-1)},
 )
+
+#plotting.draw(EWKoriginal,
+#              plot_directory = plot_directory_,
+#              logX    = False,
+#              logY    = True,
+#              sorting = False,
+#              ratio   = None,
+#              #ratio   = {},
+#              #scaling =  {i+1:0 for i in range(len(histos)-1)},
+#)
 

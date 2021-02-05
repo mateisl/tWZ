@@ -357,8 +357,8 @@ for p in plots:
 
 drawPlots(plots)
 
-#EWK_weighted.Scale(ewk)
-#QCD_weighted.Scale(qcd)
+EWK_weighted.Scale(ewk)
+QCD_weighted.Scale(qcd)
 
 histos = [[data_histo], [mTfit_histo]]
 fitresultplot = Plot.fromHisto(

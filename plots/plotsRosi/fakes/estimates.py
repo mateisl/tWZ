@@ -93,13 +93,16 @@ for s in mc:
     s.setSelectionString( mc_selectionString )
 
 max_events = -1
+for sample in [data_sample] + mc:
+    # remove 'tree_...' files until they are deleted
+    sample.files = filter( lambda f:not f.split('/')[-1].startswith('tree_'), sample.files ) 
 if args.small:
     for sample in [data_sample] + mc:
         sample.normalization = 1.
         #sample.reduceFiles( factor = 10 )
-        sample.reduceFiles( to=3 )
+        sample.reduceFiles( factor=50 )
         #sample.scale /= sample.normalization
-        max_events = 30000
+        #max_events = 100000
 
 # Text on the plots
 tex = ROOT.TLatex()
@@ -178,11 +181,10 @@ read_variables = [
 #    "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
     ]
 
-sequence       = []
-
 #read_variables += ["n%s_looseHybridIso/I"%args.mode, "%s_looseHybridIso[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F"]
 read_variables += ["n%s_FOmvaTOPT/I"%args.mode, "%s_FOmvaTOPT[pt/F,eta/F,phi/F,mT/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I", "nele_mvaTOPT/I"]
 
+sequence       = []
 def makeLeptons( event, sample ):
     collVars = ["pt","eta","phi","mT"]
     lep  = getObjDict(event, args.mode+'_FOmvaTOPT_', collVars, 0)
@@ -292,6 +294,8 @@ tarray = ROOT.TObjArray(2)
 tarray.Add( QCD_histo )
 tarray.Add( EWK_histo )
 
+data_mc_ratio = data_histo.Integral()/( QCD_histo.Integral() + EWK_histo.Integral())
+
 fit = ROOT.TFractionFitter( data_histo, tarray ) #initialise
 
 #fit.Constrain(0,0.0,1.0)
@@ -315,13 +319,15 @@ print 'FIT RESULTS XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 qcd   = ROOT.Double()
 qcd_e = ROOT.Double()
 fit.GetResult(0, qcd, qcd_e)
-print qcd 
-print qcd_e
 ewk   = ROOT.Double()
 ewk_e = ROOT.Double()
 fit.GetResult(1, ewk, ewk_e)
+
+print qcd 
+print qcd_e
 print ewk
 print ewk_e
+
 
 #format histos 
 data_histo.legendText = "data"
@@ -344,14 +350,15 @@ QCD_weighted.SetFillColor(0)
 
 for p in plots: 
     p.name += "_postFit"
-    p.histos[0][0].Scale(qcd)
-    p.histos[0][1].Scale(ewk)
-    p.histos[0][2].Scale(ewk)
+    p.histos[0][0].Scale(qcd*data_histo.Integral()/p.histos[0][0].Integral())
+    mc_ewk = p.histos[0][1].Integral()+p.histos[0][2].Integral()
+    p.histos[0][1].Scale(ewk*data_histo.Integral()/mc_ewk)
+    p.histos[0][2].Scale(ewk*data_histo.Integral()/mc_ewk)
 
 drawPlots(plots)
 
-EWK_weighted.Scale(ewk)
-QCD_weighted.Scale(qcd)
+#EWK_weighted.Scale(ewk)
+#QCD_weighted.Scale(qcd)
 
 histos = [[data_histo], [mTfit_histo]]
 fitresultplot = Plot.fromHisto(

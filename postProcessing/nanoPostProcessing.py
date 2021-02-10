@@ -24,18 +24,18 @@ from tWZ.Tools.helpers             import closestOSDLMassToMZ, deltaR, deltaPhi,
 from tWZ.Tools.objectSelection     import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons, isBJet, getGoodPhotons, getGenPartsAll, getJets, getPhotons, filterGenPhotons, genPhotonSelector, genLepFromZ, mvaTopWP
 from tWZ.Tools.objectSelection     import getGenZs, getGenPhoton
 
+from tWZ.Tools.overlapRemovalTTG   import photonFromTopDecay, hasMesonMother, getParentIds, isIsolatedPhoton, getPhotonCategory
 from tWZ.Tools.triggerEfficiency   import triggerEfficiency
 from tWZ.Tools.leptonSF            import leptonSF as leptonSF_
 from tWZ.Tools.mcTools import pdgToName, GenSearch, B_mesons, D_mesons, B_mesons_abs, D_mesons_abs
 genSearch = GenSearch()
 
 from Analysis.Tools.metFilters               import getFilterCut
-from Analysis.Tools.overlapRemovalTTG        import photonFromTopDecay, hasMesonMother, getParentIds, isIsolatedPhoton, getPhotonCategory
 from Analysis.Tools.puProfileDirDB           import puProfile
 from Analysis.Tools.L1PrefireWeight          import L1PrefireWeight
 from Analysis.Tools.LeptonTrackingEfficiency import LeptonTrackingEfficiency
 from Analysis.Tools.isrWeight                import ISRweight
-from Analysis.Tools.helpers                  import checkRootFile, deepCheckRootFile, deepCheckWeight
+from Analysis.Tools.helpers                  import checkRootFile, deepCheckRootFile, deepCheckWeight, dRCleaning
 from Analysis.Tools.leptonJetArbitration     import cleanJetsAndLeptons
 # central configuration
 targetLumi = 1000 #pb-1 Which lumi to normalize to
@@ -49,7 +49,8 @@ def get_parser():
     argParser.add_argument('--logLevel',    action='store',         nargs='?',  choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'],   default='INFO', help="Log level for logging" )
     argParser.add_argument('--samples',     action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
     argParser.add_argument('--eventsPerJob',action='store',         nargs='?',  type=int, default=30000000,                             help="Maximum number of events per job (Approximate!)." )
-    argParser.add_argument('--nJobs',       action='store',         nargs='?',  type=int, default=1,                                    help="Maximum number of simultaneous jobs." )
+    argParser.add_argument('--interpolationOrder',   action='store',nargs='?',  type=int, default=2,                                    help="Maximum number of simultaneous jobs." )
+    argParser.add_argument('--nJobs',       action='store',         nargs='?',  type=int, default=2,                                    help="EFT interpolation order" )
     argParser.add_argument('--job',         action='store',                     type=int, default=0,                                    help="Run only jobs i" )
     argParser.add_argument('--minNJobs',    action='store',         nargs='?',  type=int, default=1,                                    help="Minimum number of simultaneous jobs." )
     argParser.add_argument('--targetDir',   action='store',         nargs='?',  type=str, default=user.postprocessing_output_directory, help="Name of the directory the post-processed files will be saved" )
@@ -103,11 +104,12 @@ def fill_vector_collection( event, collection_name, collection_varnames, objects
                 getattr(event, collection_name+"_"+var)[i_obj] = obj[var]
 
 # Flags 
-isDiLep         = options.skim.lower().startswith('dilep')
-isTriLep        = options.skim.lower().startswith('trilep')
-isSingleLep     = options.skim.lower().startswith('singlelep')
-isSmall         = options.skim.lower().count('small')
-isInclusive     = options.skim.lower().count('inclusive') 
+isDiLep         = options.skim.lower().count('dilep') > 0
+isTriLep        = options.skim.lower().count('trilep') > 0
+isSingleLep     = options.skim.lower().count('singlelep') > 0
+isSmall         = options.skim.lower().count('small') > 0
+isInclusive     = options.skim.lower().count('inclusive') > 0 
+isPhoton        = options.skim.lower().count('photon')
 
 # Skim condition
 skimConds = []
@@ -117,10 +119,13 @@ if options.event > 0:
 
 if isDiLep:
     skimConds.append( "Sum$(Electron_pt>20&&abs(Electron_eta)<2.4) + Sum$(Muon_pt>20&&abs(Muon_eta)<2.4)>=2" )
-if isTriLep:
+elif isTriLep:
     skimConds.append( "Sum$(Electron_pt>20&&abs(Electron_eta)&&Electron_pfRelIso03_all<0.4) + Sum$(Muon_pt>20&&abs(Muon_eta)<2.5&&Muon_pfRelIso03_all<0.4)>=2 && Sum$(Electron_pt>10&&abs(Electron_eta)<2.5)+Sum$(Muon_pt>10&&abs(Muon_eta)<2.5)>=3" )
 elif isSingleLep:
     skimConds.append( "Sum$(Electron_pt>20&&abs(Electron_eta)<2.5) + Sum$(Muon_pt>20&&abs(Muon_eta)<2.5)>=1" )
+
+if isPhoton:
+    skimConds.append( "Sum$(Photon_pt>20)>=1" )
 
 if isInclusive:
     skimConds.append('(1)')
@@ -144,8 +149,9 @@ elif options.year == 2017:
     allSamples = mcSamples + dataSamples
 elif options.year == 2018:
     from Samples.nanoAOD.Autumn18_private_nanoAODv6         import allSamples as mcSamples
+    from Samples.nanoAOD.Autumn18_private_fast_nanoAODv6    import allSamples as fast_mcSamples
     from Samples.nanoAOD.Run2018_private_nanoAODv6          import allSamples as dataSamples
-    allSamples = mcSamples + dataSamples
+    allSamples = mcSamples + fast_mcSamples + dataSamples
 #    if options.year == 2016:
 #        from Samples.nanoAOD.Summer16_nanoAODv7         import allSamples as mcSamples
 ##        from Samples.nanoAOD.Summer16_private           import allSamples as mcSamples
@@ -200,16 +206,6 @@ elif len(samples)==1:
     sampleForPU = samples[0]
 else:
     raise ValueError( "Need at least one sample. Got %r",samples )
-
-# Trigger selection
-from tWZ.Tools.triggerSelector import triggerSelector
-ts           = triggerSelector(options.year)
-triggerCond  = ts.getSelection(options.samples[0] if isData else "MC", triggerList = ts.getTriggerList(sample) )
-treeFormulas = {"triggerDecision": {'string':triggerCond} }
-
-if isData and options.triggerSelection:
-    logger.info("Sample will have the following trigger skim: %s"%triggerCond)
-    skimConds.append( triggerCond )
 
 if options.reduceSizeBy > 1:
     logger.info("Sample size will be reduced by a factor of %s", options.reduceSizeBy)
@@ -271,14 +267,37 @@ try:    #Avoid trouble with race conditions in multithreading
 except:
     pass
 
+# EFT reweighting
+addReweights = False
+if hasattr( sample, "reweight_pkl" ):
+    addReweights = True
+    from Analysis.Tools.WeightInfo                   import WeightInfo
+    from Analysis.Tools.HyperPoly                    import HyperPoly
+    weightInfo = WeightInfo( sample.reweight_pkl )
+    ref_point_coordinates = [ weightInfo.ref_point_coordinates[var] for var in weightInfo.variables ]
+
+    def interpret_weight(weight_id):
+        str_s = weight_id.split('_')
+        res={}
+        for i in range(len(str_s)/2):
+            res[str_s[2*i]] = float(str_s[2*i+1].replace('m','-').replace('p','.'))
+        return res
+
+    hyperPoly       = HyperPoly( options.interpolationOrder )
+
+    weightInfo_data = list(weightInfo.data.iteritems())
+    weightInfo_data.sort( key = lambda w: w[1] )
+    basepoint_coordinates = map( lambda d: [d[v] for v in weightInfo.variables] , map( lambda w: interpret_weight(w[0]), weightInfo_data) )
+
+    hyperPoly.initialize( basepoint_coordinates, ref_point_coordinates )
+
+    logger.info("Adding reweights. Expect to read %i base point weights.", weightInfo.nid)
+
 ## sort the list of files?
 len_orig = len(sample.files)
 sample = sample.split( n=options.nJobs, nSub=options.job)
 logger.info( "fileBasedSplitting: Run over %i/%i files for job %i/%i."%(len(sample.files), len_orig, options.job, options.nJobs))
 logger.debug("fileBasedSplitting: Files to be run over:\n%s", "\n".join(sample.files) )
-
-# turn on all branches to be flexible for filter cut in skimCond etc.
-sample.chain.SetBranchStatus("*",1)
 
 # systematic variations
 addSystematicVariations = (not isData) and (not options.skipSystematicVariations)
@@ -290,7 +309,6 @@ btagEff = BTagEfficiency( fastSim = False, year=options.year, tagger=b_tagger )
 
 # tmp_output_directory
 tmp_output_directory  = os.path.join( user.postprocessing_tmp_directory, "%s_%i_%s_%s_%s"%(options.processingEra, options.year, options.skim, sample.name, str(uuid.uuid3(uuid.NAMESPACE_OID, sample.name))))  
-
 if os.path.exists(tmp_output_directory) and options.overwrite:
     if options.nJobs > 1:
         logger.warning( "NOT removing directory %s because nJobs = %i", tmp_output_directory, options.nJobs )
@@ -304,6 +322,7 @@ try:    #Avoid trouble with race conditions in multithreading
 except:
     pass
 
+# Anticipate & check output file
 filename, ext = os.path.splitext( os.path.join(tmp_output_directory, sample.name + '.root') )
 outfilename   = filename+ext
 
@@ -326,6 +345,24 @@ else:
 # relocate original
 sample.copy_files( os.path.join(tmp_output_directory, "input") )
 
+treeFormulas = {}
+if options.triggerSelection and isTriLep:
+    # Trigger selection
+    from tWZ.Tools.triggerSelector import triggerSelector
+    ts           = triggerSelector(options.year)
+    triggerCond  = ts.getSelection(options.samples[0] if isData else "MC", triggerList = ts.getTriggerList(sample) )
+    treeFormulas["triggerDecision"] =  {'string':triggerCond} 
+    if isData:
+        logger.info("Sample will have the following trigger skim: %s"%triggerCond)
+        skimConds.append( triggerCond )
+
+
+# turn on all branches to be flexible for filter cut in skimCond etc.
+sample.chain.SetBranchStatus("*",1)
+
+# this is the global selectionString 
+selectionString = '&&'.join(skimConds)
+
 # top pt reweighting
 from tWZ.Tools.topPtReweighting import getUnscaledTopPairPtReweightungFunction, getTopPtDrawString, getTopPtsForReweighting
 # Decision based on sample name -> whether TTJets or TTLep is in the sample name
@@ -339,7 +376,6 @@ if doTopPtReweighting:
     logger.info( "Sample will have top pt reweighting." )
     topPtReweightingFunc = getUnscaledTopPairPtReweightungFunction(selection = "dilep")
     # Compute x-sec scale factor on unweighted events
-    selectionString = "&&".join(skimConds)
     if hasattr(sample, "topScaleF"):
         # If you don't want to get the SF for each subjob run the script and add the topScaleF to the sample
         topScaleF = sample.topScaleF
@@ -357,7 +393,6 @@ else:
 if options.doCRReweighting:
     from tWZ.Tools.colorReconnectionReweighting import getCRWeight, getCRDrawString
     logger.info( "Sample will have CR reweighting." )
-    selectionString = "&&".join(skimConds)
     #norm = sample.getYieldFromDraw( selectionString = selectionString, weightString = "genWeight" )
     norm = float(sample.chain.GetEntries(selectionString))
     CRScaleF = sample.getYieldFromDraw( selectionString = selectionString, weightString = getCRDrawString() )
@@ -432,7 +467,11 @@ if isMC:
 read_variables += [ TreeVariable.fromString('nPhoton/I'),
                     VectorTreeVariable.fromString('Photon[pt/F,eta/F,phi/F,mass/F,cutBased/I,pdgId/I]') if (options.year == 2016) else VectorTreeVariable.fromString('Photon[pt/F,eta/F,phi/F,mass/F,cutBasedBitmap/I,pdgId/I]') ]
 
-new_variables = [ 'weight/F', 'triggerDecision/I', 'year/I']
+new_variables = [ 'weight/F', 'year/I']
+
+if options.triggerSelection and isTriLep:
+    new_variables+= ['triggerDecision/I']
+
 if isMC:
     read_variables += [ TreeVariable.fromString('Pileup_nTrueInt/F') ]
     # reading gen particles for top pt reweighting
@@ -455,6 +494,8 @@ read_variables += [\
     VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,dxy/F,dz/F,charge/I,mvaTOP/F]'),
     TreeVariable.fromString('nJet/I'),
     VectorTreeVariable.fromString('Jet[%s]'% ( ','.join(jetVars) ) ) ]
+if addReweights:
+    read_variables.extend( ["nLHEReweightingWeight/I", "nLHEReweighting/I", "LHEReweighting[Weight/F]" ] ) # need to set alias later
 
 new_variables += [\
     'overlapRemoval/I','nlep/I',
@@ -487,6 +528,13 @@ new_variables.extend( ['nPhotonGood/I','photon_pt/F','photon_eta/F','photon_phi/
 if isMC: new_variables.extend( ['photon_genPt/F', 'photon_genEta/F', 'genZ_mass/F'] )
 new_variables.extend( ['photonJetdR/F','photonLepdR/F'] )
 
+if addReweights:
+    sample.chain.SetAlias("nLHEReweighting",       "nLHEReweightingWeight")
+    sample.chain.SetAlias("LHEReweighting_Weight", "LHEReweightingWeight")
+    new_variables.append( TreeVariable.fromString("p[C/F]") )
+    new_variables[-1].nMax = HyperPoly.get_ndof(weightInfo.nvar, options.interpolationOrder)
+    new_variables.append( "chi2_ndof/F" )
+
 ## ttZ related variables
 new_variables.extend( ['Z1_l1_index/I', 'Z1_l2_index/I', 'Z2_l1_index/I', 'Z2_l2_index/I', 'nonZ1_l1_index/I', 'nonZ1_l2_index/I'] )
 for i in [1,2]:
@@ -500,6 +548,7 @@ if addSystematicVariations:
         if not var.startswith('unclust'):
             new_variables.extend( ['nJetGood_'+var+'/I', 'nBTag_'+var+'/I'] )
         new_variables.extend( ['met_pt_'+var+'/F', 'met_phi_'+var+'/F'] )
+
 
 # Btag weights Method 1a
 for var in btagEff.btagWeightNames:
@@ -520,7 +569,6 @@ if not options.skipNanoTools:
     
     logger.info("Preparing nanoAOD postprocessing")
     logger.info("Will put files into directory %s", tmp_output_directory)
-    cut = '&&'.join(skimConds)
     # year specific JECs 
     if options.year == 2016:
         JER                 = "Summer16_25nsV1_MC"          if not sample.isData else "Summer16_25nsV1_DATA"
@@ -576,7 +624,7 @@ if not options.skipNanoTools:
 
         # need a hash to avoid data loss
         file_hash = str(hash(f))
-        p = PostProcessor(tmp_output_directory, [f], cut=cut, modules=modules, postfix="_for_%s_%s"%(sample.name, file_hash))
+        p = PostProcessor(tmp_output_directory, [f], cut=selectionString, modules=modules, postfix="_for_%s_%s"%(sample.name, file_hash))
         if not options.reuseNanoAOD:
             p.run()
         newFileList += [tmp_output_directory + '/' + f.split('/')[-1].replace('.root', '_for_%s_%s.root'%(sample.name, file_hash))]
@@ -586,9 +634,11 @@ if not options.skipNanoTools:
     sample.clear()
 
 # Define a reader
+
+logger.info( "Running with selectionString %s", selectionString )
 reader = sample.treeReader( \
     variables = read_variables,
-    selectionString = "&&".join(skimConds)
+    selectionString = selectionString 
     )
 
 # using miniRelIso 0.2 as baseline 
@@ -678,7 +728,31 @@ def filler( event ):
         event.reweightTopPt     = topPtReweightingFunc(getTopPtsForReweighting(r)) * topScaleF if doTopPtReweighting else 1.
 
     # Trigger Decision
-    event.triggerDecision = int(treeFormulas['triggerDecision']['TTreeFormula'].EvalInstance())
+    if options.triggerSelection and isTriLep:
+        event.triggerDecision = int(treeFormulas['triggerDecision']['TTreeFormula'].EvalInstance())
+
+    if addReweights:
+        reader.activateAllBranches()
+        # unfortunately the branch does not respect the nanoAOD convention
+        #sample.chain.SetBranchAddress("LHEReweightingWeight",  ROOT.AddressOf(reader.event, "LHEReweighting_Weight" ))
+        #sample.chain.SetBranchAddress("nLHEReweightingWeight", ROOT.AddressOf(reader.event, "nLHEReweighting" ))
+
+        weights  = [ r.LHEReweighting_Weight[i] for i in range(r.nLHEReweightingWeight) ]
+
+        coeff           = hyperPoly.get_parametrization( weights )
+        #print weights, coeff
+        event.np        = hyperPoly.ndof
+        event.chi2_ndof = hyperPoly.chi2_ndof( coeff, weights )
+
+        if event.chi2_ndof > 10**-6:
+            logger.warning( "chi2_ndof is large: %f", event.chi2_ndof )
+
+        for n in xrange( hyperPoly.ndof ):
+            event.p_C[n] = coeff[n]
+
+        if weightInfo.nid != r.nLHEReweightingWeight:
+            logger.error( "addReweights: pkl file has %i bas-points but nLHEReweightWeight=%i", w.nid, r.nLHEReweightingWeight )
+            raise RuntimeError("reweight_pkl and nLHEReweightWeight are inconsistent")
 
     allSlimmedJets      = getJets(r)
     allSlimmedPhotons   = getPhotons(r, year=options.year)
@@ -713,10 +787,28 @@ def filler( event ):
 
     event.minDLmass = getMinDLMass(leptons)
 
+    # Photons 
+    photons = getGoodPhotons(r, ptCut=20, idLevel="loose", isData=isData, year=options.year)
+    # filter photons close to leptons
+    photons = dRCleaning( photons, leptons, dR=0.4)
+
+    event.nPhotonGood = len(photons)
+    if event.nPhotonGood > 0:
+      event.photon_pt         = photons[0]['pt']
+      event.photon_eta        = photons[0]['eta']
+      event.photon_phi        = photons[0]['phi']
+      event.photon_idCutBased = photons[0]['cutBased'] if (options.year == 2016) else photons[0]['cutBasedBitmap']
+      if isMC:
+        genPhoton       = getGenPhoton(gPart)
+        event.photon_genPt  = genPhoton['pt']  if genPhoton is not None else float('nan')
+        event.photon_genEta = genPhoton['eta'] if genPhoton is not None else float('nan')
+
     # now get jets, cleaned against good leptons
     all_jets     = getJets(r, jetVars=jetVarNames)
     clean_jets,_ = cleanJetsAndLeptons( all_jets, leptons ) 
-
+    # clean against leading photon
+    if event.nPhotonGood > 0:
+        clean_jets   = filter( lambda j: deltaR( j, {'phi':event.photon_phi, 'eta':event.photon_eta} )>0.1, clean_jets )
     clean_jets_acc = filter(lambda j:abs(j['eta'])<2.4, clean_jets)
     jets         = filter(lambda j:j['pt']>30, clean_jets_acc)
     bJets        = filter(lambda j:isBJet(j, tagger=b_tagger, year=options.year) and abs(j['eta'])<=2.4    , jets)
@@ -762,25 +854,14 @@ def filler( event ):
     event.nBTag      = len(bJets)
     event.m3, _,_,_  = m3(jets)
 
+    # we got all objects, so let's make dR
+    if event.nPhotonGood > 0:
+      event.photonLepdR = min(deltaR(photons[0], l) for l in leptons) if len(leptons) > 0 else 999
+      event.photonJetdR = min(deltaR(photons[0], j) for j in jets) if len(jets) > 0 else 999
+
     jets_sys      = {}
     bjets_sys     = {}
     nonBjets_sys  = {}
-
-    # Keep photons and estimate met including (leading pt) photon
-    photons = getGoodPhotons(r, ptCut=20, idLevel="tight", isData=isData, year=options.year)
-    event.nPhotonGood = len(photons)
-    if event.nPhotonGood > 0:
-      event.photon_pt         = photons[0]['pt']
-      event.photon_eta        = photons[0]['eta']
-      event.photon_phi        = photons[0]['phi']
-      event.photon_idCutBased = photons[0]['cutBased'] if (options.year == 2016) else photons[0]['cutBasedBitmap']
-      if isMC:
-        genPhoton       = getGenPhoton(gPart)
-        event.photon_genPt  = genPhoton['pt']  if genPhoton is not None else float('nan')
-        event.photon_genEta = genPhoton['eta'] if genPhoton is not None else float('nan')
-
-      event.photonJetdR = min(deltaR(photons[0], j) for j in jets) if len(jets) > 0 else 999
-      event.photonLepdR = min(deltaR(photons[0], l) for l in leptons) if len(leptons) > 0 else 999
 
     if addSystematicVariations:
         for var in ['jesTotalUp', 'jesTotalDown', 'jerUp', 'jerDown', 'unclustEnUp', 'unclustEnDown']: # don't use 'jer' as of now
@@ -996,7 +1077,13 @@ for ievtRange, eventRange in enumerate( eventRanges ):
     # Do the thing
     reader.start()
 
-    while reader.run():
+    while True:
+        if addReweights:
+            sample.chain.SetBranchStatus("*",1)
+            sample.chain.SetBranchAddress("LHEReweightingWeight",  ROOT.AddressOf(reader.event, "LHEReweighting_Weight" ))
+        run = reader.run()
+        if not run: break
+
         maker.run()
         if sample.isData:
             if maker.event.jsonPassed_:

@@ -1,7 +1,4 @@
 ## DY
-#python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --reduceSizeBy 2 --sample DYJetsToLL_M50_LO #SPLIT40
-##python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50 #SPLIT40
-#python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --reduceSizeBy 2 --sample DYJetsToLL_M10to50_LO #SPLIT40
 
 ## full stats
 python nanoPostProcessing.py  --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50_LO #SPLIT40

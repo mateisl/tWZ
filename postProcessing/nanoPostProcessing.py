@@ -295,6 +295,12 @@ if hasattr( sample, "reweight_pkl" ):
     weightInfo_data.sort( key = lambda w: w[1] )
     basepoint_coordinates = map( lambda d: [d[v] for v in weightInfo.variables] , map( lambda w: interpret_weight(w[0]), weightInfo_data) )
 
+    # find the ref point position
+    try:
+        ref_point_index = basepoint_coordinates.index(ref_point_coordinates)
+    except ValueError:
+        ref_point_index = None
+
     hyperPoly.initialize( basepoint_coordinates, ref_point_coordinates )
 
     logger.info("Adding reweights. Expect to read %i base point weights.", weightInfo.nid)
@@ -738,11 +744,10 @@ def filler( event ):
         event.triggerDecision = int(treeFormulas['triggerDecision']['TTreeFormula'].EvalInstance())
 
     if addReweights:
-        reader.activateAllBranches()
-
+        
         include_missing_refpoint = False
         if weightInfo.nid == r.nLHEReweightingWeight + 1:
-            logger.warning( "addReweights: pkl file has %i base-points but nLHEReweightWeight=%i, hence it is likely that the ref-point is among the base points and is missing. Fingers crossed.", weightInfo.nid, r.nLHEReweightingWeight )
+            logger.debug( "addReweights: pkl file has %i base-points but nLHEReweightWeight=%i, hence it is likely that the ref-point is among the base points and is missing. Fingers crossed.", weightInfo.nid, r.nLHEReweightingWeight )
             if ref_point_index is None:
                 raise RuntimeError( "weightInfo.nid == r.nLHEReweightingWeight + 1 but ref_point_index = None -> something is wrong." )
             include_missing_refpoint = True
@@ -753,17 +758,15 @@ def filler( event ):
 
         # here we check the consistency with miniAOD, hence multiply with LHEWeight_originalXWGTUP 
         weights = [reader.sample.chain.GetLeaf("LHEReweightingWeight").GetValue(i_weight) for i_weight in range(r.nLHEReweightingWeight)]
-
         if include_missing_refpoint:
             weights = weights[:ref_point_index] + [1] + weights[ref_point_index:]
 
         coeff           = hyperPoly.get_parametrization( weights )
-        #print weights, coeff
         event.np        = hyperPoly.ndof
         event.chi2_ndof = hyperPoly.chi2_ndof( coeff, weights )
-
-        if chi2_ndof > 10**-6:
-            logger.warning( "chi2_ndof is large: %f", chi2_ndof )
+        #print event.chi2_ndof, event.np, weights, coeff
+        if event.chi2_ndof > 10**-6:
+            logger.warning( "chi2_ndof is large: %f", event.chi2_ndof )
 
         for n in xrange( hyperPoly.ndof ):
             event.p_C[n] = coeff[n]
@@ -1091,13 +1094,8 @@ for ievtRange, eventRange in enumerate( eventRanges ):
     maker.start()
     # Do the thing
     reader.start()
-
-    while True:
-        if addReweights:
-            sample.chain.SetBranchStatus("*",1)
-            sample.chain.SetBranchAddress("LHEReweightingWeight",  ROOT.AddressOf(reader.event, "LHEReweighting_Weight" ))
-        run = reader.run()
-        if not run: break
+    reader.sample.chain.SetBranchStatus("*",1)
+    while reader.run():
 
         maker.run()
         if sample.isData:

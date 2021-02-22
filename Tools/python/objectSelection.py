@@ -577,12 +577,12 @@ idCutBased={'loose':0 ,'medium':1, 'tight':2}
 photonVars=['eta','pt','phi','mass','cutBased']
 photonVarsMC = photonVars + ['mcPt']
 
-def getPhotons(c, collVars=None, idLevel='loose', year=2016):
+def getPhotons(c, collVars=None, year=2016):
     if collVars is None:
         collVars = ['eta','pt','phi','mass','cutBased'] if (not (year == 2017 or year == 2018)) else ['eta','pt','phi','mass','cutBasedBitmap']
     return [getObjDict(c, 'Photon_', collVars, i) for i in range(int(getVarValue(c, 'nPhoton')))]
 
-def getGoodPhotons(c, ptCut=50, idLevel="loose", isData=True, collVars=None, year=2016):
+def getGoodPhotons(c, ptCut=20, idLevel="loose", isData=True, collVars=None, year=2016):
     idVar = "cutBased" if (not (year == 2017 or year == 2018)) else "cutBasedBitmap"
     #if collVars is None: collVars = photonVars if isData else photonVarsMC
     collVars = ['eta','pt','phi','mass','cutBased'] if (not (year == 2017 or year == 2018)) else ['eta','pt','phi','mass','cutBasedBitmap']

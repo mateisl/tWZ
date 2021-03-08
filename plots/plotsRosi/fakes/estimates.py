@@ -182,7 +182,7 @@ read_variables = [
     ]
 
 #read_variables += ["n%s_looseHybridIso/I"%args.mode, "%s_looseHybridIso[pt/F,eta/F,phi/F,mT/F,hybridIso/F]"%args.mode, "met_pt/F"]
-read_variables += ["n%s_FOmvaTOPT/I"%args.mode, "%s_FOmvaTOPT[pt/F,eta/F,phi/F,mT/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I", "nele_mvaTOPT/I"]
+read_variables += ["n%s_FOmvaTOPT/I"%args.mode, "%s_FOmvaTOPT[pt/F,eta/F,phi/F,mT/F]"%args.mode, "met_pt/F", "met_phi/F", "nmu_mvaTOPT/I", "nele_mvaTOPT/I"]
 
 sequence       = []
 def makeLeptons( event, sample ):
@@ -245,6 +245,27 @@ plots.append(Plot(
   addOverFlowBin='upper',
 ))
 
+plots.append(Plot(
+  name = 'dPhi_lep_met', texX = '#Delta#phi(lep,met)', texY = 'Number of Events',
+  attribute = lambda event, sample: deltaPhi(event.lep_phi, event.met_phi), 
+  binning=[30,-3,3],
+  addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+  name = 'dPhi_j0_met', texX = '#Delta#phi(jet,met)', texY = 'Number of Events',
+  attribute = lambda event, sample: deltaPhi(event.JetGood_phi[0], event.met_phi), 
+  binning=[30,-3,3],
+  addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+  name = 'cos(dPhi_j0_met)', texX = 'cos(#phi(jet) - #phi(met))', texY = 'Number of Events',
+  attribute = lambda event, sample: cos(event.JetGood_phi[0] - event.met_phi), 
+  binning=[30,-3,3],
+  addOverFlowBin='upper',
+))
+
 #tight-loose plots 
 plots.append(Plot(
   name = 'LT_mu', texX = 'LT_mu', texY = 'Number of Events',
@@ -276,18 +297,6 @@ for plot in plots:
 
 EWK_weighted = EWK_histo.Clone()
 QCD_weighted = QCD_histo.Clone()
-#go to EWK dominated region to make some first scaling in order to make the template fit work
-#if args.small : 
-#   i_low = data_histo.GetXaxis().FindBin(80)
-#   i_up  = data_histo.GetXaxis().FindBin(100)
-#   
-#   I_data = data_histo.Integral(i_low,i_up)
-#   I_QCD = QCD_histo.Integral(i_low,i_up)
-#   I_EWK = EWK_histo.Integral(i_low,i_up)
-#   
-#   I_scale = I_data / (I_QCD + I_EWK)
-#   QCD_histo.Scale(I_scale)
-#   EWK_histo.Scale(I_scale)
 
 #tfractionfitting
 tarray = ROOT.TObjArray(2)
@@ -376,13 +385,13 @@ ewkhisto = Plot.fromHisto(
   texY = 'events',
 )
 
-ewkoriginal = [[EWK_histo]]
-EWKoriginal = Plot.fromHisto(
-  name = 'EWKoriginal',
-  histos = ewkoriginal,
-  texX = 'EWK_original',
-  texY = 'events',
-)
+#ewkoriginal = [[EWK_histo]]
+#EWKoriginal = Plot.fromHisto(
+#  name = 'EWKoriginal',
+#  histos = ewkoriginal,
+#  texX = 'EWK_original',
+#  texY = 'events',
+#)
 
 qcdhistos = [[QCD_histo],[QCD_weighted]]
 qcdhisto = Plot.fromHisto(
@@ -431,4 +440,18 @@ plotting.draw(qcdhisto,
 #              #ratio   = {},
 #              #scaling =  {i+1:0 for i in range(len(histos)-1)},
 #)
+
+
+#for plot in plots:
+#    if plot.name == 'LT_mu_postFit' :
+#        #data_histo    
+#         datalose  = plot.histos[1][0].GetBinContent(1)
+#         datatight = plot.histos[1][0].GetBinContent(2)
+#        #QCD_histo    
+#         QCDlose  = plot.histos[0][0].GetBinContent(1)
+#         QCDtight = plot.histos[0][0].GetBinContent(2)
+#        #EWK_histo    
+#         EWKlose  = plot.histos[0][1].GetBinContent(1) + plot.histos[0][2].GetBinContent(1)
+#         EWKtight = plot.histos[0][1].GetBinContent(2) + plot.histos[0][2].GetBinContent(1)
+
 

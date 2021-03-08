@@ -151,7 +151,13 @@ elif options.year == 2018:
     from Samples.nanoAOD.Autumn18_private_nanoAODv6         import allSamples as mcSamples
     from Samples.nanoAOD.Autumn18_private_fast_nanoAODv6    import allSamples as fast_mcSamples
     from Samples.nanoAOD.Run2018_private_nanoAODv6          import allSamples as dataSamples
-    allSamples = mcSamples + fast_mcSamples + dataSamples
+
+    #debug = Sample.fromFiles("ttG_noFullyHad_debug", files= ["/users/robert.schoefbeck/CMS/test/CMSSW_10_2_22/src/nanoAODSim_debug.root"])
+    #debug.reweight_pkl = "/eos/vbc/user/robert.schoefbeck/gridpacks/v5/top_boson_reweight_card.pkl" 
+    #debug.xSection     = 1.
+    #debug.normalization = 100.
+
+    allSamples = mcSamples + fast_mcSamples + dataSamples #+[debug]
 #    if options.year == 2016:
 #        from Samples.nanoAOD.Summer16_nanoAODv7         import allSamples as mcSamples
 ##        from Samples.nanoAOD.Summer16_private           import allSamples as mcSamples
@@ -289,6 +295,12 @@ if hasattr( sample, "reweight_pkl" ):
     weightInfo_data.sort( key = lambda w: w[1] )
     basepoint_coordinates = map( lambda d: [d[v] for v in weightInfo.variables] , map( lambda w: interpret_weight(w[0]), weightInfo_data) )
 
+    # find the ref point position
+    try:
+        ref_point_index = basepoint_coordinates.index(ref_point_coordinates)
+    except ValueError:
+        ref_point_index = None
+
     hyperPoly.initialize( basepoint_coordinates, ref_point_coordinates )
 
     logger.info("Adding reweights. Expect to read %i base point weights.", weightInfo.nid)
@@ -421,7 +433,7 @@ if options.year == 2017:
 
 #branches to be kept for MC samples only
 branchKeepStrings_MC = [ "Generator_*", "GenPart_*", "nGenPart", "genWeight", "Pileup_nTrueInt","GenMET_*", "nISR", "nGenJet", "GenJet_*"]
-branchKeepStrings_MC.extend([ "*LHEScaleWeight", "*LHEPdfWeight", "LHEWeight_originalXWGTUP"])
+#branchKeepStrings_MC.extend([ "*LHEScaleWeight", "*LHEPdfWeight", "LHEWeight_originalXWGTUP"])
 
 #branches to be kept for data only
 branchKeepStrings_DATA = [ ]
@@ -495,7 +507,7 @@ read_variables += [\
     TreeVariable.fromString('nJet/I'),
     VectorTreeVariable.fromString('Jet[%s]'% ( ','.join(jetVars) ) ) ]
 if addReweights:
-    read_variables.extend( ["nLHEReweightingWeight/I", "nLHEReweighting/I", "LHEReweighting[Weight/F]" ] ) # need to set alias later
+    read_variables.extend( ["nLHEReweightingWeight/I" ] )#, "nLHEReweighting/I", "LHEReweighting[Weight/F]" ] ) # need to set alias later
 
 new_variables += [\
     'overlapRemoval/I','nlep/I',
@@ -529,8 +541,8 @@ if isMC: new_variables.extend( ['photon_genPt/F', 'photon_genEta/F', 'genZ_mass/
 new_variables.extend( ['photonJetdR/F','photonLepdR/F'] )
 
 if addReweights:
-    sample.chain.SetAlias("nLHEReweighting",       "nLHEReweightingWeight")
-    sample.chain.SetAlias("LHEReweighting_Weight", "LHEReweightingWeight")
+#    sample.chain.SetAlias("nLHEReweighting",       "nLHEReweightingWeight")
+#    sample.chain.SetAlias("LHEReweighting_Weight", "LHEReweightingWeight")
     new_variables.append( TreeVariable.fromString("p[C/F]") )
     new_variables[-1].nMax = HyperPoly.get_ndof(weightInfo.nvar, options.interpolationOrder)
     new_variables.append( "chi2_ndof/F" )
@@ -732,27 +744,33 @@ def filler( event ):
         event.triggerDecision = int(treeFormulas['triggerDecision']['TTreeFormula'].EvalInstance())
 
     if addReweights:
-        reader.activateAllBranches()
-        # unfortunately the branch does not respect the nanoAOD convention
-        #sample.chain.SetBranchAddress("LHEReweightingWeight",  ROOT.AddressOf(reader.event, "LHEReweighting_Weight" ))
-        #sample.chain.SetBranchAddress("nLHEReweightingWeight", ROOT.AddressOf(reader.event, "nLHEReweighting" ))
+        
+        include_missing_refpoint = False
+        if weightInfo.nid == r.nLHEReweightingWeight + 1:
+            logger.debug( "addReweights: pkl file has %i base-points but nLHEReweightWeight=%i, hence it is likely that the ref-point is among the base points and is missing. Fingers crossed.", weightInfo.nid, r.nLHEReweightingWeight )
+            if ref_point_index is None:
+                raise RuntimeError( "weightInfo.nid == r.nLHEReweightingWeight + 1 but ref_point_index = None -> something is wrong." )
+            include_missing_refpoint = True
+        elif weightInfo.nid == r.nLHEReweightingWeight:
+            pass
+        else:
+            raise RuntimeError("reweight_pkl and nLHEReweightWeight are inconsistent.")
 
-        weights  = [ r.LHEReweighting_Weight[i] for i in range(r.nLHEReweightingWeight) ]
+        # here we check the consistency with miniAOD, hence multiply with LHEWeight_originalXWGTUP 
+        weights = [reader.sample.chain.GetLeaf("LHEReweightingWeight").GetValue(i_weight) for i_weight in range(r.nLHEReweightingWeight)]
+        if include_missing_refpoint:
+            weights = weights[:ref_point_index] + [1] + weights[ref_point_index:]
 
         coeff           = hyperPoly.get_parametrization( weights )
-        #print weights, coeff
         event.np        = hyperPoly.ndof
         event.chi2_ndof = hyperPoly.chi2_ndof( coeff, weights )
-
+        #print event.chi2_ndof, event.np, weights, coeff
         if event.chi2_ndof > 10**-6:
             logger.warning( "chi2_ndof is large: %f", event.chi2_ndof )
 
         for n in xrange( hyperPoly.ndof ):
             event.p_C[n] = coeff[n]
-
-        if weightInfo.nid != r.nLHEReweightingWeight:
-            logger.error( "addReweights: pkl file has %i bas-points but nLHEReweightWeight=%i", w.nid, r.nLHEReweightingWeight )
-            raise RuntimeError("reweight_pkl and nLHEReweightWeight are inconsistent")
+    #    p_C_nanoAOD.append( [ coeff[n] for n in xrange(hyperPoly.ndof) ] )
 
     allSlimmedJets      = getJets(r)
     allSlimmedPhotons   = getPhotons(r, year=options.year)
@@ -1076,13 +1094,8 @@ for ievtRange, eventRange in enumerate( eventRanges ):
     maker.start()
     # Do the thing
     reader.start()
-
-    while True:
-        if addReweights:
-            sample.chain.SetBranchStatus("*",1)
-            sample.chain.SetBranchAddress("LHEReweightingWeight",  ROOT.AddressOf(reader.event, "LHEReweighting_Weight" ))
-        run = reader.run()
-        if not run: break
+    reader.sample.chain.SetBranchStatus("*",1)
+    while reader.run():
 
         maker.run()
         if sample.isData:

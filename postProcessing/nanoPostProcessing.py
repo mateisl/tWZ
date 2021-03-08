@@ -428,7 +428,7 @@ branchKeepStrings_DATA = [ ]
 
 # Jet variables to be read from chain
 jetCorrInfo = []
-jetMCInfo   = ['genJetIdx/I','hadronFlavour/I']
+jetMCInfo   = ['genJetIdx/I','hadronFlavour/I', 'partonFlavour/I']
 
 if isData:
     lumiScaleFactor=None

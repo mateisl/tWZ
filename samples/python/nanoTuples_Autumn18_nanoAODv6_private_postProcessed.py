@@ -76,6 +76,10 @@ dirs['TTVV']            = ['TTWW', 'TTWZ','TTZZ']
 dirs['TTX_rare']        = ["TTTT", "TTHbbLep", "TTHnobb_pow", "THW", "THQ"] + dirs['TTW'] + dirs['TTVV'] # same as TTX_rare but without tZq_ll
 TTX_rare = Sample.fromDirectory(name="TTX_rare", treeName="Events", isData=False, color=color.TTX_rare, texName="t/t#bar{t}+(t#bar{t}/H/W/VV)", directory=make_dirs( dirs['TTX_rare']))
 
+TTW  = Sample.fromDirectory(name="TTW", treeName="Events", isData=False, color=color.TTW, texName="t#bar{t}W", directory=make_dirs( dirs['TTW']))
+dirs['TTTT']            = ['TTTT']
+TTTT = Sample.fromDirectory(name="TTTT", treeName="Events", isData=False, color=color.TTTT, texName="t#bar{t}W", directory=make_dirs( dirs['TTTT']))
+
 # TT
 dirs['TTLep']           = ['TTLep_pow']
 dirs['singleTop']       = ['TBar_tch_pow_redBy15', 'TBar_tWch', 'T_tch_pow_redBy15', 'T_tWch']

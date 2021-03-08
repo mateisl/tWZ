@@ -1,6 +1,6 @@
 
-#base = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/nanoTuples"
-base = "/mnt/hephy/cms/robert.schoefbeck/tWZ/nanoTuples/"
+base = "/scratch-cbe/users/robert.schoefbeck/tWZ/nanoTuples/"
+#base = "/mnt/hephy/cms/robert.schoefbeck/tWZ/nanoTuples/"
 mc_2016               = base+"/tWZ_nAODv6_private_v3/2016/trilep"
 data_2016             = base+"/tWZ_nAODv6_private_v3/2016/trilep"
 mc_2017               = base+"/tWZ_nAODv6_private_v3/2017/trilep"

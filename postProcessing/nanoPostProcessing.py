@@ -432,7 +432,7 @@ if options.year == 2017:
     branchKeepStrings_DATAMC += [ "METFixEE2017_*" ]
 
 #branches to be kept for MC samples only
-branchKeepStrings_MC = [ "Generator_*", "GenPart_*", "nGenPart", "genWeight", "Pileup_nTrueInt","GenMET_*", "nISR", "nGenJet", "GenJet_*"]
+branchKeepStrings_MC = [ "Generator_*", "GenPart_*", "nGenPart", "genWeight", "Pileup_nTrueInt","GenMET_*", "nISR", "nGenJet", "GenJet_*", "genTtbarId"]
 #branchKeepStrings_MC.extend([ "*LHEScaleWeight", "*LHEPdfWeight", "LHEWeight_originalXWGTUP"])
 
 #branches to be kept for data only

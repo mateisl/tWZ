@@ -19,6 +19,7 @@ special_cuts = {
     "trilepT" :        "l1_pt>40&&l2_pt>20&&l3_pt>10&&l1_mvaTOPWP>=4&&l2_mvaTOPWP>=4&&l3_mvaTOPWP>=4",
     "trilepMini0p12" : "Sum$(lep_pt>40&&lep_miniPFRelIso_all<0.12&&{lep_string})>=1 && Sum$(lep_pt>20&&lep_miniPFRelIso_all<0.12&&{lep_string})>=2&&Sum$(lep_pt>10&&lep_miniPFRelIso_all<0.12&&{lep_string})==3".format(lep_string=lep_string_TTH),
     "onZ1"   : "abs(Z1_mass-91.2)<10",
+    "offZ1"    : "abs(Z1_mass-91.2)>10",
     "offZ2"  : "(!(abs(Z2_mass-91.2)<20))",
   }
 

@@ -68,14 +68,13 @@ logger.info( "Working in era %s", args.era)
 from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
 
 if args.era == "Run2016":
-    mc = [Summer16.TTW, Summer16.TTZ, Summer16.TTTT ] #Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
+    mc = [Summer16.TTW, Summer16.TTZ, Summer16.TTTT, Summer16.nonprompt_3l ] #Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 elif args.era == "Run2017":
-    mc = [Fall17.TTW, Fall17.TTZ, Fall17.TTTT  ] #, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
+    mc = [Fall17.TTW, Fall17.TTZ, Fall17.TTTT, Fall17.nonprompt_3l ] #, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
 elif args.era == "Run2018":
-    mc = [Autumn18.TTW, Autumn18.TTZ, Autumn18.TTTT  ] #, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
+    mc = [Autumn18.TTW, Autumn18.TTZ, Autumn18.TTTT, Autumn18.nonprompt_3l ] #, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
-    mc = [TTW, TTZ, TTTT ] #TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
-
+    mc = [TTW, TTZ, TTTT, nonprompt_3l] #TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 # data sample
 try:
   data_sample = eval(args.era)
@@ -271,36 +270,31 @@ models = [
      #("FI_ctZ_BSM_TTG",      False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ctZ_BSM_TTG/ttG_WG/FI_ctZ_BSM/regression_model.h5")),
      #("FI_ctZ_BSM_TTG_wq",   False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ctZ_BSM_TTG_wq/ttG_WG/FI_ctZ_BSM/regression_model.h5")),
      #("FI_ctZ_BSM_TTGWG_wq", False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ctZ_BSM_TTGWG_wq/ttG_WG/FI_ctZ_BSM/regression_model.h5")),
-     #("FI_ctZ_BSM_TTGWG",    False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ctZ_BSM_TTGWG/ttG_WG/FI_ctZ_BSM/regression_model.h5")),
+     ("TTTT_Multiclass_LSTM",    True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test_LSTM/tttt_3l/regression_model.h5")),
      ("Multiclass_TTTT",  False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test/tttt_3l/regression_model.h5")),
 ]
-
-#def keras_predict( event, sample ):
-#
-#    # get model inputs assuming lstm
-#    flat_variables, lstm_jets = config.predict_inputs( event, sample, jet_lstm = True)
-#    for name, has_lstm, model in models:
-#        print has_lstm, flat_variables, lstm_jets
-#        prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets] )
-#        setattr( event, name, prediction )
-#            
-#        if not prediction>-float('inf'):
-#            print name, prediction, [[getattr( event, mva_variable) for mva_variable, _ in config.mva_variables]]
-#            print "mva_m3", event.mva_m3, "m3", event.m3, "event.nJetGood", event.nJetGood
-#            raise RuntimeError("Found NAN prediction?")
 
 def keras_predict( event, sample ):
 
     # get model inputs assuming lstm
-    flat_variables  = config.predict_inputs( event, sample, jet_lstm = False)
-    for name, has_lstm, model in models: 
-        #print flat_variables 
-        prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets]  )
-        #print prediction
-        #print(len(prediction)) 
+    flat_variables, lstm_jets = config.predict_inputs( event, sample, jet_lstm = True)
+    for name, has_lstm, model in models:
+        #print has_lstm, flat_variables, lstm_jets
+        prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets] )
         for i_pred, value in enumerate(prediction[0]):  
-           setattr( event, name+"_p%i"%i_pred, value )
-           #print name+"_p%i"%i_pred  
+           setattr( event, name+'_'+config.training_samples[i_pred].name, value )
+            
+#def keras_predict( event, sample ):
+#
+#    # get model inputs assuming lstm
+#    flat_variables = config.predict_inputs( event, sample, jet_lstm = False)
+#    for name, has_lstm, model in models: 
+#        #print flat_variables, has_lstm, lstm_jets 
+#        prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets]  )
+#        #print prediction
+#        for i_pred, value in enumerate(prediction[0]):  
+#           setattr( event, name+"_p%i"%i_pred, value )
+#           #print name+"_p%i"%i_pred  
 
 sequence.append( keras_predict )
 
@@ -326,6 +320,7 @@ for i_mode, mode in enumerate(allModes):
         #sample.style = styles.lineStyle(sample.color)
         sample.read_variables = read_variables_MC 
         sample.setSelectionString([getLeptonSelection(mode)])
+        sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
 
     
     if args.scaled: 
@@ -336,35 +331,43 @@ for i_mode, mode in enumerate(allModes):
         else:
           stack = Stack(mc)
     
-    for sample in mc+[data_sample]:
-        sample.weight = weight_
-
+#    for sample in mc+[data_sample]:
+#        sample.weight = weight_
+#
     # Use some defaults
-    Plot.setDefaults(stack = stack, weight = None, selectionString = cutInterpreter.cutString(args.selection))
+    Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString = cutInterpreter.cutString(args.selection))
 
     plots = []
 
-    plots.append(Plot(
-        texX = 'Multiclass_TTTT_p0', 
-        texY = 'Number of Events',
-        name = 'multiclass_tttt_p0',
-        attribute = lambda event, sample: event.Multiclass_TTTT_p0,
-        binning=[50,0,1],
-    ))
-
-    plots.append(Plot(
-        texX = 'Multiclass_TTTT_p1', 
-        texY = 'Number of Events',
-        name = 'multiclass_tttt_p1', attribute = lambda event, sample: event.Multiclass_TTTT_p1,
-        binning=[50,0,1],
-    ))
-
-    plots.append(Plot(
-        texX = 'Multiclass_TTTT_p2', 
-        texY = 'Number of Events',
-        name = 'multiclass_tttt_p2', attribute = lambda event, sample: event.Multiclass_TTTT_p2,
-        binning=[50,0,1],
-    ))
+    for name, has_lstm, model in models:
+        for i_tr_s, tr_s in enumerate( config.training_samples ):
+            disc_name = name+'_'+config.training_samples[i_tr_s].name
+            plots.append(Plot(
+                texX = disc_name, texY = 'Number of Events',
+                name = disc_name, attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
+                binning=[30, 0, 1],
+            ))
+#    plots.append(Plot(
+#        texX = 'Multiclass_TTTT_p0', 
+#        texY = 'Number of Events',
+#        name = 'multiclass_tttt_p0',
+#        attribute = lambda event, sample: event.Multiclass_TTTT_p0,
+#        binning=[50,0,1],
+#    ))
+#
+#    plots.append(Plot(
+#        texX = 'Multiclass_TTTT_p1', 
+#        texY = 'Number of Events',
+#        name = 'multiclass_tttt_p1', attribute = lambda event, sample: event.Multiclass_TTTT_p1,
+#        binning=[50,0,1],
+#    ))
+#
+#    plots.append(Plot(
+#        texX = 'Multiclass_TTTT_p2', 
+#        texY = 'Number of Events',
+#        name = 'multiclass_tttt_p2', attribute = lambda event, sample: event.Multiclass_TTTT_p2,
+#        binning=[50,0,1],
+#    ))
 #    plots.append(Plot(
 #      name = 'maxpt',
 #      texX = 'maxpt',

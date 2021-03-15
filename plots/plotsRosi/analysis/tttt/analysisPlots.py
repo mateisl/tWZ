@@ -24,6 +24,7 @@ from tWZ.Tools.user                      import plot_directory
 from tWZ.Tools.cutInterpreter            import cutInterpreter
 from tWZ.Tools.objectSelection           import cbEleIdFlagGetter, vidNestedWPBitMapNamingList
 from tWZ.Tools.objectSelection           import lepString
+from tWZ.Tools.mt2Calculator             import mt2Calculator
 
 from Analysis.Tools.helpers              import deltaPhi, deltaR, getCollection, getObjDict
 from Analysis.Tools.puProfileCache       import *
@@ -68,13 +69,13 @@ logger.info( "Working in era %s", args.era)
 from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
 
 if args.era == "Run2016":
-    mc = [Summer16.TTW, Summer16.TTZ, Summer16.TTTT, Summer16.nonprompt_3l ] #Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
+    mc = [Summer16.TTW, Summer16.TTZ, Summer16.TTTT , Summer16.nonprompt_3l ] #Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
 elif args.era == "Run2017":
-    mc = [Fall17.TTW, Fall17.TTZ, Fall17.TTTT, Fall17.nonprompt_3l ] #, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
+    mc = [Fall17.TTW, Fall17.TTZ, Fall17.TTTT , Fall17.nonprompt_3l ] #, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
 elif args.era == "Run2018":
-    mc = [Autumn18.TTW, Autumn18.TTZ, Autumn18.TTTT, Autumn18.nonprompt_3l ] #, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
+    mc = [Autumn18.TTW, Autumn18.TTZ, Autumn18.TTTT , Autumn18.nonprompt_3l ] #, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
-    mc = [TTW, TTZ, TTTT, nonprompt_3l] #TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
+    mc = [TTW, TTZ, TTTT , nonprompt_3l] #TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 # data sample
 try:
   data_sample = eval(args.era)
@@ -146,6 +147,16 @@ def drawPlots(plots, mode, dataMCScale):
 
 sequence       = []
 
+def getmt2(event, sample): 
+    mt2Calculator.reset()
+    #set met 
+    mt2Calculator.setMet(event.met_pt, event.met_phi )
+    #set leptons
+    mt2Calculator.setLeptons(event.l1_pt, event.l1_eta, event.l1_phi, event.l2_pt, event.l2_eta, event.l2_phi )
+
+    setattr(event, "mt2ll", mt2Calculator.mt2ll() )
+
+sequence.append(getmt2)
 
 
 def getWpt( event, sample):
@@ -171,6 +182,7 @@ def getM3l( event, sample ):
     event.M3l = (l[0] + l[1] + l[2]).M()
 
 sequence.append( getM3l )
+
 
 #jets without eta cut
 jetVars          = ['pt/F', 'chEmEF/F', 'chHEF/F', 'neEmEF/F', 'neHEF/F', 'rawFactor/F', 'eta/F', 'phi/F', 'jetId/I', 'btagDeepB/F', 'btagDeepFlavB/F', 'btagCSVV2/F', 'area/F'] 
@@ -268,10 +280,12 @@ from keras.models import load_model
 
 models = [
      #("FI_ctZ_BSM_TTG",      False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ctZ_BSM_TTG/ttG_WG/FI_ctZ_BSM/regression_model.h5")),
-     #("FI_ctZ_BSM_TTG_wq",   False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ctZ_BSM_TTG_wq/ttG_WG/FI_ctZ_BSM/regression_model.h5")),
-     #("FI_ctZ_BSM_TTGWG_wq", False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ctZ_BSM_TTGWG_wq/ttG_WG/FI_ctZ_BSM/regression_model.h5")),
-     ("TTTT_Multiclass_LSTM",    True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test_LSTM/tttt_3l/regression_model.h5")),
-     ("Multiclass_TTTT",  False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test/tttt_3l/regression_model.h5")),
+     #("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_LSTM/tttt_3l/regression_model.h5")),
+     #("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt/tttt_3l/regression_model.h5")),
+     ("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2_LSTM/tttt_3l/regression_model.h5")),
+     ("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2/tttt_3l/regression_model.h5")),
+#     ("TTTT_Multiclass_LSTM",    True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test_LSTM/tttt_3l/regression_model.h5")),
+#     ("Multiclass_TTTT",  False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test/tttt_3l/regression_model.h5")),
 ]
 
 def keras_predict( event, sample ):
@@ -345,8 +359,27 @@ for i_mode, mode in enumerate(allModes):
             plots.append(Plot(
                 texX = disc_name, texY = 'Number of Events',
                 name = disc_name, attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
-                binning=[30, 0, 1],
+                binning=[50, 0, 1],
             ))
+
+            plots.append(Plot(
+                texX = disc_name+"coarse", texY = 'Number of Events',
+                name = disc_name+"coarse", attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
+                binning=[18, 0, 1],
+            ))
+
+            plots.append(Plot(
+                texX = disc_name+"medcoarse", texY = 'Number of Events',
+                name = disc_name+"medcoarse", attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
+                binning=[32, 0, 1],
+            ))
+
+    plots.append(Plot(
+        texX = "mt2ll" , texY = 'Number of Events',
+        name = "mt2ll", attribute = lambda event, sample: getattr( event, "mt2ll" ),
+        binning=[20, 0, 300],
+    ))
+
 #    plots.append(Plot(
 #        texX = 'Multiclass_TTTT_p0', 
 #        texY = 'Number of Events',

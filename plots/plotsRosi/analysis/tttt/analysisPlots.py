@@ -23,7 +23,7 @@ from RootTools.core.standard             import *
 from tWZ.Tools.user                      import plot_directory
 from tWZ.Tools.cutInterpreter            import cutInterpreter
 from tWZ.Tools.objectSelection           import cbEleIdFlagGetter, vidNestedWPBitMapNamingList
-from tWZ.Tools.objectSelection           import lepString
+from tWZ.Tools.objectSelection           import lepString, isBJet
 from tWZ.Tools.mt2Calculator             import mt2Calculator
 
 from Analysis.Tools.helpers              import deltaPhi, deltaR, getCollection, getObjDict
@@ -31,7 +31,6 @@ from Analysis.Tools.puProfileCache       import *
 from Analysis.Tools.puReweighting        import getReweightingFunction
 from Analysis.Tools.leptonJetArbitration     import cleanJetsAndLeptons
 import Analysis.Tools.syncer 
-
 
 # Arguments
 import argparse
@@ -158,6 +157,11 @@ def getmt2(event, sample):
 
 sequence.append(getmt2)
 
+def getDeltaR(event, sample):
+    event.jets     = [getObjDict(event, 'JetGood_', jetVarNames, i) for i in range(int(event.nJetGood))]
+    bjets          = filter(lambda j:isBJet(j, year=event.year) and abs(j['eta'])<=2.4    , event.jets)
+    event.minDRbjets = min( [ deltaR(b1, b2) for i, b1 in enumerate(bjets[:-1]) for b2 in bjets[i+1:]  ]) 
+sequence.append(getDeltaR)
 
 def getWpt( event, sample):
 
@@ -297,18 +301,6 @@ def keras_predict( event, sample ):
         prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets] )
         for i_pred, value in enumerate(prediction[0]):  
            setattr( event, name+'_'+config.training_samples[i_pred].name, value )
-            
-#def keras_predict( event, sample ):
-#
-#    # get model inputs assuming lstm
-#    flat_variables = config.predict_inputs( event, sample, jet_lstm = False)
-#    for name, has_lstm, model in models: 
-#        #print flat_variables, has_lstm, lstm_jets 
-#        prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets]  )
-#        #print prediction
-#        for i_pred, value in enumerate(prediction[0]):  
-#           setattr( event, name+"_p%i"%i_pred, value )
-#           #print name+"_p%i"%i_pred  
 
 sequence.append( keras_predict )
 
@@ -378,6 +370,22 @@ for i_mode, mode in enumerate(allModes):
         texX = "mt2ll" , texY = 'Number of Events',
         name = "mt2ll", attribute = lambda event, sample: getattr( event, "mt2ll" ),
         binning=[20, 0, 300],
+    ))
+
+    plots.append(Plot(
+        texX = "minDR_bjets" , 
+        texY = 'Number of Events',
+        name = "minDR_bjets_coarse", 
+        attribute = lambda event, sample: event.minDRbjets ,
+        binning=[10, 0, 5],
+    ))
+
+    plots.append(Plot(
+        texX = "minDR_bjets" , 
+        texY = 'Number of Events',
+        name = "minDR_bjets", 
+        attribute = lambda event, sample: event.minDRbjets ,
+        binning=[20, 0, 5],
     ))
 
 #    plots.append(Plot(

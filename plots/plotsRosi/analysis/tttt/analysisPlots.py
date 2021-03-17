@@ -74,7 +74,7 @@ elif args.era == "Run2017":
 elif args.era == "Run2018":
     mc = [Autumn18.TTW, Autumn18.TTZ, Autumn18.TTTT , Autumn18.nonprompt_3l ] #, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
-    mc = [TTW, TTZ, TTTT , nonprompt_3l] #TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
+    mc = [TTW, TTZ, TTTT , nonprompt_3l, WZ, ZZ ]
 # data sample
 try:
   data_sample = eval(args.era)

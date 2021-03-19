@@ -140,7 +140,7 @@ def drawPlots(plots, mode, dataMCScale):
             #scaling =  { i+1:0 for i in range(4) } if args.scaled else {}, 
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
-            copyIndexPHP = True, extensions = ["png"],
+            copyIndexPHP = True, extensions = ["png", "pdf", "root"],
           )
 
 # Read variables and sequences
@@ -1132,5 +1132,8 @@ for mode in ["comb1","comb2","all"]:
                         j.Add(l)
     
     if mode == "all": drawPlots(allPlots['mumumu'], mode, dataMCScale)
+
+#import pickle
+#pickle.dump( {p.name: p.histos for p in allPlots['mumumu'] if isinstance(p, Plot2D)}, file( os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, args.selection+'.pkl'), 'w' ))
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )

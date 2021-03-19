@@ -74,7 +74,8 @@ elif args.era == "Run2017":
 elif args.era == "Run2018":
     mc = [Autumn18.TTW, Autumn18.TTZ, Autumn18.TTTT , Autumn18.nonprompt_3l ] #, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
-    mc = [TTW, TTZ, TTTT , nonprompt_3l, WZ, ZZ ]
+    mc = [TTTT, TTZ, TTW, WZ ]
+    #mc = [TTW, TTZ, TTTT , nonprompt_3l, WZ ]
 # data sample
 try:
   data_sample = eval(args.era)
@@ -133,7 +134,7 @@ def drawPlots(plots, mode, dataMCScale):
             ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
             #ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0)], 'texY':'Ratio'} if args.scaled else None,
             #ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0),(2,0),(3,0),(4,0)], 'texY':'Ratio'} if args.scaled else None,
-            logX = False, logY = log, sorting = True,
+            logX = False, logY = log, sorting = False,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
             scaling =  { 1:0 } if args.scaled else {}, 
             #scaling =  { i+1:0 for i in range(4) } if args.scaled else {}, 
@@ -286,8 +287,8 @@ models = [
      #("FI_ctZ_BSM_TTG",      False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ctZ_BSM_TTG/ttG_WG/FI_ctZ_BSM/regression_model.h5")),
      #("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_LSTM/tttt_3l/regression_model.h5")),
      #("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt/tttt_3l/regression_model.h5")),
-     ("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2_LSTM/tttt_3l/regression_model.h5")),
-     ("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2/tttt_3l/regression_model.h5")),
+     ("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2_LSTM/tttt_3l/regression_model.h5")),
+     ("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2/tttt_3l/regression_model.h5")),
 #     ("TTTT_Multiclass_LSTM",    True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test_LSTM/tttt_3l/regression_model.h5")),
 #     ("Multiclass_TTTT",  False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test/tttt_3l/regression_model.h5")),
 ]

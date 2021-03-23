@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import os
-from StopsDilepton.tools.helpers import  checkRootFile
+from Analysis.Tools.helpers import  checkRootFile
 from subprocess import call
 
 def get_parser():
@@ -77,7 +77,7 @@ if options.treeName=='':
     options.treeName=None
 
 # Logger
-import StopsDilepton.tools.logger as logger
+import Analysis.Tools.logger as logger
 logger = logger.get_logger(options.logLevel, logFile = None )
 
 # Walk the directory structure and group files in 'jobs' of [f1_0.root, f1_1.root, ...]  tootalling to approx. sizeGB

@@ -16,12 +16,12 @@
 #python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50_HT1200to2500 #SPLIT2
 #python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M50_HT2500toInf #SPLIT2
 ## low mass #
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --LHEHTCut 70 --sample DYJetsToLL_M10to50_LO #SPLIT28
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M4to50_HT70to100 #SPLIT16
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M4to50_HT100to200 #SPLIT11
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M4to50_HT200to400 #SPLIT2
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M4to50_HT400to600 #SPLIT3
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample DYJetsToLL_M4to50_HT600toInf #SPLIT5
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --LHEHTCut 70 --sample DYJetsToLL_M10to50_LO #SPLIT28
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample DYJetsToLL_M4to50_HT70to100 #SPLIT16
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample DYJetsToLL_M4to50_HT100to200 #SPLIT11
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample DYJetsToLL_M4to50_HT200to400 #SPLIT2
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample DYJetsToLL_M4to50_HT400to600 #SPLIT3
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample DYJetsToLL_M4to50_HT600toInf #SPLIT5
 
 # top
 #python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --flagTTBar --sample TTLep_pow  #SPLIT250
@@ -49,35 +49,42 @@ python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processing
 
 ## di/multi boson
 
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample VVTo2L2Nu #SPLIT13
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample WZTo3LNu_amcatnlo #SPLIT16
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample WZTo2L2Q #SPLIT20
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample WZTo1L3Nu #SPLIT2
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample WWTo1L1Nu2Q #SPLIT8
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample WWToLNuQQ #SPLIT18
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample ZZTo4L #SPLIT8
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample ZZTo2Q2Nu #SPLIT10
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --reduceSizeBy 5 --sample ZZTo2L2Q #SPLIT5
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample VVTo2L2Nu #SPLIT13
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WZTo3LNu_amcatnlo #SPLIT16
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WZTo2L2Q #SPLIT20
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WZTo1L3Nu #SPLIT2
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WWTo1L1Nu2Q #SPLIT8
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WWToLNuQQ #SPLIT18
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample ZZTo4L #SPLIT8
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample ZZTo2Q2Nu #SPLIT10
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --reduceSizeBy 5 --sample ZZTo2L2Q #SPLIT5
 ## additional samples for ARC studies
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample WWTo2L2Nu #SPLIT11
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample ZZTo2L2Nu #SPLIT11
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WWTo2L2Nu #SPLIT11
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample ZZTo2L2Nu #SPLIT11
 ###
-####python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample WW #SPLIT5
-####python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample ZZ #SPLIT5
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample WWW_4F #SPLIT3
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample WWZ 
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample WZZ #SPLIT2
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample ZZZ 
+####python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WW #SPLIT5
+####python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample ZZ #SPLIT5
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WWW_4F #SPLIT3
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WWZ 
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WZZ #SPLIT2
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample ZZZ 
 ##
 ### rare
+<<<<<<< HEAD
+python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample TTTT #SPLIT5
+python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample TTWZ 
+python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample TTWW #SPLIT3
+python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample TTZZ 
+=======
 #python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample TTTT #SPLIT5
 #python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample TTWZ 
 #python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample TTWW #SPLIT3
 #python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample TTZZ 
+>>>>>>> 1743535e08cfb2ea6bb712e6f9586d79b9410137
 #
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample tWll_thad_Wlept_DR #SPLIT10
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample tWll_thad_Wlept_DS #SPLIT10
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample tWll_tlept_Whad_DR #SPLIT10
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample tWll_tlept_Whad_DS #SPLIT10
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample tWll_tlept_Wlept_DR #SPLIT10
-#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v3 --sample tWll_tlept_Wlept_DS #SPLIT10
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample tWll_thad_Wlept_DR #SPLIT10
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample tWll_thad_Wlept_DS #SPLIT10
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample tWll_tlept_Whad_DR #SPLIT10
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample tWll_tlept_Whad_DS #SPLIT10
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample tWll_tlept_Wlept_DR #SPLIT10
+#python nanoPostProcessing.py  --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample tWll_tlept_Wlept_DS #SPLIT10

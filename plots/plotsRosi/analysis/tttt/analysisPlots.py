@@ -74,8 +74,8 @@ elif args.era == "Run2017":
 elif args.era == "Run2018":
     mc = [Autumn18.TTW, Autumn18.TTZ, Autumn18.TTTT , Autumn18.nonprompt_3l ] #, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
-    mc = [TTTT, TTZ, TTW, WZ ]
-    #mc = [TTW, TTZ, TTTT , nonprompt_3l, WZ ]
+    #mc = [TTTT, TTZ, TTW, WZ ]
+    mc = [TTW, TTZ, TTTT , nonprompt_3l, WZ ]
 # data sample
 try:
   data_sample = eval(args.era)
@@ -287,8 +287,10 @@ models = [
      #("FI_ctZ_BSM_TTG",      False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ctZ_BSM_TTG/ttG_WG/FI_ctZ_BSM/regression_model.h5")),
      #("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_LSTM/tttt_3l/regression_model.h5")),
      #("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt/tttt_3l/regression_model.h5")),
-     ("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2_LSTM/tttt_3l/regression_model.h5")),
-     ("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2/tttt_3l/regression_model.h5")),
+     ("tttt_ttw_ttz_nonprompt_LSTM", True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v3_LSTM/tttt_3l/multiclass_model.h5")),
+     ("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v3/tttt_3l/multiclass_model.h5")),
+     #("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2_LSTM/tttt_3l/regression_model.h5")),
+     #("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2/tttt_3l/regression_model.h5")),
 #     ("TTTT_Multiclass_LSTM",    True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test_LSTM/tttt_3l/regression_model.h5")),
 #     ("Multiclass_TTTT",  False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test/tttt_3l/regression_model.h5")),
 ]
@@ -1133,7 +1135,7 @@ for mode in ["comb1","comb2","all"]:
     
     if mode == "all": drawPlots(allPlots['mumumu'], mode, dataMCScale)
 
-#import pickle
-#pickle.dump( {p.name: p.histos for p in allPlots['mumumu'] if isinstance(p, Plot2D)}, file( os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, args.selection+'.pkl'), 'w' ))
+import pickle
+pickle.dump( {p.name: p.histos for p in allPlots['mumumu'] if "TTTT" in p.name}, file( os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era,  args.selection+'.pkl'), 'w' ))
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )

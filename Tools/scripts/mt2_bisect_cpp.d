@@ -1,7 +1,0 @@
-
-# DO NOT DELETE
-
-/users/rosmarie.schoefbeck/public/CMSSW_10_6_0/src/tWZ/Tools/scripts/mt2_bisect_cpp.so: /usr/include/math.h
-/users/rosmarie.schoefbeck/public/CMSSW_10_6_0/src/tWZ/Tools/scripts/mt2_bisect_cpp.so: /users/rosmarie.schoefbeck/public/CMSSW_10_6_0/src/tWZ/Tools/scripts/mt2_bisect.h
-/users/rosmarie.schoefbeck/public/CMSSW_10_6_0/src/tWZ/Tools/scripts/mt2_bisect_cpp.so: /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/RVersion.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/RConfig.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/TClass.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/TDictAttributeMap.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/TInterpreter.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/TROOT.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/TBuffer.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/TMemberInspector.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/TError.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/RtypesImp.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/TIsAProxy.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/TFileMergeInfo.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/lcg/root/6.14.09/include/TCollectionProxyInfo.h /cvmfs/cms.cern.ch/slc7_amd64_gcc820/cms/cmssw/CMSSW_10_6_0/external/slc7_amd64_gcc820/bin/rootcling
-mt2_bisect_cpp__ROOTBUILDVERSION= 6.14/09

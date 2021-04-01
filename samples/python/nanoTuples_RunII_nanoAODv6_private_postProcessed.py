@@ -24,8 +24,10 @@ triBoson     = Sample.combine( "triBoson", [Summer16.triBoson, Fall17.triBoson, 
 ZZ           = Sample.combine( "ZZ", [Summer16.ZZ, Fall17.ZZ, Autumn18.ZZ] )
 nonprompt_3l = Sample.combine( "nonprompt_3l", [Summer16.nonprompt_3l, Fall17.nonprompt_3l, Autumn18.nonprompt_3l] )
 Xgamma       = Sample.combine( "Xgamma", [Summer16.TWZ, Fall17.TWZ, Autumn18.TWZ])
+Top          = Sample.combine( "Top", [Summer16.Top, Fall17.Top, Autumn18.Top])
+TTLep        = Sample.combine( "TTLep", [Summer16.TTLep, Fall17.TTLep, Autumn18.TTLep])
 
 TTTT       = Sample.combine( "TTTT", [Summer16.TTTT, Fall17.TTTT, Autumn18.TTTT])
 TTW        = Sample.combine( "TTW", [Summer16.TTW, Fall17.TTW, Autumn18.TTW])
 TTZ        = Sample.combine( "TTZ", [Summer16.TTZ, Fall17.TTZ, Autumn18.TTZ])
-
+DY       = Sample.combine("DY", [Summer16.DY, Fall17.DY, Autumn18.DY])

@@ -58,7 +58,7 @@ dirs['TWZ_NLO_DS']             = ['tWll_thad_Wlept_DS', 'tWll_tlept_Wlept_DS', '
 TWZ_NLO_DS  = Sample.fromDirectory(name="TWZ_NLO_DS", treeName="Events", isData=False, color=color.TWZ, texName="tWZ(NLO)", directory=make_dirs( dirs['TWZ_NLO_DS']))
 
 # TTZ
-dirs['TTZToLLNuNu']     = ['TTZToLLNuNu']#, 'TTZToLLNuNu_m1to10'] # FIXME
+dirs['TTZToLLNuNu']     = ['TTZToLLNuNu', 'TTZToLLNuNu_m1to10'] 
 dirs['TTZToQQ']         = ['TTZToQQ']
 dirs['TTZ']             = ['TTZToLLNuNu', 'TTZToLLNuNu_m1to10', "TTZToQQ"]
 TTZToLLNuNu = Sample.fromDirectory(name="ToLLNuNu", treeName="Events", isData=False, color=color.TTZ, texName="t#bar{t}Z #rightarrow ll#nu#nu", directory=make_dirs( dirs['TTZToLLNuNu']))
@@ -82,14 +82,17 @@ TTTT = Sample.fromDirectory(name="TTTT", treeName="Events", isData=False, color=
 
 # TT
 dirs['TTLep']           = ['TTLep_pow']
+TTLep = Sample.fromDirectory(name="TTLep",      treeName="Events", isData=False, color=color.TTZ, texName="t#bar{t}Lep", directory=make_dirs( dirs['TTLep']))
 dirs['singleTop']       = ['TBar_tch_pow_redBy15', 'TBar_tWch', 'T_tch_pow_redBy15', 'T_tWch']
 dirs['Top']             = dirs['TTLep'] + dirs['singleTop']
 Top  = Sample.fromDirectory(name="Top", treeName="Events", isData=False, color=color.TTJets, texName="t/t#bar{t}", directory=make_dirs(dirs['Top']))
 
 # DY
-#dirs['DY_HT_LO']        = ['DYJetsToLL_M50_LO_ext_comb_lheHT70','DYJetsToLL_M50_HT70to100', 'DYJetsToLL_M50_HT100to200_comb', 'DYJetsToLL_M50_HT200to400_comb', 'DYJetsToLL_M50_HT400to600_comb', 'DYJetsToLL_M50_HT600to800', 'DYJetsToLL_M50_HT800to1200', 'DYJetsToLL_M50_HT1200to2500', 'DYJetsToLL_M50_HT2500toInf']
-dirs['DY_LO']              = ['DYJetsToLL_M50_LO'] #,'DYJetsToLL_M10to50_LO']
-DY_LO  = Sample.fromDirectory(name="DY", treeName="Events", isData=False, color=color.DY, texName="DY(LO)+Jets", directory=make_dirs(dirs['DY_LO']))
+dirs['DY_M4']           = ['DYJetsToLL_M4to50_HT400to600', 'DYJetsToLL_M4to50_HT200to400', 'DYJetsToLL_M4to50_HT100to200', 'DYJetsToLL_M4to50_HT600toInf', 'DYJetsToLL_M4to50_HT70to100', 'DYJetsToLL_M50_HT100to200']
+dirs['DY_HT_LO']        = ['DYJetsToLL_M50_HT70to100', 'DYJetsToLL_M10to50_LO_lheHT70' , 'DYJetsToLL_M50_HT600to800', 'DYJetsToLL_M50_HT800to1200', 'DYJetsToLL_M50_HT1200to2500', 'DYJetsToLL_M50_HT2500toInf', 'DYJetsToLL_M50_HT200to400', 'DYJetsToLL_M50_HT400to600']
+dirs['DY_LO']           = [ 'DYJetsToLL_M10to50_LO', 'DYJetsToLL_M50_LO','DYJetsToLL_M50_LO_lheHT70' ]
+dirs['DY']              = dirs['DY_M4'] + dirs['DY_HT_LO'] + dirs['DY_LO']
+DY  = Sample.fromDirectory(name="DY", treeName="Events", isData=False, color=color.DY, texName="DY", directory=make_dirs(dirs['DY_LO']))
 
 dirs['nonprompt_3l']    = dirs['WW'] + dirs['VVTo2L2Nu'] + dirs['singleTop'] + dirs['DY_LO'] + dirs['TTLep']
 dirs['nonprompt_4l']    = dirs['WW'] + dirs['VVTo2L2Nu'] + dirs['singleTop'] + dirs['TZQ'] + dirs["WZ"] + dirs['DY_LO'] + dirs['TTLep'] 

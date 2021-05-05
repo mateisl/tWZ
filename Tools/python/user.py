@@ -45,3 +45,14 @@ if os.environ['USER'] in ['janik.andrejkovic']:
     mva_directory                   = "/mnt/hephy/cms/janik.andrejkovic/tWZ/MVA"
     cern_proxy_certificate          = "/users/janik.andrejkovic/.private/.proxy"
     HistogramsForFakeStudies        = "/users/janik.andrejkovic/public/test/CMSSW_10_2_18/src/tWZ/fake/helperHistograms"
+
+if os.environ["USER"] in ["dennis.schwarz"]:
+    postprocessing_output_directory = "/scratch-cbe/users/dennis.schwarz/tWZ/nanoTuples"
+    postprocessing_tmp_directory    = "/scratch/hephy/cms/dennis.schwarz/tWZ/tmp/"
+    plot_directory                  = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots"
+    cache_dir                       = "/mnt/hephy/cms/dennis.schwarz/tWZ/caches"
+    # Analysis result files
+    analysis_results                = "/mnt/hephy/cms/dennis.schwarz/tWZ/results/v1"
+    mva_directory                   = "/mnt/hephy/cms/dennis.schwarz/tWZ/MVA"
+    cern_proxy_certificate          = "/users/dennis.schwarz/.private/.proxy"
+

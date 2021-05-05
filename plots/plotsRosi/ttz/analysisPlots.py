@@ -75,7 +75,7 @@ elif args.era == "Run2018":
     mc = [Autumn18.TTW, Autumn18.TTZ, Autumn18.TTTT , Autumn18.nonprompt_3l ] #, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
     #mc = [TTTT, TTZ, TTW, WZ ]
-    mc = [TTW, TTZ, TTTT , nonprompt_3l, WZ ]
+    mc = [TTZ, DY, TTLep ] #, nonprompt_3l, WZ ]
 # data sample
 try:
   data_sample = eval(args.era)
@@ -161,7 +161,9 @@ sequence.append(getmt2)
 def getDeltaR(event, sample):
     event.jets     = [getObjDict(event, 'JetGood_', jetVarNames, i) for i in range(int(event.nJetGood))]
     bjets          = filter(lambda j:isBJet(j, year=event.year) and abs(j['eta'])<=2.4    , event.jets)
-    event.minDRbjets = min( [ deltaR(b1, b2) for i, b1 in enumerate(bjets[:-1]) for b2 in bjets[i+1:]  ]) 
+    nbjets         = len(bjets)
+    if nbjets >= 2 : event.minDRbjets = min( [ deltaR(b1, b2) for i, b1 in enumerate(bjets[:-1]) for b2 in bjets[i+1:]  ]) 
+    else: event.minDRbjets = -1
 sequence.append(getDeltaR)
 
 def getWpt( event, sample):
@@ -269,7 +271,7 @@ def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
 #MVA
 
 import TMB.MVA.configs as configs
-config = configs.tttt_3l
+config = configs.ttZ_2l
 read_variables += config.read_variables
 sequence += config.sequence
 # Add sequence that computes the MVA inputs
@@ -284,15 +286,8 @@ sequence.append( make_mva_inputs )
 from keras.models import load_model
 
 models = [
-     #("FI_ctZ_BSM_TTG",      False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ctZ_BSM_TTG/ttG_WG/FI_ctZ_BSM/regression_model.h5")),
-     #("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_LSTM/tttt_3l/regression_model.h5")),
-     #("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt/tttt_3l/regression_model.h5")),
-     ("tttt_ttw_ttz_nonprompt_LSTM", True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v3_LSTM/tttt_3l/multiclass_model.h5")),
-     ("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v3/tttt_3l/multiclass_model.h5")),
-     #("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2_LSTM/tttt_3l/regression_model.h5")),
-     #("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2/tttt_3l/regression_model.h5")),
-#     ("TTTT_Multiclass_LSTM",    True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test_LSTM/tttt_3l/regression_model.h5")),
-#     ("Multiclass_TTTT",  False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test/tttt_3l/regression_model.h5")),
+     ("ttz_tt_dy_LSTM", True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/ttZ_tt_dy_LSTM/ttZ_2l/multiclass_model.h5")),
+     ("ttz_tt_dy", False,     load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/ttZ_tt_dy/ttZ_2l/multiclass_model.h5")),
 ]
 
 def keras_predict( event, sample ):
@@ -1136,6 +1131,6 @@ for mode in ["comb1","comb2","all"]:
     if mode == "all": drawPlots(allPlots['mumumu'], mode, dataMCScale)
 
 import pickle
-pickle.dump( {p.name: p.histos for p in allPlots['mumumu'] if "TTTT" in p.name}, file( os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era,  args.selection+'.pkl'), 'w' ))
+pickle.dump( {p.name: p.histos for p in allPlots['mumumu'] if "ttz" in p.name}, file( os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era,  args.selection+'.pkl'), 'w' ))
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )

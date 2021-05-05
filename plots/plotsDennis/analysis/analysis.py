@@ -251,6 +251,57 @@ def getTopHypos( event ):
 
     return toph, topl
 
+def get2TopHypos( event ):
+    topA1 = ROOT.TLorentzVector()
+    topA2 = ROOT.TLorentzVector()
+    topB1 = ROOT.TLorentzVector()
+    topB2 = ROOT.TLorentzVector()
+    Wh = getWhad( event )
+    Wl = getWlep( event )
+    bjetindex = event.JetGood_index[getBJetindex(event)]
+    bJet1 = ROOT.TLorentzVector()
+    bJet1.SetPtEtaPhiM(event.Jet_pt[bjetindex], event.Jet_eta[bjetindex], event.Jet_phi[bjetindex], event.Jet_mass[bjetindex])
+
+    # now search for second highest bjet
+    bJet2 = ROOT.TLorentzVector()
+    secondmax = 0
+    index = -1
+    for i in range(event.nJetGood):
+        if i == bjetindex:
+            continue
+        btagscore = event.JetGood_btagDeepB[i]
+        if btagscore > secondmax:
+            secondmax = btagscore
+            index = i
+    if index != -1:
+        bjet2index = event.JetGood_index[index]
+        bJet2.SetPtEtaPhiM(event.Jet_pt[bjet2index], event.Jet_eta[bjet2index], event.Jet_phi[bjet2index], event.Jet_mass[bjet2index])
+    else:
+        return topA1, topA2
+
+    topA1 = Wh + bJet1
+    topA2 = Wl + bJet2
+    topB1 = Wh + bJet2
+    topB2 = Wl + bJet1
+
+    mtop = 172.5
+    diffA = pow(topA1.M()-mtop,2) + pow(topA2.M()-mtop,2)
+    diffB = pow(topB1.M()-mtop,2) + pow(topB2.M()-mtop,2)
+
+    if diffA < diffB:
+        return topA1, topA2
+    else:
+        return topB1, topB2
+
+def getBadTop( event, sample):
+    top1, top2  = get2TopHypos(event)
+    mtop = 172.5
+    if abs(top1.M()-172.5) < abs(top2.M()-172.5):
+        event.BadTopMass = top2.M()
+    else:
+        event.BadTopMass = top1.M()
+
+sequence.append( getBadTop )
 
 def getWhadMass( event, sample):
     event.WhadMass = getWhad( event ).M()
@@ -301,9 +352,8 @@ read_variables_MC = [
     'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F',
     "genZ1_pt/F", "genZ1_eta/F", "genZ1_phi/F",
 ]
+
 # define 3l selections
-
-
 mu_string  = lepString('mu','VL')
 ele_string = lepString('ele','VL')
 def getLeptonSelection( mode ):
@@ -723,6 +773,13 @@ for i_mode, mode in enumerate(allModes):
       name = 'Wlep_mass',
       attribute = lambda event, sample: event.WlepMass,
       binning=[300/10,0,300],
+    ))
+
+    plots.append(Plot(
+      texX = 'm_{second top} (GeV)', texY = 'Number of Events / 20 GeV',
+      name = 'BadTop_mass',
+      attribute = lambda event, sample: event.BadTopMass,
+      binning=[500/20,0,500],
     ))
 
     plots.append(Plot(

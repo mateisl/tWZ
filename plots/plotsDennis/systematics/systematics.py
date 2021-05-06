@@ -30,6 +30,7 @@ from Analysis.Tools.DirDB                import DirDB
 import Analysis.Tools.syncer
 import numpy as np
 
+################################################################################
 # Arguments
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
@@ -45,7 +46,7 @@ argParser.add_argument('--normalizeBinWidth', action='store_true', default=False
 argParser.add_argument('--reweightPU',         action='store', default='Central', choices=[ 'Central', 'VUp'] )
 args = argParser.parse_args()
 
-
+################################################################################
 # Logger
 import tWZ.Tools.logger as logger
 import RootTools.core.logger as logger_rt
@@ -54,20 +55,15 @@ logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 logger.info( "Working in era %s", args.era)
 
-# Year
-if "2016" in args.era:
-    year = 2016
-elif "2017" in args.era:
-    year = 2017
-elif "2018" in args.era:
-    year = 2018
-
-
+################################################################################
+# Set names of PU weights
 if args.reweightPU == 'Central':
     nominalPuWeight, upPUWeight, downPUWeight = "reweightPU", "reweightPUUp", "reweightPUDown"
 elif args.reweightPU == 'VUp':
     nominalPuWeight, upPUWeight, downPUWeight = "reweightPUVUp", "reweightPUVVUp", "reweightPUUp"
 
+################################################################################
+# Selection modifier
 def jetSelectionModifier( sys, returntype = "func"):
     #Need to make sure all jet variations of the following observables are in the ntuple
     variiedJetObservables = ['nJetGood', 'nBTag', 'met_pt']
@@ -92,10 +88,12 @@ def metSelectionModifier( sys, returntype = 'func'):
     elif returntype == "list":
         return [ v+'_'+sys for v in variiedMetObservables ]
 
-# these are the nominal MC weights we always apply
+################################################################################
+# Nominal MC weights that need to be applied
 nominalMCWeights = ["weight", "reweightPU", "reweightTrigger", "reweightBTag_SF", "reweightL1Prefire"]
 
-# weight the MC according to a variation
+################################################################################
+# Change the weight according to variation
 def MC_WEIGHT( variation, returntype = "string"):
     variiedMCWeights = list(nominalMCWeights)   # deep copy
     if variation.has_key('replaceWeight'):
@@ -118,12 +116,15 @@ def MC_WEIGHT( variation, returntype = "string"):
     elif returntype == "list":
         return variiedMCWeights
 
+################################################################################
+# Data weight has no variations
 def data_weight( event, sample ):
     return event.weight
 
 data_weight_string = "weight"
 
-# Define all systematic variations
+################################################################################
+# Define systematic variations
 variations = {
     'central'           : {'read_variables': [ '%s/F'%v for v in nominalMCWeights ]},
     'jesTotalUp'        : {'selectionModifier':jetSelectionModifier('jesTotalUp'),               'read_variables' : [ '%s/F'%v for v in nominalMCWeights + jetSelectionModifier('jesTotalUp','list')]},
@@ -145,6 +146,10 @@ variations = {
 #   'JERDown':{},
 }
 
+# Define which systematics change the jet v4
+jet_systematics = ['jesTotalUp', 'jesTotalDown', 'JERUp', 'JERDown']
+
+################################################################################
 # Add a default selection modifier that does nothing
 for key, variation in variations.iteritems():
     if not variation.has_key('selectionModifier'):
@@ -152,18 +157,19 @@ for key, variation in variations.iteritems():
     if not variation.has_key('read_variables'):
         variation['read_variables'] = []
 
+################################################################################
 # Check if we know the variation
 if args.variation is not None and args.variation not in variations.keys():
     raise RuntimeError( "Variation %s not among the known: %s", args.variation, ",".join( variation.keys() ) )
 
+################################################################################
 # arguments & directory
 plot_subdirectory = args.plot_directory
-if args.signal == "DM":           plot_subdirectory += "_DM"
-if args.signal == "T2tt":         plot_subdirectory += "_T2tt"
 if args.small:                    plot_subdirectory += "_small"
 if args.reweightPU:               plot_subdirectory += "_reweightPU%s"%args.reweightPU
-#if args.recoil:                  plot_subdirectory  += '_recoil_'+args.recoil
 
+################################################################################
+# Define MC samples
 from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
 
 if args.era == "Run2016":
@@ -175,7 +181,8 @@ elif args.era == "Run2018":
 elif args.era == "RunII":
     mc = [TWZ_NLO_DR, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
-# data sample
+################################################################################
+# Define data sample
 try:
   data_sample = eval(args.era)
 except Exception as e:
@@ -193,12 +200,13 @@ if args.small:
         sample.reduceFiles( to = 1 )
         sample.scale /= sample.normalization
 
-
+################################################################################
 # postions of MC components in list
 position = {s.name:i_s for i_s,s in enumerate(mc)}
 
 
-# Read variables and sequences
+################################################################################
+# Read variables
 read_variables = [
     "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l1_mvaTOP/F", "l1_mvaTOPWP/I", "l1_index/I",
@@ -213,13 +221,12 @@ read_variables = [
     "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
 ]
 
+################################################################################
+# Sequences
 sequence = []
 
-signals = []
-
-
-
-# define 3l selections
+################################################################################
+# Define 3l selections
 mu_string  = lepString('mu','VL')
 ele_string = lepString('ele','VL')
 def getLeptonSelection( mode ):
@@ -229,6 +236,7 @@ def getLeptonSelection( mode ):
     elif mode=="eee":    return "Sum$({mu_string})==0&&Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
     elif mode=='all':    return "Sum$({mu_string})+Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
 
+################################################################################
 # Getter functor for lepton quantities
 def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
     if functor is not None:
@@ -253,10 +261,12 @@ def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
                 return getattr( event, "Electron_%s"%branch )[event.lep_eleIndex[index]] if abs(event.lep_pdgId[index])==abs_pdg else float('nan')
     return func_
 
+
+################################################################################
+# Set up channels and values for plotting
 yields     = {}
 allPlots   = {}
 modes      = ['mumumu','mumue','muee', 'eee']
-# modes      = ['mumumu']
 
 data_sample.name           = "data"
 data_sample.read_variables = ["event/I","run/I"]
@@ -272,10 +282,11 @@ for sample in mc:
     if args.variation is not None:
         sample.read_variables+=list(set(variations[args.variation]['read_variables']))
 
-
+################################################################################
 # Fire up the cache
 dirDB = DirDB(os.path.join(plot_directory, 'systematicPlots', plot_subdirectory, args.selection, 'cache'))
 
+################################################################################
 # loop over modes
 for mode in modes:
     yields[mode] = {}
@@ -305,9 +316,11 @@ for mode in modes:
     stack_mc   = Stack( mc )
     stack_data = Stack( data_sample )
 
+
+    ############################################################################
+    # Set up plots
     plots      = []
 
-    l1ptbinning = [0,20,40,60,80,100,140,240,340]
     if args.variation == 'central':
         l1_pt_data   = Plot(
             name        = "l1_pt_data",
@@ -317,7 +330,6 @@ for mode in modes:
             attribute   = TreeVariable.fromString( "l1_pt/F" ),
             weight      = data_weight )
         plots.append( l1_pt_data )
-
 
     l1_pt_mc  = Plot(\
         name            = "l1_pt_mc",
@@ -343,7 +355,8 @@ for mode in modes:
         texX        = 'p_{T}^{miss} (GeV)', texY = 'Number of Events / 20 GeV' if args.normalizeBinWidth else "Number of Events",
         binning     = [400/20,0,400],
         stack       = stack_mc,
-        attribute   = TreeVariable.fromString('met_pt/F'),
+        # attribute   = TreeVariable.fromString('met_pt/F'),
+        attribute   = TreeVariable.fromString( "met_pt_%s/F" % args.variation ) if args.variation in jet_systematics else TreeVariable.fromString('met_pt/F'),
         selectionString = selectionModifier(cutInterpreter.cutString(args.selection)) if selectionModifier is not None else None,
         weight      = mc_weight )
     plots.append( met_mc )
@@ -373,9 +386,7 @@ for mode in modes:
             # Delete lambda because we can't serialize it
             for plot in plots:
                 del plot.weight
-                # print "!!!!!!!!!!!!!!!!!!!!!!!"
-                # for i in range(len(plot.histos[0])):
-                #     print plot.histos[0][i].GetMaximum()
+
 
             # save
             dirDB.add( key, (normalisation_mc, normalisation_data, [plot.histos for plot in plots]), overwrite = args.overwrite)
@@ -386,6 +397,7 @@ if args.variation is not None:
     logger.info( "Done with modes %s and variation %s of selection %s. Quit now.", ",".join( modes ), args.variation, args.selection )
     sys.exit(0)
 
+################################################################################
 # Systematic pairs:( 'name', 'up', 'down' )
 systematics = [\
     {'name':'JEC',         'pair':('jesTotalUp', 'jesTotalDown')},
@@ -395,11 +407,12 @@ systematics = [\
     {'name':'BTag_l',      'pair':('BTag_SF_l_Down', 'BTag_SF_l_Up')},
     {'name':'trigger',     'pair':('TriggerDown', 'TriggerUp')},
     # {'name':'leptonSF',    'pair':('LeptonSFDown', 'LeptonSFUp')},
-    #{'name': 'TopPt',     'pair':(  'TopPt', 'central'),},
-    #{'name': 'JER',       'pair':(  'JERUp', 'JERDown'),},
+    # {'name': 'TopPt',     'pair':(  'TopPt', 'central'),},
+    # {'name': 'JER',       'pair':(  'JERUp', 'JERDown'),},
 ]
 
-# loop over modes
+################################################################################
+# Check if all files are alread in DB, otherwise create cmd strings
 missing_cmds   = []
 variation_data = {}
 for mode in modes:
@@ -430,7 +443,8 @@ for mode in modes:
             missing_cmds.append( cmd_string )
             logger.info("Missing variation %s, era %s in mode %s in cache. Need to run: \n%s", variation, args.era, mode, cmd_string)
 
-# write missing cmds
+################################################################################
+# write cmd strings in missing.sh
 missing_cmds = list(set(missing_cmds))
 if len(missing_cmds)>0:
     with file( 'missing.sh', 'w' ) as f:
@@ -441,11 +455,12 @@ if len(missing_cmds)>0:
     sys.exit(0)
 
 
-# make 'all' and 'SF' from ee/mumu/mue
+################################################################################
+# make 'all' and 'SF' modes
+# usage: new_modes.append( ('new name', (list modes to sum up)) )
 new_modes = []
 all_modes = list(modes)
 if 'mumumu' in modes and 'mumue' in modes and 'muee' in modes and 'eee' in modes:
-    # usage: new_modes.append( ('new name', (list modes to sum up)) )
     new_modes.append( ('all', ('mumumu', 'mumue', 'muee', 'eee')) )
     all_modes.append( 'all' )
 
@@ -478,6 +493,7 @@ for variation in variations:
 
 
 
+################################################################################
 # SF for top central such that we get area normalisation
 dataMC_SF = {}
 for mode in all_modes:
@@ -485,6 +501,8 @@ for mode in all_modes:
     dataMC_SF[mode] = {variation:{s.name:1 for s in mc} for variation in variations}
     yield_data = variation_data[(mode,'central')]['normalisation_data']
 
+################################################################################
+# Draw
 def drawObjects( ):
     tex = ROOT.TLatex()
     tex.SetNDC()
@@ -496,6 +514,7 @@ def drawObjects( ):
       ]
     return [tex.DrawLatex(*l) for l in lines]
 
+################################################################################
 # We plot now.
 for mode in all_modes:
     for i_plot, plot in enumerate(plots):

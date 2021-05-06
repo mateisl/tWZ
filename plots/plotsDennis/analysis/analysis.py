@@ -30,6 +30,7 @@ from Analysis.Tools.puReweighting        import getReweightingFunction
 import Analysis.Tools.syncer
 import numpy as np
 
+################################################################################
 # Arguments
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
@@ -43,6 +44,7 @@ argParser.add_argument('--era',            action='store', type=str, default="Ru
 argParser.add_argument('--selection',      action='store', default='trilepT-minDLmass12-onZ1-njet4p-btag1')
 args = argParser.parse_args()
 
+################################################################################
 # Logger
 import tWZ.Tools.logger as logger
 import RootTools.core.logger as logger_rt
@@ -54,7 +56,8 @@ if args.noData:                       args.plot_directory += "_noData"
 
 logger.info( "Working in era %s", args.era)
 
-#tWZ_sample = TWZ if args.nominalSignal else yt_TWZ_filter
+################################################################################
+# Define the MC samples
 from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
 
 if args.era == "Run2016":
@@ -66,7 +69,8 @@ elif args.era == "Run2018":
 elif args.era == "RunII":
     mc = [TWZ_NLO_DR, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
-# data sample
+################################################################################
+# Define the data sample
 try:
   data_sample = eval(args.era)
 except Exception as e:
@@ -85,12 +89,15 @@ if args.small:
         #sample.reduceFiles( to=1)
         sample.scale /= sample.normalization
 
+################################################################################
 # Text on the plots
 tex = ROOT.TLatex()
 tex.SetNDC()
 tex.SetTextSize(0.04)
 tex.SetTextAlign(11) # align right
 
+################################################################################
+# Functions needed specifically for this analysis routine
 def charge(pdgId):
     return -pdgId/abs(pdgId)
 
@@ -125,35 +132,6 @@ def drawPlots(plots, mode, dataMCScale):
             copyIndexPHP = True, extensions = ["png"],
           )
 
-# Read variables and sequences
-sequence       = []
-
-def getWpt( event, sample):
-
-    # get the lepton and met
-    lepton  = ROOT.TLorentzVector()
-    met     = ROOT.TLorentzVector()
-    lepton.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
-    met.SetPtEtaPhiM(event.met_pt, 0, event.met_phi, 0)
-
-    # get the W boson candidate
-    W   = lepton + met
-    event.W_pt = W.Pt()
-
-sequence.append( getWpt )
-
-
-def getM3l( event, sample ):
-    # get the invariant mass of the 3l system
-    l = []
-    for i in range(3):
-        l.append(ROOT.TLorentzVector())
-        l[i].SetPtEtaPhiM(event.lep_pt[i], event.lep_eta[i], event.lep_phi[i],0)
-    event.M3l = (l[0] + l[1] + l[2]).M()
-
-sequence.append( getM3l )
-
-
 def getBJetindex( event ):
     maxscore = 0.0
     index = -1
@@ -164,16 +142,6 @@ def getBJetindex( event ):
             index = i
     return index
 
-def getBJetPt( event, sample ):
-    index = getBJetindex(event)
-    if index != -1:
-        event.BJetPt = event.JetGood_pt[index]
-        event.BJetIndex = index
-    else:
-        event.BJetPt = float('nan')
-        event.BJetIndex = index
-
-sequence.append( getBJetPt )
 
 def getWhad( event ):
     # get Whad from min dijet mass
@@ -256,16 +224,18 @@ def get2TopHypos( event ):
     topA2 = ROOT.TLorentzVector()
     topB1 = ROOT.TLorentzVector()
     topB2 = ROOT.TLorentzVector()
+    # Get Ws
     Wh = getWhad( event )
     Wl = getWlep( event )
+    # Get highest btag
     bjetindex = event.JetGood_index[getBJetindex(event)]
     bJet1 = ROOT.TLorentzVector()
     bJet1.SetPtEtaPhiM(event.Jet_pt[bjetindex], event.Jet_eta[bjetindex], event.Jet_phi[bjetindex], event.Jet_mass[bjetindex])
 
     # now search for second highest bjet
-    bJet2 = ROOT.TLorentzVector()
     secondmax = 0
     index = -1
+    bJet2 = ROOT.TLorentzVector()
     for i in range(event.nJetGood):
         if i == bjetindex:
             continue
@@ -279,11 +249,13 @@ def get2TopHypos( event ):
     else:
         return topA1, topA2
 
+    # construct tops
     topA1 = Wh + bJet1
     topA2 = Wl + bJet2
     topB1 = Wh + bJet2
     topB2 = Wl + bJet1
 
+    # get hypothesis closest to mtop
     mtop = 172.5
     diffA = pow(topA1.M()-mtop,2) + pow(topA2.M()-mtop,2)
     diffB = pow(topB1.M()-mtop,2) + pow(topB2.M()-mtop,2)
@@ -292,6 +264,44 @@ def get2TopHypos( event ):
         return topA1, topA2
     else:
         return topB1, topB2
+
+################################################################################
+# Define sequences
+sequence       = []
+
+def getWpt( event, sample):
+    # get the lepton and met
+    lepton  = ROOT.TLorentzVector()
+    met     = ROOT.TLorentzVector()
+    lepton.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
+    met.SetPtEtaPhiM(event.met_pt, 0, event.met_phi, 0)
+
+    # get the W boson candidate
+    W   = lepton + met
+    event.W_pt = W.Pt()
+
+sequence.append( getWpt )
+
+def getM3l( event, sample ):
+    # get the invariant mass of the 3l system
+    l = []
+    for i in range(3):
+        l.append(ROOT.TLorentzVector())
+        l[i].SetPtEtaPhiM(event.lep_pt[i], event.lep_eta[i], event.lep_phi[i],0)
+    event.M3l = (l[0] + l[1] + l[2]).M()
+
+sequence.append( getM3l )
+
+def getBJetPt( event, sample ):
+    index = getBJetindex(event)
+    if index != -1:
+        event.BJetPt = event.JetGood_pt[index]
+        event.BJetIndex = index
+    else:
+        event.BJetPt = float('nan')
+        event.BJetIndex = index
+
+sequence.append( getBJetPt )
 
 def getBadTop( event, sample):
     top1, top2  = get2TopHypos(event)
@@ -332,7 +342,8 @@ def getTopProperties( event, sample):
 
 sequence.append( getTopProperties )
 
-
+################################################################################
+# Read variables
 
 read_variables = [
     "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
@@ -353,6 +364,7 @@ read_variables_MC = [
     "genZ1_pt/F", "genZ1_eta/F", "genZ1_phi/F",
 ]
 
+################################################################################
 # define 3l selections
 mu_string  = lepString('mu','VL')
 ele_string = lepString('ele','VL')
@@ -363,6 +375,7 @@ def getLeptonSelection( mode ):
     elif mode=="eee":    return "Sum$({mu_string})==0&&Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
     elif mode=='all':    return "Sum$({mu_string})+Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
 
+################################################################################
 # Getter functor for lepton quantities
 def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
     if functor is not None:
@@ -387,20 +400,9 @@ def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
                 return getattr( event, "Electron_%s"%branch )[event.lep_eleIndex[index]] if abs(event.lep_pdgId[index])==abs_pdg else float('nan')
     return func_
 
-#mu0_charge   = lep_getter("pdgId", 0, 13, functor = charge)
-#ele0_charge = lep_getter("pdgId", 0, 11, functor = charge)
-#mu1_charge   = lep_getter("pdgId", 1, 13, functor = charge)
-#ele1_charge = lep_getter("pdgId", 1, 11, functor = charge)
-#def test(event, sample):
-#    mu0_ch  = mu0_charge(event, sample)
-#    ele0_ch = ele0_charge(event, sample)
-#    mu1_ch  = mu1_charge(event, sample)
-#    ele1_ch = ele1_charge(event, sample)
-#    print "mu0_ch",mu0_ch, "ele0_ch",ele0_ch, "mu1_ch",mu1_ch, "ele1_ch",ele1_ch
-#
-#sequence.append( test )
 
-
+################################################################################
+# Set up channels and values for plotting
 yields     = {}
 allPlots   = {}
 allModes   = ['mumumu','mumue','muee', 'eee']
@@ -431,6 +433,9 @@ for i_mode, mode in enumerate(allModes):
 
     # Use some defaults
     Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString = cutInterpreter.cutString(args.selection))
+
+    ################################################################################
+    # Now define the plots
 
     plots = []
 
@@ -739,13 +744,11 @@ for i_mode, mode in enumerate(allModes):
         binning=[10,0,6],
     ))
 
-    # GEN plots ########################
     plots.append(Plot(
       texX = 'p_{T}^{gen}(Z1) (GeV)', texY = 'Number of Events / 30 GeV',
       name = 'genZ1_pt', attribute = lambda event, sample: event.genZ1_pt if not sample.isData else float('nan'),
       binning=[600/30,0,600],
     ))
-    ####################################
 
     plots.append(Plot(
       texX = 'p_{T}(highest b-tagged jet) (GeV)', texY = 'Number of Events / 30 GeV',
@@ -863,6 +866,7 @@ for i_mode, mode in enumerate(allModes):
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 
+    ################################################################################
     # Get normalization yields from yield histogram
     for plot in plots:
       if plot.name == "yield":
@@ -890,7 +894,17 @@ for i_mode, mode in enumerate(allModes):
     drawPlots(plots, mode, dataMCScale)
     allPlots[mode] = plots
 
-
+    # This is how you would wirte a root file
+    # outfile = ROOT.TFile('test.root', 'recreate')
+    # outfile.cd()
+    # for plot in plots:
+    #     print "--------------------"
+    #     print plot.name
+    #     for i, l in enumerate(plot.histos):
+    #         for j, h in enumerate(l):
+    #             h.Write()
+    # outfile.Close()
+################################################################################
 # Add the different channels into SF and all
 for mode in ["comb1","comb2","all"]:
     yields[mode] = {}

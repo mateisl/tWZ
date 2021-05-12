@@ -55,6 +55,10 @@ if args.small:                        args.plot_directory += "_small"
 if args.noData:                       args.plot_directory += "_noData"
 
 logger.info( "Working in era %s", args.era)
+if args.dataMCScaling:
+    logger.info( "Data/MC scaling active")
+else:
+    logger.info( "Data/MC scaling not active")
 
 ################################################################################
 # Define the MC samples
@@ -341,6 +345,20 @@ def getTopProperties( event, sample):
     event.TopPt = top.Pt()
 
 sequence.append( getTopProperties )
+
+def getMaxEtaJet( event, sample ):
+    maxeta = 0
+    index = -1
+    for i in range(len(event.Jet_eta)):
+        if abs(event.Jet_eta[i]) > maxeta and event.Jet_pt[i] > 30:
+            maxeta = abs(event.Jet_eta[i])
+            index = i
+    if index != -1:
+        event.maxeta = event.Jet_eta[index]
+    else:
+        event.maxeta = 0.0
+
+sequence.append( getMaxEtaJet )
 
 ################################################################################
 # Read variables
@@ -838,6 +856,13 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
+        name = 'maxeta',
+        texX = 'max #eta(jet)', texY = 'Number of Events',
+        attribute = lambda event, sample: event.maxeta,
+        binning=[20,-5,5],
+    ))
+
+    plots.append(Plot(
         name = 'jet0_eta',
         texX = '#eta(leading jet)', texY = 'Number of Events',
         attribute = lambda event, sample: event.JetGood_eta[0],
@@ -892,6 +917,7 @@ for i_mode, mode in enumerate(allModes):
     dataMCScale        = yields[mode]["data"]/yields[mode]["MC"] if yields[mode]["MC"] != 0 else float('nan')
 
     drawPlots(plots, mode, dataMCScale)
+
     allPlots[mode] = plots
 
     # This is how you would wirte a root file

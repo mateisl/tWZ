@@ -361,7 +361,8 @@ for mode in modes:
         weight      = mc_weight )
     plots.append( met_mc )
 
-
+    ############################################################################
+    # Check DB for existing plots
     if args.variation is not None:
         key  = (args.era, mode, args.variation)
         if dirDB.contains(key) and not args.overwrite:
@@ -498,6 +499,7 @@ for variation in variations:
 dataMC_SF = {}
 for mode in all_modes:
     # All SF to 1
+    # The dict will look like dataMC_SF[mode][variationname][samplename]
     dataMC_SF[mode] = {variation:{s.name:1 for s in mc} for variation in variations}
     yield_data = variation_data[(mode,'central')]['normalisation_data']
 
@@ -537,6 +539,8 @@ for mode in all_modes:
         # perform the scaling
         for variation in variations.keys():
             for s in mc:
+                # print 'DATA/MC scaling:'
+                # print dataMC_SF[mode][variation][s.name]
                 mc_histo_list[variation][0][position[s.name]].Scale( dataMC_SF[mode][variation][s.name] )
 
         # Add histos, del the stack (which refers to MC only )
@@ -604,7 +608,7 @@ for mode in all_modes:
               ratio = {'yRange':(0.1,1.9), 'drawObjects':ratio_boxes},
               logX = False, logY = log, sorting = False,
               yRange = (0.03, "auto") if log else (0.001, "auto"),
-              #scaling = {0:1},
+              #scaling = {0:1}, # scaling is already preformed above
               legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
               drawObjects = drawObjects() + boxes,
               copyIndexPHP = True, extensions = ["png"],

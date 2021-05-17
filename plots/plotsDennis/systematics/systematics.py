@@ -111,7 +111,12 @@ def MC_WEIGHT( variation, returntype = "string"):
     elif returntype == "func":
         getters = map( operator.attrgetter, variiedMCWeights)
         def weight_( event, sample):
-            return reduce(operator.mul, [g(event) for g in getters], 1)
+            # Calculate weight
+            w = reduce(operator.mul, [g(event) for g in getters], 1)
+            # Get Lumi weight and multiply to weight
+            lumi_weight = lumi_year[event.year]/1000.
+            w *= lumi_weight
+            return w
         return weight_
     elif returntype == "list":
         return variiedMCWeights
@@ -275,7 +280,7 @@ data_sample.scale          = 1.
 lumi_scale                 = data_sample.lumi/1000
 logger.info('Lumi scale is ' + str(lumi_scale))
 for sample in mc:
-    sample.scale           = lumi_scale
+    # sample.scale           = lumi_scale
     sample.style           = styles.fillStyle(sample.color, lineColor = sample.color)
     sample.read_variables  = ['Pileup_nTrueInt/F', 'GenMET_pt/F', 'GenMET_phi/F']
     # append variables for systematics
@@ -299,7 +304,7 @@ for mode in modes:
     for sample in mc: sample.style = styles.fillStyle(sample.color)
 
     for sample in mc:
-      sample.setSelectionString([getLeptonSelection(mode)])
+        sample.setSelectionString([getLeptonSelection(mode)])
 
     # Use some defaults
     Plot.setDefaults( selectionString = cutInterpreter.cutString(args.selection) )

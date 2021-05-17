@@ -69,9 +69,9 @@ elif args.era == "Run2018":
     lumi_scale = 60.0
 elif args.era == "RunII":
     mc = [TWZ_NLO_DR]
-
 for sample in mc:
     sample.scale           = 1 # Scale MCs individually with lumi
+
 
 if args.small:
     for sample in mc:
@@ -121,24 +121,234 @@ def drawPlots(plots, mode, dataMCScale):
           )
 
 
-def getStatus3Parts(event):
-    indices = []
-    print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-    for index in range(event.nGenPart):
-        print event.GenPart_status[index], event.GenPart_pdgId[index]
-        if event.GenPart_status[index] == 3:
-            indices.append(index)
-    return indices
+def getZDecay(event):
+    Z1 = ROOT.TLorentzVector()
+    Z2 = ROOT.TLorentzVector()
+    NZdecays = 0
+    for i in range(event.nGenPart):
+        i_mother = event.GenPart_genPartIdxMother[i]
+        if i_mother!=-1 and abs(event.GenPart_pdgId[i_mother]) == 23:
+            # Go on if daughter is still a Z
+            if abs(event.GenPart_pdgId[i]) == 23:
+                continue
+            else:
+                NZdecays+=1
+                if NZdecays == 1:
+                    Z1.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_mass[i])
+                elif NZdecays == 2:
+                    Z2.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_mass[i])
+
+    if NZdecays != 2:
+        print "[ERROR] Found %s Z boson decay products" % ( NZdecays )
+        return []
+    else:
+        if Z1.Pt() > Z2.Pt():
+            return [Z1, Z2]
+        else:
+            return [Z2, Z1]
+
+def getWorigin(index, event):
+    while True:
+        i_mother = event.GenPart_genPartIdxMother[index]
+        if abs(event.GenPart_pdgId[i_mother]) == 24:
+            index = i_mother
+        else:
+            return i_mother
+
+
+def getWDecay(event):
+    W1 = ROOT.TLorentzVector()
+    W2 = ROOT.TLorentzVector()
+    NWdecays = 0
+    stati = []
+    ids = []
+
+    # Check which particle have a W as mother
+    for i in range(event.nGenPart):
+        i_mother = event.GenPart_genPartIdxMother[i]
+        # Mother has to be a W
+        if i_mother!=-1 and abs(event.GenPart_pdgId[i_mother]) == 24:
+            # Continue if mother comes from top
+            i_origin = getWorigin(i_mother, event)
+            if abs(event.GenPart_pdgId[i_origin]) == 6:
+                continue
+            # Particle itself should not be a W or radiated Photon
+            if abs(event.GenPart_pdgId[i]) == 24 or abs(event.GenPart_pdgId[i]) == 22:
+                continue
+            NWdecays+=1
+            if NWdecays==1:
+                W1.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_mass[i])
+            elif NWdecays==2:
+                W2.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_mass[i])
+
+
+    if NWdecays != 2:
+        print "[ERROR] Found %s W boson decay products" % ( NWdecays )
+        return []
+    else:
+        if W1.Pt() > W2.Pt():
+            return [W1, W2]
+        else:
+            return [W2, W1]
+
+def getTopDecay(event):
+    bquark = ROOT.TLorentzVector()
+    Wdecay1 = ROOT.TLorentzVector()
+    Wdecay2 = ROOT.TLorentzVector()
+    Windex = -1
+    Nb = 0
+    NW = 0
+    NWdaughter = 0
+    # Get b and W
+    for i in range(event.nGenPart):
+        i_mother = event.GenPart_genPartIdxMother[i]
+        if i_mother != -1 and abs(event.GenPart_pdgId[i_mother]) == 6:
+            if abs(event.GenPart_pdgId[i]) == 5:
+                Nb+=1
+                bquark.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_mass[i])
+            elif abs(event.GenPart_pdgId[i]) == 24:
+                NW+=1
+                Windex = i
+    # Get W decay
+    Wdecays = []
+    for i in range(event.nGenPart):
+        i_mother = event.GenPart_genPartIdxMother[i]
+        if i_mother == Windex:
+            if abs(event.GenPart_pdgId[i]) == 24: # If daughter is also a W, continue follow the decay
+                Windex = i
+                continue
+            NWdaughter+=1
+            if NWdaughter == 1:
+                Wdecay1.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_mass[i])
+            elif NWdaughter == 2:
+                Wdecay2.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_mass[i])
+
+    valid = True
+    if Nb != 1:
+        print "[ERROR] Found %s b quarks" % ( Nb )
+        valid = False
+    if NW != 1:
+        print "[ERROR] Found %s W bosons" % ( NW )
+        valid = False
+    if NWdaughter != 2:
+        print "[ERROR] Found %s W daughters" % ( NWdaughter )
+        valid = False
+
+    if Wdecay2.Pt() > Wdecay1.Pt():
+        store = Wdecay1
+        Wdecay1 = Wdecay2
+        Wdecay2 = store
+
+    if valid:
+        return [bquark, Wdecay1, Wdecay2]
+    else:
+        return []
+
+def getMaxDeltaR(particles):
+    maxDR = 0
+    for i in range(len(particles)):
+        for j in range(len(particles)):
+            if i!=j and particles[i].DeltaR(particles[j]) > maxDR:
+                maxDR = particles[i].DeltaR(particles[j])
+    return maxDR
+
+
 ################################################################################
 # Define sequences
 sequence       = []
 
-def getNGenPartsHard(event, sample):
-    event.NGenPartsHard = len(getStatus3Parts(event))
+def printGenParticles(event, sample):
+    quarkIDs = [1,2,3,4,5] #exclude top
+    leptonIDs = [11,12,13,14,15,16]
+    statusvetos = [21,22,71]
+    Nb = 0
+    # print '----------------------'
+    for i in range(event.nGenPart):
+        status = event.GenPart_status[i]
+        id = event.GenPart_pdgId[i]
+        if status in statusvetos: continue
+        if abs(id) in quarkIDs or abs(id) in leptonIDs:
+            # print "Index: %s, ID: %s, Status %s" %(i, id, status)
+            if abs(id) == 5: Nb+=1
 
-sequence.append(getNGenPartsHard)
+    event.NBquarks = Nb
+    event.test = [1,2,3]
+
+sequence.append(printGenParticles)
 
 
+
+
+def getZDecayProperties(event, sample):
+    products = getZDecay(event)
+    if len(products) < 2:
+        event.ZDecay_Z1_pt = -1
+        event.ZDecay_Z2_pt = -1
+        event.ZDecay_DR = -1
+    else:
+        event.ZDecay_Z1_pt = products[0].Pt()
+        event.ZDecay_Z2_pt = products[1].Pt()
+        event.ZDecay_DR = products[0].DeltaR(products[1])
+
+sequence.append(getZDecayProperties)
+
+def getWDecayProperties(event, sample):
+    products = getWDecay(event)
+    if len(products) < 2:
+        event.WDecay_W1_pt = -1
+        event.WDecay_W2_pt = -1
+        event.WDecay_DR = -1
+    else:
+        event.WDecay_W1_pt = products[0].Pt()
+        event.WDecay_W2_pt = products[1].Pt()
+        event.WDecay_DR = products[0].DeltaR(products[1])
+
+sequence.append(getWDecayProperties)
+
+def getTopDecayProperties(event, sample):
+    products = getTopDecay(event)
+    if len(products) < 3:
+        event.TopDecay_b_pt = -1
+        event.TopDecay_W1_pt = -1
+        event.TopDecay_W2_pt = -1
+        event.TopDecay_maxDR = -1
+    else:
+        event.TopDecay_b_pt = products[0].Pt()
+        event.TopDecay_W1_pt = products[1].Pt()
+        event.TopDecay_W2_pt = products[2].Pt()
+        event.TopDecay_maxDR = getMaxDeltaR(products)
+
+sequence.append(getTopDecayProperties)
+
+def getPDGIDs(event, sample):
+    ids = []
+    for i in range(event.nGenPart):
+        ids.append(event.GenPart_pdgId[i])
+    event.ids = ids
+sequence.append(getPDGIDs)
+
+def getOrientations(event, sample):
+    TopProducts = getTopDecay(event)
+    WProducts = getWDecay(event)
+    ZProducts = getZDecay(event)
+    if len(TopProducts)<3 or len(WProducts)<2 or len(ZProducts)<2:
+        event.DR_TopW = -1
+        event.DR_TopZ = -1
+        event.DR_WZ = -1
+        event.mTop = -1
+        event.mW = -1
+        event.mZ = -1
+    else:
+        Top = TopProducts[0]+TopProducts[1]+TopProducts[2]
+        W = WProducts[0]+WProducts[1]
+        Z = ZProducts[0]+ZProducts[1]
+        event.DR_TopW = Top.DeltaR(W)
+        event.DR_TopZ = Top.DeltaR(Z)
+        event.DR_WZ = W.DeltaR(Z)
+        event.mTop = Top.M()
+        event.mW = W.M()
+        event.mZ = Z.M()
+sequence.append(getOrientations)
 
 ################################################################################
 # Read variables
@@ -231,12 +441,130 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
-        name = "N_GenPartsHard",
-        texX = 'Number of generator particles with status=3', texY = 'Number of Events',
-        attribute = lambda event, sample: event.NGenPartsHard,
+        name = "N_Bquarks",
+        texX = 'Number of generated b', texY = 'Number of Events',
+        attribute = lambda event, sample: event.NBquarks,
+        binning=[11,-0.5,10.5],
+    ))
+
+    plots.append(Plot(
+        name = "TopDecay_b_pt",
+        texX = 'p_{T}(b from top) GeV', texY = 'Number of Events',
+        attribute = lambda event, sample: event.TopDecay_b_pt,
+        binning=[50,0,400],
+    ))
+
+    plots.append(Plot(
+        name = "TopDecay_W1_pt",
+        texX = 'p_{T}(Leading W decay from top) GeV', texY = 'Number of Events',
+        attribute = lambda event, sample: event.TopDecay_W1_pt,
+        binning=[50,0,400],
+    ))
+
+    plots.append(Plot(
+        name = "TopDecay_W2_pt",
+        texX = 'p_{T}(Sub-leading W decay from top) GeV', texY = 'Number of Events',
+        attribute = lambda event, sample: event.TopDecay_W2_pt,
+        binning=[50,0,400],
+    ))
+
+    plots.append(Plot(
+        name = "TopDecay_maxDR",
+        texX = 'max #Delta R between top decays', texY = 'Number of Events',
+        attribute = lambda event, sample: event.TopDecay_maxDR,
+        binning=[50,0,10],
+    ))
+
+    plots.append(Plot(
+        name = "m_top",
+        texX = 'm_{top}', texY = 'Number of Events',
+        attribute = lambda event, sample: event.mTop,
         binning=[50,0,200],
     ))
 
+    plots.append(Plot(
+        name = "ZDecay_Z1_pt",
+        texX = 'p_{T}(Leading Z decay) GeV', texY = 'Number of Events',
+        attribute = lambda event, sample: event.ZDecay_Z1_pt,
+        binning=[50,0,400],
+    ))
+
+    plots.append(Plot(
+        name = "ZDecay_Z2_pt",
+        texX = 'p_{T}(Sub-leading Z decay) GeV', texY = 'Number of Events',
+        attribute = lambda event, sample: event.ZDecay_Z2_pt,
+        binning=[50,0,400],
+    ))
+
+    plots.append(Plot(
+        name = "ZDecay_DR",
+        texX = '#Delta R between Z decays', texY = 'Number of Events',
+        attribute = lambda event, sample: event.ZDecay_DR,
+        binning=[50,0,10],
+    ))
+
+    plots.append(Plot(
+        name = "m_Z",
+        texX = 'm_{Z}', texY = 'Number of Events',
+        attribute = lambda event, sample: event.mZ,
+        binning=[50,0,200],
+    ))
+
+    plots.append(Plot(
+        name = "WDecay_W1_pt",
+        texX = 'p_{T}(Leading W decay) GeV', texY = 'Number of Events',
+        attribute = lambda event, sample: event.WDecay_W1_pt,
+        binning=[50,0,400],
+    ))
+
+    plots.append(Plot(
+        name = "WDecay_W2_pt",
+        texX = 'p_{T}(Sub-leading W decay) GeV', texY = 'Number of Events',
+        attribute = lambda event, sample: event.WDecay_W2_pt,
+        binning=[50,0,400],
+    ))
+
+    plots.append(Plot(
+        name = "WDecay_DR",
+        texX = '#Delta R between W decays', texY = 'Number of Events',
+        attribute = lambda event, sample: event.WDecay_DR,
+        binning=[50,0,10],
+    ))
+
+    plots.append(Plot(
+        name = "m_W",
+        texX = 'm_{W}', texY = 'Number of Events',
+        attribute = lambda event, sample: event.mW,
+        binning=[50,0,200],
+    ))
+
+    plots.append(Plot(
+        name = "DR_TopW",
+        texX = '#Delta R(top,W)', texY = 'Number of Events',
+        attribute = lambda event, sample: event.DR_TopW,
+        binning=[50,0,10],
+    ))
+
+    plots.append(Plot(
+        name = "DR_TopZ",
+        texX = '#Delta R(top,Z)', texY = 'Number of Events',
+        attribute = lambda event, sample: event.DR_TopZ,
+        binning=[50,0,10],
+    ))
+
+    plots.append(Plot(
+        name = "DR_WZ",
+        texX = '#Delta R(W,Z)', texY = 'Number of Events',
+        attribute = lambda event, sample: event.DR_WZ,
+        binning=[50,0,10],
+    ))
+
+    plots.append(Plot(
+        name = "PDGIDs",
+        texX = 'pdg ID', texY = 'Number of Events',
+        attribute = lambda event, sample: event.ids,
+        binning=[51,-25,25],
+    ))
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 

@@ -139,7 +139,7 @@ def drawPlots(plots, mode, dataMCScale):
 def getBJetindex( event ):
     maxscore = 0.0
     index = -1
-    for i in range(len(event.JetGood_btagDeepB)):
+    for i in range(event.nJetGood):
         btagscore = event.JetGood_btagDeepB[i]
         if btagscore > maxscore:
             maxscore = btagscore
@@ -349,7 +349,7 @@ sequence.append( getTopProperties )
 def getMaxEtaJet( event, sample ):
     maxeta = 0
     index = -1
-    for i in range(len(event.Jet_eta)):
+    for i in range(event.nJet):
         if abs(event.Jet_eta[i]) > maxeta and event.Jet_pt[i] > 30:
             maxeta = abs(event.Jet_eta[i])
             index = i
@@ -360,11 +360,69 @@ def getMaxEtaJet( event, sample ):
 
 sequence.append( getMaxEtaJet )
 
+def getDRTopZ( event, sample ):
+    tophad, toplep = getTopHypos( event )
+
+    if abs(tophad.M()-172.5) < abs(toplep.M()-172.5):
+        top = tophad
+    else:
+        top = toplep
+
+    Z = ROOT.TLorentzVector()
+    Z.SetPtEtaPhiM(event.Z1_pt, event.Z1_eta, event.Z1_phi, event.Z1_mass)
+    event.DRTopZ = top.DeltaR(Z)
+
+
+sequence.append( getDRTopZ )
+
+def get2TopChi2(event,sample):
+    tophad, toplep = getTopHypos( event )
+    # Values from UHH2
+    Mtlep_mean  = 174.
+    Mtlep_sigma =  18.
+    Mthad_mean  = 181.
+    Mthad_sigma =  15.
+    chi2 = pow((tophad.M()-Mthad_mean)/Mthad_sigma,2)+pow((toplep.M()-Mtlep_mean)/Mtlep_sigma,2)
+    event.chi2 = chi2
+sequence.append( get2TopChi2 )
+
+def getDeltaMaxEta(event,sample):
+    jet1 = ROOT.TLorentzVector()
+    # First get jet with max eta
+    maxeta = 0
+    i_maxeta = -1
+    for i in range(event.nJet):
+        if abs(event.Jet_eta[i]) > maxeta and event.Jet_pt[i] > 30:
+            maxeta = abs(event.Jet_eta[i])
+            found_jet1 = True
+            i_maxeta = i
+    jet1.SetPtEtaPhiM(event.Jet_pt[i_maxeta], event.Jet_eta[i_maxeta], event.Jet_phi[i_maxeta], event.Jet_mass[i_maxeta])
+    # get second jet which is not the btag and gives max m_{ij}
+    i_bjet = getBJetindex(event)
+    maxdijetmass = 0
+    i_maxdijetmass = -1
+    for i in range(event.nJetGood):
+        if i==i_bjet: continue
+        jetindex = event.JetGood_index[i]
+        jetcandidate = ROOT.TLorentzVector()
+        jetcandidate.SetPtEtaPhiM(event.Jet_pt[jetindex], event.Jet_eta[jetindex], event.Jet_phi[jetindex], event.Jet_mass[jetindex])
+        dijet = jet1+jetcandidate
+        if dijet.M() > maxdijetmass:
+            maxdijetmass=dijet.M()
+            i_maxdijetmass=jetindex
+
+    if i_maxeta!=-1 and i_maxdijetmass!=-1:
+        event.deltamaxeta = abs(event.Jet_eta[i_maxdijetmass]-maxeta)
+    else:
+        event.deltamaxeta = float('nan')
+
+sequence.append( getDeltaMaxEta )
+
 ################################################################################
 # Read variables
 
 read_variables = [
-    "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
+    "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",  "nJet/I",
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l1_mvaTOP/F", "l1_mvaTOPWP/I", "l1_index/I",
     "l2_pt/F", "l2_eta/F" , "l2_phi/F", "l2_mvaTOP/F", "l2_mvaTOPWP/I", "l2_index/I",
     "l3_pt/F", "l3_eta/F" , "l3_phi/F", "l3_mvaTOP/F", "l3_mvaTOPWP/I", "l3_index/I",
@@ -887,6 +945,27 @@ for i_mode, mode in enumerate(allModes):
         texX = 'p_{T}(W) (GeV)', texY = 'Number of Events / 20 GeV',
         attribute = lambda event, sample:event.W_pt,
         binning=[20,0,400],
+    ))
+
+    plots.append(Plot(
+        name = "DR_TopZ",
+        texX = '#Delta R (top, Z)', texY = 'Number of Events',
+        attribute = lambda event, sample:event.DRTopZ,
+        binning=[20,0,8],
+    ))
+
+    plots.append(Plot(
+        name = "chi2",
+        texX = '#chi^{2}', texY = 'Number of Events',
+        attribute = lambda event, sample:event.chi2,
+        binning=[50,0,200],
+    ))
+
+    plots.append(Plot(
+        name = "DeltaMaxEta",
+        texX = '#Delta #eta_{j}', texY = 'Number of Events',
+        attribute = lambda event, sample:event.deltamaxeta,
+        binning=[50,0,10],
     ))
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)

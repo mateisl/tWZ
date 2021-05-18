@@ -381,6 +381,10 @@ for mode in modes:
             mc_normalization_weight_string    = MC_WEIGHT(variations[args.variation], returntype='string')
             normalisation_mc = {s.name :s.scale*s.getYieldFromDraw(selectionString = normalization_selection_string, weightString = mc_normalization_weight_string)['val'] for s in mc}
 
+            for s in mc:
+                print normalisation_mc[s.name]
+
+
             if args.variation == 'central':
                 normalisation_data = data_sample.scale*data_sample.getYieldFromDraw( selectionString = normalization_selection_string, weightString = data_weight_string)['val']
             else:

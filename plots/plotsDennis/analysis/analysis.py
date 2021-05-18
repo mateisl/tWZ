@@ -935,12 +935,6 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
-      texX = 'jet area(leading jet)', texY = 'Number of Events / 0.05',
-      name = 'jet0_area', attribute = lambda event, sample: event.JetGood_area[0],
-      binning=[40,0,2],
-    ))
-
-    plots.append(Plot(
         name = "W_pt",
         texX = 'p_{T}(W) (GeV)', texY = 'Number of Events / 20 GeV',
         attribute = lambda event, sample:event.W_pt,
@@ -965,7 +959,7 @@ for i_mode, mode in enumerate(allModes):
         name = "DeltaMaxEta",
         texX = '#Delta #eta_{j}', texY = 'Number of Events',
         attribute = lambda event, sample:event.deltamaxeta,
-        binning=[50,0,10],
+        binning=[20,0,7],
     ))
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)

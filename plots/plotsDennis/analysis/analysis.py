@@ -23,10 +23,14 @@ from tWZ.Tools.user                      import plot_directory
 from tWZ.Tools.cutInterpreter            import cutInterpreter
 from tWZ.Tools.objectSelection           import cbEleIdFlagGetter, vidNestedWPBitMapNamingList
 from tWZ.Tools.objectSelection           import lepString
+from tWZ.Tools.helpers          import getCollection
+
 # Analysis
 from Analysis.Tools.helpers              import deltaPhi, deltaR
 from Analysis.Tools.puProfileCache       import *
 from Analysis.Tools.puReweighting        import getReweightingFunction
+from Analysis.Tools.leptonJetArbitration     import cleanJetsAndLeptons
+
 import Analysis.Tools.syncer
 import numpy as np
 
@@ -292,7 +296,7 @@ def getM3l( event, sample ):
     for i in range(3):
         l.append(ROOT.TLorentzVector())
         l[i].SetPtEtaPhiM(event.lep_pt[i], event.lep_eta[i], event.lep_phi[i],0)
-    event.M3l = (l[0] + l[1] + l[2]).M()
+    event.m3l = (l[0] + l[1] + l[2]).M()
 
 sequence.append( getM3l )
 
@@ -418,6 +422,42 @@ def getDeltaMaxEta(event,sample):
 
 sequence.append( getDeltaMaxEta )
 
+def getAngles(event, sample=None):
+    event.nonZ1_l1_Z1_deltaPhi = deltaPhi(event.lep_phi[event.nonZ1_l1_index], event.Z1_phi)
+    event.Z1_j1_deltaPhi       = deltaPhi(event.Z1_phi, event.JetGood_phi[0])
+    event.nonZ1_l1_Z1_deltaEta = abs(event.lep_eta[event.nonZ1_l1_index] - event.Z1_eta)
+    event.nonZ1_l1_Z1_deltaR   = deltaR({'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    event.jet0_Z1_deltaR       = deltaR({'eta':event.JetGood_eta[0], 'phi':event.JetGood_phi[0]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    event.jet0_nonZ1_l1_deltaR = deltaR({'eta':event.JetGood_eta[0], 'phi':event.JetGood_phi[0]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+    event.jet1_Z1_deltaR       = deltaR({'eta':event.JetGood_eta[1], 'phi':event.JetGood_phi[1]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    event.jet1_nonZ1_l1_deltaR = deltaR({'eta':event.JetGood_eta[1], 'phi':event.JetGood_phi[1]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+    event.jet2_Z1_deltaR       = deltaR({'eta':event.JetGood_eta[2], 'phi':event.JetGood_phi[2]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    event.jet2_nonZ1_l1_deltaR = deltaR({'eta':event.JetGood_eta[2], 'phi':event.JetGood_phi[2]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+    i_bjet = getBJetindex(event)
+    event.bJet_Z1_deltaR      = deltaR({'eta':event.JetGood_eta[i_bjet], 'phi':event.JetGood_phi[i_bjet]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    event.bJet_nonZ1l1_deltaR = deltaR({'eta':event.JetGood_eta[i_bjet], 'phi':event.JetGood_phi[i_bjet]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
+sequence.append( getAngles )
+
+
+def forwardJets( event, sample=None ):
+    jetVars          = ['pt/F', 'eta/F', 'phi/F', 'btagDeepB/F', 'jetId/I', 'btagDeepFlavB/F', 'mass/F']
+    lepVars          = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F','mvaFall17V2Iso_WP90/O', 'mvaTOP/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','eleIndex/I','muIndex/I']
+    jetVarNames      = [x.split('/')[0] for x in jetVars]
+    lepVarNames      = [x.split('/')[0] for x in lepVars]
+    #jets einlesen (in case of MC also reat the index of the genjet)
+    alljets   = getCollection( event, 'Jet', jetVarNames, 'nJet')
+    alljets.sort( key = lambda j: -j['pt'] )
+    leptons   = getCollection(event, "lep", lepVarNames, 'nlep')
+    # clean against good leptons
+    clean_jets,_ = cleanJetsAndLeptons( alljets, leptons )
+    # filter pt, but not eta
+    jets_no_eta         = filter(lambda j:j['pt']>30, clean_jets)
+    if jets_no_eta:
+        event.maxAbsEta_of_pt30jets = max( [ abs(j['eta']) for j in jets_no_eta ])
+    else:
+        event.maxAbsEta_of_pt30jets = -1
+sequence.append( forwardJets )
+
 ################################################################################
 # Read variables
 
@@ -439,6 +479,35 @@ read_variables_MC = [
     'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F',
     "genZ1_pt/F", "genZ1_eta/F", "genZ1_phi/F",
 ]
+
+################################################################################
+# MVA
+import tWZ.MVA.configs as configs
+config = configs.tWZ_3l
+read_variables += config.read_variables
+
+# Add sequence that computes the MVA inputs
+def make_mva_inputs( event, sample ):
+    for mva_variable, func in config.mva_variables:
+        setattr( event, mva_variable, func(event, sample) )
+sequence.append( make_mva_inputs )
+
+# load models
+from keras.models import load_model
+
+models = [
+    ("tWZ_3l", False, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz/tWZ_3l/multiclass_model.h5")),
+]
+
+def keras_predict( event, sample ):
+    # get model inputs assuming lstm
+    flat_variables, lstm_jets = config.predict_inputs( event, sample, jet_lstm = True)
+    for name, has_lstm, model in models:
+        #print has_lstm, flat_variables, lstm_jets
+        prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets] )
+        for i_val, val in enumerate( prediction[0] ):
+            setattr( event, name+'_'+config.training_samples[i_val].name, val)
+sequence.append( keras_predict )
 
 ################################################################################
 # define 3l selections
@@ -665,7 +734,7 @@ for i_mode, mode in enumerate(allModes):
     plots.append(Plot(
         name = "M3l",
         texX = 'M(3l) (GeV)', texY = 'Number of Events',
-        attribute = lambda event, sample:event.M3l,
+        attribute = lambda event, sample:event.m3l,
         binning=[25,0,500],
     ))
 
@@ -961,6 +1030,21 @@ for i_mode, mode in enumerate(allModes):
         attribute = lambda event, sample:event.deltamaxeta,
         binning=[20,0,7],
     ))
+
+
+    # MVA plot
+    for name, has_lstm, model in models:
+        #print has_lstm, flat_variables, lstm_jets
+        for i_tr_s, tr_s in enumerate( config.training_samples ):
+            disc_name = name+'_'+config.training_samples[i_tr_s].name
+            plots.append(Plot(
+                texX = disc_name, texY = 'Number of Events',
+                name = disc_name, attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
+                binning=[50, 0, 1],
+            ))
+
+
+
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 

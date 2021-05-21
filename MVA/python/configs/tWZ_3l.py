@@ -96,25 +96,6 @@ def make_jets( event, sample ):
     event.bJets    = filter(lambda j:isBJet(j, year=event.year) and abs(j['eta'])<=2.4    , event.jets)
 sequence.append( make_jets )
 
-def get_mll(event, sample):
-    event.mll = sqrt(2*(event.l1_pt)*(event.l2_pt)*(cosh(event.l1_eta-event.l2_eta)-cos(event.l1_phi-event.l2_phi)))
-sequence.append(get_mll)
-
-def getDeltaR(event, sample):
-    if len(event.jets) >= 1:
-        event.minDRjet_l1       = min(deltaR({'eta':event.jets[j]['eta'],  'phi':event.jets[j]['phi']}, {'eta':event.l1_eta, 'phi':event.l1_phi})  for j in range(len(event.jets)) )
-        event.minDRjet_l2       = min(deltaR({'eta':event.jets[j]['eta'],  'phi':event.jets[j]['phi']}, {'eta':event.l2_eta, 'phi':event.l2_phi})  for j in range(len(event.jets)))
-    else:
-        event.minDRjet_l1      = -1
-        event.minDRjet_l2      = -1
-    if len(event.bJets) >= 1:
-        event.minDRbjet_l1      = min(deltaR({'eta':event.bJets[b]['eta'], 'phi':event.bJets[b]['phi']}, {'eta':event.l1_eta, 'phi':event.l1_phi}) for b in range(len(event.bJets) ))
-        event.minDRbjet_l2      = min(deltaR({'eta':event.bJets[b]['eta'], 'phi':event.bJets[b]['phi']}, {'eta':event.l2_eta, 'phi':event.l2_phi}) for b in range(len(event.bJets )))
-    else:
-        event.minDRbjet_l1      = -1
-        event.minDRbjet_l2      = -1
-sequence.append(getDeltaR)
-
 def getAngles(event, sample=None):
     event.nonZ1_l1_Z1_deltaPhi = deltaPhi(event.lep_phi[event.nonZ1_l1_index], event.Z1_phi)
     event.Z1_j1_deltaPhi       = deltaPhi(event.Z1_phi, event.JetGood_phi[0])
@@ -126,24 +107,11 @@ def getAngles(event, sample=None):
     event.jet1_nonZ1_l1_deltaR = deltaR({'eta':event.JetGood_eta[1], 'phi':event.JetGood_phi[1]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
     event.jet2_Z1_deltaR       = deltaR({'eta':event.JetGood_eta[2], 'phi':event.JetGood_phi[2]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
     event.jet2_nonZ1_l1_deltaR = deltaR({'eta':event.JetGood_eta[2], 'phi':event.JetGood_phi[2]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
-
+    i_bjet = getBJetindex(event)
+    event.bJet_Z1_deltaR      = deltaR({'eta':event.JetGood_eta[i_bjet], 'phi':event.JetGood_phi[i_bjet]}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
+    event.bJet_nonZ1l1_deltaR = deltaR({'eta':event.JetGood_eta[i_bjet], 'phi':event.JetGood_phi[i_bjet]}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
 sequence.append( getAngles )
 
-def getbJets( event, sample=None ):
-#    #bJets filtern( nur 2016 )
-    alljets   = getCollection( event, 'Jet', jetVarNames , 'nJet')
-    goodjets = filter( isAnalysisJet, alljets )
-    bJets = filter(lambda j:isBJet(j, tagger=b_tagger, year=2016) and abs(j['eta'])<=2.4, goodjets)
-
-    if len(bJets)>=1:
-        event.bJet = bJets[0]
-        event.bJet_Z1_deltaR      = deltaR({'eta':bJets[0]['eta'], 'phi':bJets[0]['phi']}, {'eta':event.Z1_eta, 'phi':event.Z1_phi})
-        event.bJet_nonZ1l1_deltaR = deltaR({'eta':bJets[0]['eta'], 'phi':bJets[0]['phi']}, {'eta':event.lep_eta[event.nonZ1_l1_index], 'phi':event.lep_phi[event.nonZ1_l1_index]})
-    else:
-        event.bJet_Z1_deltaR      = -1
-        event.bJet_nonZ1l1_deltaR = -1
-
-sequence.append( getbJets )
 
 def forwardJets( event, sample=None ):
     #jets einlesen (in case of MC also reat the index of the genjet)

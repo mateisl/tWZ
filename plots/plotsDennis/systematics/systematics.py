@@ -46,6 +46,7 @@ argParser.add_argument('--normalizeBinWidth', action='store_true', default=False
 argParser.add_argument('--reweightPU',         action='store', default='Central', choices=[ 'Central', 'VUp'] )
 args = argParser.parse_args()
 
+
 ################################################################################
 # Logger
 import tWZ.Tools.logger as logger
@@ -106,7 +107,11 @@ def MC_WEIGHT( variation, returntype = "string"):
             raise RuntimeError( "Tried to change weight %s to %s but didn't find it in list %r" % ( variation['replaceWeight'][0], variation['replaceWeight'][1], variiedMCWeights ))
     # multiply strings for ROOT weights
     if returntype == "string":
-        return "*".join(variiedMCWeights)
+        weightstring = "*".join(variiedMCWeights)
+        # create string for lumi
+        lumistring = "("+"+".join( [ "%s*(year==%s)"%(l/1000, y) for (y,l) in lumi_year.iteritems() ])+")"
+        weightstring += "*"+lumistring
+        return weightstring
     # create a function that multiplies the attributes of the event
     elif returntype == "func":
         getters = map( operator.attrgetter, variiedMCWeights)

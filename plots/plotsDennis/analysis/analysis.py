@@ -458,6 +458,18 @@ def forwardJets( event, sample=None ):
         event.maxAbsEta_of_pt30jets = -1
 sequence.append( forwardJets )
 
+def getTTbar( event, sample):
+    top1, top2  = get2TopHypos(event)
+    mtop = 172.5
+    if abs(top1.M()-172.5) < abs(top2.M()-172.5):
+        event.MTop1 = top1.M()
+        event.MTop2 = top2.M()
+    else:
+        event.MTop1 = top2.M()
+        event.MTop2 = top1.M()
+
+sequence.append( getTTbar )
+
 ################################################################################
 # Read variables
 
@@ -948,6 +960,20 @@ for i_mode, mode in enumerate(allModes):
       texX = 'm_{top} (GeV)', texY = 'Number of Events / 20 GeV',
       name = 'Top_mass',
       attribute = lambda event, sample: event.TopMass,
+      binning=[500/20,0,500],
+    ))
+
+    plots.append(Plot(
+      texX = 'm_{top1} (GeV)', texY = 'Number of Events / 20 GeV',
+      name = 'MTop1',
+      attribute = lambda event, sample: event.MTop1,
+      binning=[500/20,0,500],
+    ))
+
+    plots.append(Plot(
+      texX = 'm_{top2} (GeV)', texY = 'Number of Events / 20 GeV',
+      name = 'MTop2',
+      attribute = lambda event, sample: event.MTop2,
       binning=[500/20,0,500],
     ))
 

@@ -66,9 +66,148 @@ def getBJetindex( event ):
             index = i
     return index
 
+def getWhad( event ):
+    # get Whad from min dijet mass
+    # exclude highest b tag from jet selection
+    index_btag = getBJetindex(event)
+    min_mass = 1000.
+    Whad = ROOT.TLorentzVector()
+    for i in range(event.nJetGood):
+        if i == index_btag:
+            continue
+        jetindex1 = event.JetGood_index[i]
+        jet1  = ROOT.TLorentzVector()
+        jet1.SetPtEtaPhiM(event.Jet_pt[jetindex1], event.Jet_eta[jetindex1], event.Jet_phi[jetindex1], event.Jet_mass[jetindex1])
+
+        for j in range(event.nJetGood):
+            if j == index_btag or j == i:
+                continue
+            jetindex2 = event.JetGood_index[j]
+            jet2  = ROOT.TLorentzVector()
+            jet2.SetPtEtaPhiM(event.Jet_pt[jetindex2], event.Jet_eta[jetindex2], event.Jet_phi[jetindex2], event.Jet_mass[jetindex2])
+
+            dijet = jet1+jet2
+            if dijet.M() < min_mass:
+                min_mass = dijet.M()
+                Whad = dijet
+
+    return Whad
+
+def getWlep( event ):
+    Wlep = ROOT.TLorentzVector()
+    lepton  = ROOT.TLorentzVector()
+    met     = ROOT.TLorentzVector()
+    lepton.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
+    met.SetPtEtaPhiM(event.met_pt, 0, event.met_phi, 0)
+
+    lepton_pT = ROOT.TVector3(lepton.Px(), lepton.Py(), 0)
+    neutrino_pT = ROOT.TVector3(met.Px(), met.Py(), 0)
+
+    mass_w = 80.399
+    mu = mass_w * mass_w / 2 + lepton_pT * neutrino_pT
+    A = - (lepton_pT * lepton_pT)
+    B = mu * lepton.Pz()
+    C = mu * mu - lepton.E() * lepton.E() * (neutrino_pT * neutrino_pT)
+    discriminant = B * B - A * C
+    if discriminant <= 0:
+        # Take only real part of the solution for pz:
+        neutrino = ROOT.TLorentzVector()
+        neutrino.SetPxPyPzE(met.Px(),met.Py(),-B / A,0)
+        neutrino.SetE(neutrino.P())
+    else:
+        discriminant = sqrt(discriminant)
+        neutrino1 = ROOT.TLorentzVector()
+        neutrino1.SetPxPyPzE(met.Px(),met.Py(),(-B - discriminant) / A,0)
+        neutrino1.SetE(neutrino1.P())
+        neutrino2 = ROOT.TLorentzVector()
+        neutrino2.SetPxPyPzE(met.Px(),met.Py(),(-B + discriminant) / A,0)
+        neutrino2.SetE(neutrino2.P())
+        if neutrino1.E() > neutrino2.E():
+            neutrino = neutrino1
+        else:
+            neutrino = neutrino2
+
+    Wlep = lepton + neutrino
+    return Wlep
+
+def getTopHypos( event ):
+    Wh = getWhad( event )
+    Wl = getWlep( event )
+    bjetindex = event.JetGood_index[getBJetindex(event)]
+    bJet = ROOT.TLorentzVector()
+    bJet.SetPtEtaPhiM(event.Jet_pt[bjetindex], event.Jet_eta[bjetindex], event.Jet_phi[bjetindex], event.Jet_mass[bjetindex])
+
+    toph = Wh + bJet
+    topl = Wl + bJet
+
+    return toph, topl
+
+def get2TopHypos( event ):
+    topA1 = ROOT.TLorentzVector()
+    topA2 = ROOT.TLorentzVector()
+    topB1 = ROOT.TLorentzVector()
+    topB2 = ROOT.TLorentzVector()
+    # Get Ws
+    Wh = getWhad( event )
+    Wl = getWlep( event )
+    # Get highest btag
+    bjetindex = event.JetGood_index[getBJetindex(event)]
+    bJet1 = ROOT.TLorentzVector()
+    bJet1.SetPtEtaPhiM(event.Jet_pt[bjetindex], event.Jet_eta[bjetindex], event.Jet_phi[bjetindex], event.Jet_mass[bjetindex])
+
+    # now search for second highest bjet
+    secondmax = 0
+    index = -1
+    bJet2 = ROOT.TLorentzVector()
+    for i in range(event.nJetGood):
+        if i == bjetindex:
+            continue
+        btagscore = event.JetGood_btagDeepB[i]
+        if btagscore > secondmax:
+            secondmax = btagscore
+            index = i
+    if index != -1:
+        bjet2index = event.JetGood_index[index]
+        bJet2.SetPtEtaPhiM(event.Jet_pt[bjet2index], event.Jet_eta[bjet2index], event.Jet_phi[bjet2index], event.Jet_mass[bjet2index])
+    else:
+        return topA1, topA2
+
+    # construct tops
+    topA1 = Wh + bJet1
+    topA2 = Wl + bJet2
+    topB1 = Wh + bJet2
+    topB2 = Wl + bJet1
+
+    # get hypothesis closest to mtop
+    mtop = 172.5
+    diffA = pow(topA1.M()-mtop,2) + pow(topA2.M()-mtop,2)
+    diffB = pow(topB1.M()-mtop,2) + pow(topB2.M()-mtop,2)
+
+    if diffA < diffB:
+        return topA1, topA2
+    else:
+        return topB1, topB2
+
 
 ## Sequence ####################################################################
 sequence = []
+
+def getTTbar( event, sample):
+    top1, top2  = get2TopHypos(event)
+    mtop = 172.5
+    if abs(top1.M()-172.5) < abs(top2.M()-172.5):
+        event.MTop1 = top1.M()
+        event.MTop2 = top2.M()
+    else:
+        event.MTop1 = top2.M()
+        event.MTop2 = top1.M()
+
+sequence.append( getTTbar )
+
+def getWhadMass( event, sample):
+    event.WhadMass = getWhad( event ).M()
+
+sequence.append( getWhadMass )
 
 def getWpt( event, sample=None):
     # get the lepton and met
@@ -162,6 +301,31 @@ def getDeltaMaxEta(event,sample):
 
 sequence.append( getDeltaMaxEta )
 
+def getDRTopZ( event, sample ):
+    tophad, toplep = getTopHypos( event )
+
+    if abs(tophad.M()-172.5) < abs(toplep.M()-172.5):
+        top = tophad
+    else:
+        top = toplep
+
+    Z = ROOT.TLorentzVector()
+    Z.SetPtEtaPhiM(event.Z1_pt, event.Z1_eta, event.Z1_phi, event.Z1_mass)
+    event.DRTopZ = top.DeltaR(Z)
+
+
+sequence.append( getDRTopZ )
+
+def get2TopChi2(event,sample):
+    tophad, toplep = getTopHypos( event )
+    # Values from UHH2
+    Mtlep_mean  = 174.
+    Mtlep_sigma =  18.
+    Mthad_mean  = 181.
+    Mthad_sigma =  15.
+    chi2 = pow((tophad.M()-Mthad_mean)/Mthad_sigma,2)+pow((toplep.M()-Mtlep_mean)/Mtlep_sigma,2)
+    event.chi2 = chi2
+sequence.append( get2TopChi2 )
 
 all_mva_variables = {
 
@@ -171,6 +335,13 @@ all_mva_variables = {
      "mva_m3l"                   :(lambda event, sample: event.m3l),
      "mva_nJetGood"              :(lambda event, sample: event.nJetGood),
      "mva_nBTag"                 :(lambda event, sample: event.nBTag),
+
+# top reconstruction
+     "mva_mtop1"                 :(lambda event, sample: event.MTop1),
+     "mva_mtop2"                 :(lambda event, sample: event.MTop1),
+     "mva_mWhad"                 :(lambda event, sample: event.WhadMass),
+     "mva_dR_top_Z"              :(lambda event, sample: event.DRTopZ),
+     "mva_chi2"                  :(lambda event, sample: event.chi2),
 
 # jet kinmatics
      "mva_jet0_pt"               :(lambda event, sample: event.JetGood_pt[0]          if event.nJetGood >=1 else 0),
@@ -206,10 +377,8 @@ all_mva_variables = {
 # nonZ1_l1 vs. other objects
      "mva_jet0_nonZl1_deltaR"    :(lambda event, sample: event.jet0_nonZ1_l1_deltaR    if event.nJetGood >=1 else -1),
      "mva_jet1_nonZl1_deltaR"    :(lambda event, sample: event.jet1_nonZ1_l1_deltaR    if event.nJetGood >=2 else -1),
-
      "mva_bJet_Z1_deltaR"        :(lambda event, sample: event.bJet_Z1_deltaR),
      "mva_bJet_non_Z1l1_deltaR"  :(lambda event, sample: event.bJet_nonZ1l1_deltaR),
-
      "mva_maxAbsEta_of_pt30jets" :(lambda event, sample: event.maxAbsEta_of_pt30jets),
 
 #leptonMVA
@@ -270,4 +439,5 @@ assert len(training_samples)==len(set([s.name for s in training_samples])), "tra
 
 # training selection
 from tWZ.Tools.cutInterpreter import cutInterpreter
-selectionString = cutInterpreter.cutString( 'trilepT-minDLmass12-onZ1-njet4p-btag1' )
+selectionString = cutInterpreter.cutString( 'trilepT-onZ1-btag1-njet3p' )
+# selectionString = cutInterpreter.cutString( 'trilepT-minDLmass12-onZ1-njet4p-btag1' )

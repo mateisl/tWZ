@@ -36,18 +36,15 @@ import Analysis.Tools.syncer
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--logLevel',       action='store',      default='INFO', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
-argParser.add_argument('--noData',         action='store_true', default=False, help='also plot data?')
 argParser.add_argument('--small',                             action='store_true', help='Run only on a small subset of the data?', )
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
 argParser.add_argument('--plot_directory', action='store', default='tttt_test')
-argParser.add_argument('--era',            action='store', type=str, default="Run2016")
 argParser.add_argument('--selection',      action='store', default='trilepM-offZ1-minDLmass12-njet4p-btag2p')
 #argParser.add_argument('--nanoAODv4',   default=True, action='store_true',                                                                        help="Run on nanoAODv4?" )
 argParser.add_argument('--samples',        action='store',         nargs='*',  type=str, default=['TTZToLLNuNu_ext'],                  help="List of samples to be post-processed, given as CMG component name" )
 #flagg for parton selection
 argParser.add_argument('--normalize',      action='store_true', default=False,                                                                   help="Normalize to 1" )
-argParser.add_argument('--scaled',         action='store_true', help='scaling', )
 #argParser.add_argument('--mva',            action='store', type=str )
 
 args = argParser.parse_args()
@@ -60,36 +57,19 @@ logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 if args.small:                        args.plot_directory += "_small"
-if args.noData:                       args.plot_directory += "_noData"
 if args.normalize:                    args.plot_directory += "_normalize"
-if args.scaled:                       args.plot_directory += "_scaled"
-logger.info( "Working in era %s", args.era)
 
 from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
 
-if args.era == "Run2016":
-    mc = [Summer16.TTW, Summer16.TTZ, Summer16.TTTT , Summer16.nonprompt_3l ] #Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
-elif args.era == "Run2017":
-    mc = [Fall17.TTW, Fall17.TTZ, Fall17.TTTT , Fall17.nonprompt_3l ] #, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
-elif args.era == "Run2018":
-    mc = [Autumn18.TTW, Autumn18.TTZ, Autumn18.TTTT , Autumn18.nonprompt_3l ] #, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
-elif args.era == "RunII":
-    #mc = [TTTT, TTZ, TTW, WZ ]
-    mc = [TTW, TTZ, TTTT , nonprompt_3l, WZ ]
-# data sample
-try:
-  data_sample = eval(args.era)
-except Exception as e:
-  logger.error( "Didn't find %s", args.era )
-  raise e
+mc = [TTZ, TTW, TTH, WZ ]
+all_mc = mc + [TTTT]
 
-lumi_scale                 = data_sample.lumi/1000
-data_sample.scale          = 1.
-for sample in mc:
+lumi_scale                 = 350 
+for sample in all_mc:
     sample.scale           = 1 # Scale MCs individually with lumi
 
 if args.small:
-    for sample in mc:# + [data_sample]:
+    for sample in all_mc:
         sample.normalization = 1.
         #sample.reduceFiles( factor = 40 )
         sample.reduceFiles( to=1)
@@ -104,22 +84,18 @@ tex.SetTextAlign(11) # align right
 def charge(pdgId):
     return -pdgId/abs(pdgId)
 
-def drawObjects( plotData, dataMCScale, lumi_scale ):
+def drawObjects( dataMCScale, lumi_scale ):
     lines = [
-      (0.15, 0.95, 'CMS Preliminary' if plotData else 'CMS Simulation'), 
-      (0.45, 0.95, 'L=%3.1f fb{}^{-1} (13 TeV) Scale %3.2f'% ( lumi_scale, dataMCScale ) ) if plotData else (0.45, 0.95, 'L=%3.1f fb{}^{-1} (13 TeV)' % lumi_scale)
+      (0.15, 0.95, 'CMS Simulation'), 
+      (0.45, 0.95, 'L=%3.1f fb{}^{-1} (13 TeV)' % lumi_scale)
     ]
-    if "mt2ll100" in args.selection and args.noData: lines += [(0.55, 0.5, 'M_{T2}(ll) > 100 GeV')] # Manually put the mt2ll > 100 GeV label
     return [tex.DrawLatex(*l) for l in lines] 
 
 def drawPlots(plots, mode, dataMCScale):
   for log in [False, True]:
-    plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, mode + ("_log" if log else ""), args.selection)
+    plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, "RunIII", mode + ("_log" if log else ""), args.selection)
     for plot in plots:
       if not max(l.GetMaximum() for l in sum(plot.histos,[])): continue # Empty plot
-      if not args.noData: 
-        if mode == "all": plot.histos[1][0].legendText = "Data"
-        if mode == "SF":  plot.histos[1][0].legendText = "Data (SF)"
 
       _drawObjects = []
         
@@ -131,15 +107,13 @@ def drawPlots(plots, mode, dataMCScale):
       if isinstance( plot, Plot):
             plotting.draw(plot,
             plot_directory = plot_directory_,
-            ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
+            ratio = None,
             #ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0)], 'texY':'Ratio'} if args.scaled else None,
             #ratio = {'yRange': (0.1, 1.9), 'histos':[(1,0),(2,0),(3,0),(4,0)], 'texY':'Ratio'} if args.scaled else None,
             logX = False, logY = log, sorting = False,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
-            scaling =  { 1:0 } if args.scaled else {}, 
-            #scaling =  { i+1:0 for i in range(4) } if args.scaled else {}, 
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
-            drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
+            drawObjects = drawObjects( dataMCScale , lumi_scale ) + _drawObjects,
             copyIndexPHP = True, extensions = ["png", "pdf", "root"],
           )
 
@@ -278,7 +252,6 @@ def make_mva_inputs( event, sample ):
         setattr( event, mva_variable, func(event, sample) )
 sequence.append( make_mva_inputs )
 
-
 #load models
 
 from keras.models import load_model
@@ -287,8 +260,9 @@ models = [
      #("FI_ctZ_BSM_TTG",      False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ctZ_BSM_TTG/ttG_WG/FI_ctZ_BSM/regression_model.h5")),
      #("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_LSTM/tttt_3l/regression_model.h5")),
      #("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt/tttt_3l/regression_model.h5")),
-     ("tttt_ttw_ttz_nonprompt_LSTM", True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v3_LSTM/tttt_3l/multiclass_model.h5")),
-     ("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v3/tttt_3l/multiclass_model.h5")),
+     (configs.tttt_3l, "tttt_ttw_ttz_nonprompt_LSTM", True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v3_LSTM/tttt_3l/multiclass_model.h5")),
+     (configs.tttt_3l_tth, "tttt_ttw_ttz_nonprompt_tth_LSTM", True, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_tth_v3_LSTM/tttt_3l_tth/multiclass_model.h5")),
+     #("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v3/tttt_3l/multiclass_model.h5")),
      #("tttt_ttw_ttz_nonprompt_LSTM",   True , load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2_LSTM/tttt_3l/regression_model.h5")),
      #("tttt_ttw_ttz_nonprompt", False, load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/tttt_3l_ttw_ttz_nonprompt_v2/tttt_3l/regression_model.h5")),
 #     ("TTTT_Multiclass_LSTM",    True, load_model("/mnt/hephy/cms/rosmarie.schoefbeck/TMB/models/tttt_3l_test_LSTM/tttt_3l/regression_model.h5")),
@@ -298,8 +272,8 @@ models = [
 def keras_predict( event, sample ):
 
     # get model inputs assuming lstm
-    flat_variables, lstm_jets = config.predict_inputs( event, sample, jet_lstm = True)
-    for name, has_lstm, model in models:
+    for config, name, has_lstm, model in models:
+        flat_variables, lstm_jets = config.predict_inputs( event, sample, jet_lstm = True)
         #print has_lstm, flat_variables, lstm_jets
         prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets] )
         for i_pred, value in enumerate(prediction[0]):  
@@ -308,7 +282,7 @@ def keras_predict( event, sample ):
 sequence.append( keras_predict )
 
 
-weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
+weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_scale
 
 
 yields     = {}
@@ -316,29 +290,16 @@ allPlots   = {}
 allModes   = ['mumumu','mumue','muee', 'eee']
 for i_mode, mode in enumerate(allModes):
     yields[mode] = {}
-    if not args.noData:
-        data_sample.texName = "data"
-        data_sample.setSelectionString([getLeptonSelection(mode)])
-        data_sample.name           = "data"
-        data_sample.style          = styles.errorStyle(ROOT.kBlack)
-        data_sample.read_variables = read_variables_data 
-        lumi_scale                 = data_sample.lumi/1000
 
-    for sample in mc: 
+    for sample in all_mc: 
         sample.style = styles.fillStyle(sample.color)
-        #sample.style = styles.lineStyle(sample.color)
         sample.read_variables = read_variables_MC 
         sample.setSelectionString([getLeptonSelection(mode)])
         sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
+    TTTT.style = styles.lineStyle(ROOT.kBlack, width=2)
 
     
-    if args.scaled: 
-        stack = Stack()
-    else:
-        if not args.noData:
-          stack = Stack(mc, data_sample)
-        else:
-          stack = Stack(mc)
+    stack = Stack(mc, [TTTT])
     
 #    for sample in mc+[data_sample]:
 #        sample.weight = weight_
@@ -348,7 +309,7 @@ for i_mode, mode in enumerate(allModes):
 
     plots = []
 
-    for name, has_lstm, model in models:
+    for config, name, has_lstm, model in models:
         for i_tr_s, tr_s in enumerate( config.training_samples ):
             disc_name = name+'_'+config.training_samples[i_tr_s].name
             plots.append(Plot(
@@ -1103,7 +1064,7 @@ for i_mode, mode in enumerate(allModes):
             h.GetXaxis().SetBinLabel(4, "medium")
             h.GetXaxis().SetBinLabel(5, "tight")
         
-    if args.noData: yields[mode]["data"] = 0
+    yields[mode]["data"] = 0
 
     yields[mode]["MC"] = sum(yields[mode][s.name] for s in mc)
     dataMCScale        = yields[mode]["data"]/yields[mode]["MC"] if yields[mode]["MC"] != 0 else float('nan')
@@ -1136,6 +1097,6 @@ for mode in ["comb1","comb2","all"]:
     if mode == "all": drawPlots(allPlots['mumumu'], mode, dataMCScale)
 
 import pickle
-pickle.dump( {p.name: p.histos for p in allPlots['mumumu'] if "TTTT" in p.name}, file( os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era,  args.selection+'.pkl'), 'w' ))
+pickle.dump( {p.name: p.histos for p in allPlots['mumumu'] if "TTTT" in p.name}, file( os.path.join(plot_directory, 'analysisPlots', args.plot_directory, "RunIII",  args.selection+'.pkl'), 'w' ))
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )

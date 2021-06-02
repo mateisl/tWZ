@@ -9,8 +9,8 @@ ROOT.setTDRStyle()
 import pickle
 hist_dict = pickle.load(file(filename))
 mva  = 'tttt_ttw_ttz_nonprompt_LSTM'
-classifier = 'TTTT_vs_TTZ'
-#classifier = 'TTTT_vs_TTW'
+#classifier = 'TTTT_vs_TTZ'
+classifier = 'TTTT_vs_TTW'
 bkgs = ['TTTT', 'TTZ', 'TTW'] 
 
 
@@ -38,9 +38,9 @@ h['TTZ']    .SetLineColor( ROOT.kAzure+4 )
 h['TTZ']    .SetFillColor( ROOT.kAzure+4 )
 h['TTZ']    .SetMarkerColor( ROOT.kAzure+4 )
 h['TTZ']    .SetMarkerStyle(0)
-h['TTW']    .SetLineColor( ROOT.kGreen+4 )
-h['TTW']    .SetFillColor( ROOT.kGreen+4 )
-h['TTW']    .SetMarkerColor( ROOT.kGreen+4 )
+h['TTW']    .SetLineColor( ROOT.kGreen+2 )
+h['TTW']    .SetFillColor( ROOT.kGreen+2 )
+h['TTW']    .SetMarkerColor( ROOT.kGreen+2 )
 h['TTW']    .SetMarkerStyle(0)
 
 l = ROOT.TLegend(0.65, 0.65, 0.95, 0.89)

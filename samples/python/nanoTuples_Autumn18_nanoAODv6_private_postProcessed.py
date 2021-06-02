@@ -68,13 +68,14 @@ TTZ         = Sample.fromDirectory(name="TTZ",      treeName="Events", isData=Fa
 dirs['TZQ']             = ['tZq_ll']#, 'tZq_nunu'] 
 TZQ = Sample.fromDirectory(name="TZQ", treeName="Events", isData=False, color=color.TZQ, texName="tZQ", directory=make_dirs( dirs['TZQ']))
 
-#dirs['TTH']             = ['TTHbbLep', 'TTHnobb_pow']
+dirs['TTH']             = ['TTHbbLep', 'TTHnobb_pow']
 #dirs['THX']             = ['THW', 'THQ']
 #dirs['TTTT']            = ['TTTT']
 dirs['TTW']             = ['TTWToLNu', 'TTWToQQ']
 dirs['TTVV']            = ['TTWW', 'TTWZ','TTZZ']
 dirs['TTX_rare']        = ["TTTT", "TTHbbLep", "TTHnobb_pow", "THW", "THQ"] + dirs['TTW'] + dirs['TTVV'] # same as TTX_rare but without tZq_ll
 TTX_rare = Sample.fromDirectory(name="TTX_rare", treeName="Events", isData=False, color=color.TTX_rare, texName="t/t#bar{t}+(t#bar{t}/H/W/VV)", directory=make_dirs( dirs['TTX_rare']))
+TTH      = Sample.fromDirectory(name="TTH", treeName="Events", isData=False, color=color.TTX_rare, texName="t#bar{t}H", directory=make_dirs( dirs['TTH']))
 
 TTW  = Sample.fromDirectory(name="TTW", treeName="Events", isData=False, color=color.TTW, texName="t#bar{t}W", directory=make_dirs( dirs['TTW']))
 dirs['TTTT']            = ['TTTT']

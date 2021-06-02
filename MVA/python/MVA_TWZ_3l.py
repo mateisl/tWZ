@@ -38,7 +38,7 @@ read_variables = [\
                     "nlep/I",
                     "Z1_lldPhi/F",
                     "Z1_lldR/F",
-                    "l1_mvaTOP/F", "l1_mvaTOPWP/I"
+                    "l1_mvaTOP/F", "l1_mvaTOPWP/I",
                     "l2_mvaTOP/F", "l2_mvaTOPWP/I",
                     "l3_mvaTOP/F", "l3_mvaTOPWP/I",
                     ]

@@ -1,0 +1,138 @@
+from RootTools.core.standard import *
+import Analysis.Tools.syncer
+import os
+import ROOT
+import array
+import numpy as np
+from tWZ.Tools.user                      import plot_directory
+
+def getAUC2( xvalues, yvalues ):
+    # The TGraph.Integral function only returns the size of the area enclosed by the TGraph.
+    # So, we add points at (x,0) for every existing value of (x,y).
+    # This has to happen in reverse order, so a graph with values
+    # x = [1, 2, 3],          y = [1, 2, 3] is converted to
+    # x = [1, 2, 3, 3, 2, 1], y = [1, 2, 3, 0, 0, 0]
+    # Then we can use the Integral function
+    newx = []
+    newy = []
+    for x in xvalues:
+        newx.append(x) # set same x values
+    for y in yvalues:
+        newy.append(y) # set same y values
+    for x in reversed(xvalues):
+        newx.append(x) # x values in revers
+        newy.append(0) # y is all zeros
+    # create TGraph and return integral
+    newgraph = ROOT.TGraph(len(newx), array.array('d',newx), array.array('d',newy))
+    return newgraph.Integral()
+
+def getAUC( graph ):
+    stepsize = 0.001
+    integral = 0.0
+    x_lo = 0
+    x_hi = x_lo + stepsize
+    while x_hi < 1.0:
+        int_tmp = (x_hi-x_lo)*0.5*(graph.Eval(x_lo)+graph.Eval(x_hi))
+        integral += int_tmp
+        x_lo += stepsize
+        x_hi += stepsize
+    return integral
+
+
+ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/tWZ/Tools/scripts/tdrstyle.C")
+ROOT.setTDRStyle()
+
+dirname = "/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/analysis/"
+roc = {}
+auc = {}
+filename = "MVA_score_Run2016.root"
+models = ["MVA_tWZ_3l", "MVA_tWZ_3l_deltaEta", "MVA_tWZ_3l_topReco"]
+legends = {
+    "MVA_tWZ_3l":           "MVA 3l",
+    "MVA_tWZ_3l_deltaEta":  "MVA 3l + #Delta#eta",
+    "MVA_tWZ_3l_topReco":   "MVA 3l + #Delta#eta + top reco",
+}
+
+for model in models:
+    node = "TWZnode"
+    signal = "tWZ"
+    # backgrounds = ["ttZ", "ttX", "tZq", "WZ", "ZZ", "triBoson", "nonprompt"]
+    backgrounds = ["ttZ"]
+
+    print "Getting histograms from model %s" %(model)
+
+    f = ROOT.TFile.Open(dirname+filename)
+
+    # get signal and backgrounds
+    print "  reading", model+"__"+signal+"__"+node, "..."
+    sig = f.Get(model+"__"+signal+"__"+node)
+    print "  reading", model+"__"+backgrounds[0]+"__"+node, "..."
+    bkg = f.Get(model+"__"+backgrounds[0]+"__"+node)
+    if len(backgrounds)>1:
+        for i in range(len(backgrounds)):
+            if i==0:
+                continue
+            else:
+                print "  reading", model+"__"+backgrounds[i]+"__"+node, "..."
+                tmp = f.Get(model+"__"+backgrounds[i]+"__"+node)
+                bkg.Add(tmp)
+
+    # normalize to unit area
+    sig.Scale(1./sig.Integral())
+    bkg.Scale(1./bkg.Integral())
+
+    sig_eff = []
+    bkg_eff = []
+    for i_bin in reversed(range(1,sig.GetNbinsX()+1)):
+        sig_eff .append( sig.Integral(i_bin, sig.GetNbinsX()))
+        bkg_eff .append( bkg.Integral(i_bin, sig.GetNbinsX()))
+        #print i_bin, sig_eff, bkg_eff
+
+
+    roc[model] = ROOT.TGraph(len(sig_eff), array.array('d',bkg_eff), array.array('d',sig_eff))
+    auc[model] = getAUC(roc[model])
+
+ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/tWZ/Tools/scripts/tdrstyle.C")
+ROOT.setTDRStyle()
+
+colors = [ROOT.kBlue, ROOT.kRed, ROOT.kGreen, ROOT.kAzure-7, 798]
+styles = [1, 7, 2, 1, 1, 1, 1]
+
+ROOT.gStyle.SetOptStat(0)
+c1 = ROOT.TCanvas()
+leg = ROOT.TLegend(0.33, 0.2, 0.9, 0.35)
+leg.SetFillStyle(0)
+leg.SetShadowColor(ROOT.kWhite)
+leg.SetBorderSize(0)
+
+firstkey = roc.keys()[0]
+
+roc[firstkey].Draw("AL")
+roc[firstkey].GetXaxis().SetTitle("ttZ background efficiency")
+roc[firstkey].GetYaxis().SetTitle("tWZ signal efficiency")
+roc[firstkey].GetXaxis().SetRangeUser(0,1)
+roc[firstkey].GetYaxis().SetRangeUser(0,1)
+
+icol = 0
+for model in models:
+    roc[model].SetLineColor(colors[icol])
+    roc[model].SetLineWidth(2)
+    roc[model].SetLineStyle(styles[icol])
+    roc[model].SetMarkerStyle(0)
+    roc[model].Draw("L SAME")
+    leg.AddEntry( roc[model], legends[model]+", auc = %.2f" %(auc[model]), "l")
+    icol += 1
+
+leg.Draw()
+
+diagonal = ROOT.TLine(0,0,1,1)
+diagonal.SetLineWidth(2)
+diagonal.SetLineColor(13)
+diagonal.SetLineStyle(7)
+diagonal.Draw("SAME")
+
+c1.SetTitle("")
+c1.RedrawAxis()
+c1.Print(os.path.join(plot_directory, "roc.png"))
+c1.Print(os.path.join(plot_directory, "roc.pdf"))
+Analysis.Tools.syncer.sync()

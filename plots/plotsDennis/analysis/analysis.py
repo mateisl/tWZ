@@ -265,8 +265,12 @@ def get2TopHypos( event ):
 
     # get hypothesis closest to mtop
     mtop = 172.5
-    diffA = pow(topA1.M()-mtop,2) + pow(topA2.M()-mtop,2)
-    diffB = pow(topB1.M()-mtop,2) + pow(topB2.M()-mtop,2)
+    diffA1 = abs(topA1.M()-mtop)
+    diffA2 = abs(topA2.M()-mtop)
+    diffA = diffA1 if diffA1<diffA2 else diffA2
+    diffB1 = abs(topB1.M()-mtop)
+    diffB2 = abs(topB2.M()-mtop)
+    diffB = diffB1 if diffB1<diffB2 else diffB2
 
     if diffA < diffB:
         return topA1, topA2
@@ -496,11 +500,20 @@ read_variables_MC = [
 # MVA
 import tWZ.MVA.configs as configs
 config = configs.tWZ_3l
+config_topReco = configs.tWZ_3l_topReco
+config_deltaEta = configs.tWZ_3l_deltaEta
 read_variables += config.read_variables
+read_variables += config_topReco.read_variables
+read_variables += config_deltaEta.read_variables
+
 
 # Add sequence that computes the MVA inputs
 def make_mva_inputs( event, sample ):
     for mva_variable, func in config.mva_variables:
+        setattr( event, mva_variable, func(event, sample) )
+    for mva_variable, func in config_topReco.mva_variables:
+        setattr( event, mva_variable, func(event, sample) )
+    for mva_variable, func in config_deltaEta.mva_variables:
         setattr( event, mva_variable, func(event, sample) )
 sequence.append( make_mva_inputs )
 
@@ -509,16 +522,21 @@ from keras.models import load_model
 
 models = [
     ("tWZ_3l", False, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz/tWZ_3l/multiclass_model.h5")),
+    ("tWZ_3l_topReco", False, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz_topReco/tWZ_3l_topReco/multiclass_model.h5")),
+    ("tWZ_3l_deltaEta", False, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz_deltaEta/tWZ_3l_deltaEta/multiclass_model.h5")),
 ]
 
 def keras_predict( event, sample ):
     # get model inputs assuming lstm
-    flat_variables, lstm_jets = config.predict_inputs( event, sample, jet_lstm = True)
     for name, has_lstm, model in models:
-        #print has_lstm, flat_variables, lstm_jets
+        if name == "tWZ_3l": cfg = config
+        elif name == "tWZ_3l_topReco": cfg = config_topReco
+        elif name == "tWZ_3l_deltaEta": cfg = config_deltaEta
+        flat_variables, lstm_jets = cfg.predict_inputs( event, sample, jet_lstm = True)
+        # print name, has_lstm, flat_variables, lstm_jets
         prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets] )
         for i_val, val in enumerate( prediction[0] ):
-            setattr( event, name+'_'+config.training_samples[i_val].name, val)
+            setattr( event, name+'_'+cfg.training_samples[i_val].name, val)
 sequence.append( keras_predict )
 
 ################################################################################
@@ -1061,12 +1079,22 @@ for i_mode, mode in enumerate(allModes):
     # MVA plot
     for name, has_lstm, model in models:
         #print has_lstm, flat_variables, lstm_jets
-        for i_tr_s, tr_s in enumerate( config.training_samples ):
-            disc_name = name+'_'+config.training_samples[i_tr_s].name
+        if name == "tWZ_3l": cfg = config
+        elif name == "tWZ_3l_topReco": cfg = config_topReco
+        elif name == "tWZ_3l_deltaEta": cfg = config_deltaEta
+        for i_tr_s, tr_s in enumerate( cfg.training_samples ):
+            disc_name = name+'_'+cfg.training_samples[i_tr_s].name
             plots.append(Plot(
                 texX = disc_name, texY = 'Number of Events',
-                name = disc_name, attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
+                name = "MVA_"+disc_name,
+                attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
                 binning=[50, 0, 1],
+            ))
+            plots.append(Plot(
+                texX = disc_name, texY = 'Number of Events',
+                name = "MVA_"+disc_name+"_ZOOM",
+                attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
+                binning=[10, 0, 1],
             ))
 
 
@@ -1103,16 +1131,7 @@ for i_mode, mode in enumerate(allModes):
 
     allPlots[mode] = plots
 
-    # This is how you would wirte a root file
-    # outfile = ROOT.TFile('test.root', 'recreate')
-    # outfile.cd()
-    # for plot in plots:
-    #     print "--------------------"
-    #     print plot.name
-    #     for i, l in enumerate(plot.histos):
-    #         for j, h in enumerate(l):
-    #             h.Write()
-    # outfile.Close()
+
 ################################################################################
 # Add the different channels into SF and all
 for mode in ["comb1","comb2","all"]:
@@ -1135,6 +1154,41 @@ for mode in ["comb1","comb2","all"]:
                     if i==k:
                         j.Add(l)
 
-    if mode == "all": drawPlots(allPlots['mumumu'], mode, dataMCScale)
+    if mode == "all":
+        drawPlots(allPlots['mumumu'], mode, dataMCScale)
+        # Write MVA score in root file
+        outfile = ROOT.TFile('MVA_score_'+args.era+'.root', 'recreate')
+        outfile.cd()
+        for plot in plots:
+            if "MVA_tWZ" in plot.name:
+                model = "MVA_tWZ_3l"
+                if "topReco" in plot.name: model = "MVA_tWZ_3l_topReco"
+                elif "deltaEta" in plot.name: model = "MVA_tWZ_3l_deltaEta"
+
+                for i, l in enumerate(plot.histos):
+                    for j, h in enumerate(l):
+                        histname = h.GetName()
+                        cropped_name = ""
+                        if model+"_TWZ_NLO_DR" in histname:
+                            node_name = "TWZnode"
+                            cropped_name = histname.replace(model+"_TWZ_NLO_DR", "")
+                        elif model+"_TTZ" in histname:
+                            cropped_name = histname.replace(model+"_TTZ", "")
+                            node_name = "TTZnode"
+                        else:
+                            print "[ERROR] cannot identify node of MVA plot"
+                            continue
+                        if "TWZ_NLO_DR" in cropped_name: process = "tWZ"
+                        elif "TTZ" in cropped_name: process = "ttZ"
+                        elif "TTX_rare" in cropped_name: process = "ttX"
+                        elif "TZQ" in cropped_name: process = "tZq"
+                        elif "WZ" in cropped_name: process = "WZ"
+                        elif "ZZ" in cropped_name: process = "ZZ"
+                        elif "triBoson" in cropped_name: process = "triBoson"
+                        elif "nonprompt" in cropped_name: process = "nonprompt"
+                        elif "data" in cropped_name: process = "data"
+                        h.Write(model+"__"+process+"__"+node_name)
+        outfile.Close()
+
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )

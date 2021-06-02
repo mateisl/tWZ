@@ -336,6 +336,13 @@ all_mva_variables = {
      "mva_nJetGood"              :(lambda event, sample: event.nJetGood),
      "mva_nBTag"                 :(lambda event, sample: event.nBTag),
 
+# top reconstruction
+     "mva_mtop1"                 :(lambda event, sample: event.MTop1),
+     "mva_mtop2"                 :(lambda event, sample: event.MTop1),
+     "mva_mWhad"                 :(lambda event, sample: event.WhadMass),
+     "mva_dR_top_Z"              :(lambda event, sample: event.DRTopZ),
+     "mva_chi2"                  :(lambda event, sample: event.chi2),
+
 # jet kinmatics
      "mva_jet0_pt"               :(lambda event, sample: event.JetGood_pt[0]          if event.nJetGood >=1 else 0),
      "mva_jet0_eta"              :(lambda event, sample: event.JetGood_eta[0]         if event.nJetGood >=1 else -10),
@@ -383,6 +390,8 @@ all_mva_variables = {
      "mva_l2_mvaTOPWP"           :(lambda event, sample: event.l2_mvaTOPWP),
      "mva_l3_mvaTOPWP"           :(lambda event, sample: event.l3_mvaTOPWP),
 
+# Delta eta
+     "mva_deltamaxeta"           :(lambda event, sample: event.deltamaxeta),
 
 }
 

@@ -45,12 +45,12 @@ ROOT.setTDRStyle()
 dirname = "/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/analysis/"
 roc = {}
 auc = {}
-filename = "MVA_score_Run2016.root"
-models = ["MVA_tWZ_3l", "MVA_tWZ_3l_deltaEta", "MVA_tWZ_3l_topReco"]
+filename = "MVA_score_Run2017.root"
+models = ["MVA_tWZ_3l", "MVA_tWZ_3l_topReco", "MVA_tWZ_3l_lstm"]
 legends = {
     "MVA_tWZ_3l":           "MVA 3l",
-    "MVA_tWZ_3l_deltaEta":  "MVA 3l + #Delta#eta",
     "MVA_tWZ_3l_topReco":   "MVA 3l + #Delta#eta + top reco",
+    "MVA_tWZ_3l_lstm":      "MVA 3l + LSTM",
 }
 
 for model in models:

@@ -472,6 +472,8 @@ def getTTbar( event, sample):
         event.MTop1 = top2.M()
         event.MTop2 = top1.M()
 
+    event.MTop_average = (top1.M()+top2.M())/2
+
 sequence.append( getTTbar )
 
 ################################################################################
@@ -501,10 +503,10 @@ read_variables_MC = [
 import tWZ.MVA.configs as configs
 config = configs.tWZ_3l
 config_topReco = configs.tWZ_3l_topReco
-config_deltaEta = configs.tWZ_3l_deltaEta
+config_lstm = configs.tWZ_3l
 read_variables += config.read_variables
 read_variables += config_topReco.read_variables
-read_variables += config_deltaEta.read_variables
+read_variables += config_lstm.read_variables
 
 
 # Add sequence that computes the MVA inputs
@@ -513,7 +515,7 @@ def make_mva_inputs( event, sample ):
         setattr( event, mva_variable, func(event, sample) )
     for mva_variable, func in config_topReco.mva_variables:
         setattr( event, mva_variable, func(event, sample) )
-    for mva_variable, func in config_deltaEta.mva_variables:
+    for mva_variable, func in config_lstm.mva_variables:
         setattr( event, mva_variable, func(event, sample) )
 sequence.append( make_mva_inputs )
 
@@ -523,7 +525,7 @@ from keras.models import load_model
 models = [
     ("tWZ_3l", False, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz/tWZ_3l/multiclass_model.h5")),
     ("tWZ_3l_topReco", False, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz_topReco/tWZ_3l_topReco/multiclass_model.h5")),
-    ("tWZ_3l_deltaEta", False, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz_deltaEta/tWZ_3l_deltaEta/multiclass_model.h5")),
+    ("tWZ_3l_lstm", True, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz_LSTM_LSTM/tWZ_3l/multiclass_model.h5")),
 ]
 
 def keras_predict( event, sample ):
@@ -531,7 +533,7 @@ def keras_predict( event, sample ):
     for name, has_lstm, model in models:
         if name == "tWZ_3l": cfg = config
         elif name == "tWZ_3l_topReco": cfg = config_topReco
-        elif name == "tWZ_3l_deltaEta": cfg = config_deltaEta
+        elif name == "tWZ_3l_lstm": cfg = config_lstm
         flat_variables, lstm_jets = cfg.predict_inputs( event, sample, jet_lstm = True)
         # print name, has_lstm, flat_variables, lstm_jets
         prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets] )
@@ -996,6 +998,13 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
+      texX = '(m_{top1}+m_{top2})/2 (GeV)', texY = 'Number of Events / 20 GeV',
+      name = 'MTop_average',
+      attribute = lambda event, sample: event.MTop_average,
+      binning=[500/20,0,500],
+    ))
+
+    plots.append(Plot(
       texX = 'p_{T}(top) (GeV)', texY = 'Number of Events / 30 GeV',
       name = 'Top_pt',
       attribute = lambda event, sample: event.TopPt,
@@ -1081,7 +1090,7 @@ for i_mode, mode in enumerate(allModes):
         #print has_lstm, flat_variables, lstm_jets
         if name == "tWZ_3l": cfg = config
         elif name == "tWZ_3l_topReco": cfg = config_topReco
-        elif name == "tWZ_3l_deltaEta": cfg = config_deltaEta
+        elif name == "tWZ_3l_lstm": cfg = config_lstm
         for i_tr_s, tr_s in enumerate( cfg.training_samples ):
             disc_name = name+'_'+cfg.training_samples[i_tr_s].name
             plots.append(Plot(
@@ -1163,7 +1172,7 @@ for mode in ["comb1","comb2","all"]:
             if "MVA_tWZ" in plot.name:
                 model = "MVA_tWZ_3l"
                 if "topReco" in plot.name: model = "MVA_tWZ_3l_topReco"
-                elif "deltaEta" in plot.name: model = "MVA_tWZ_3l_deltaEta"
+                elif "lstm" in plot.name: model = "MVA_tWZ_3l_lstm"
 
                 for i, l in enumerate(plot.histos):
                     for j, h in enumerate(l):

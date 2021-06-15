@@ -38,9 +38,9 @@ argParser.add_argument('--noData',         action='store_true', default=False, h
 argParser.add_argument('--small',                             action='store_true', help='Run only on a small subset of the data?', )
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
-argParser.add_argument('--plot_directory', action='store', default='tWZ_v3')
+argParser.add_argument('--plot_directory', action='store', default='ttZ-flavor')
 argParser.add_argument('--era',            action='store', type=str, default="Run2016")
-argParser.add_argument('--selection',      action='store', default='trilepT-minDLmass12-onZ1-njet4p-btag1')
+argParser.add_argument('--selection',      action='store', default='trilepT-minDLmass12-onZ1-njet3p-btag1p')
 args = argParser.parse_args()
 
 # Logger
@@ -64,7 +64,19 @@ elif args.era == "Run2017":
 elif args.era == "Run2018":
     mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
-    mc = [TWZ_NLO_DR, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
+
+    TTZ_ISR = copy.deepcopy( TTZ )
+    TTZ_ISR.setSelectionString( "Sum$(GenPart_pdgId==23&&GenPart_genPartIdxMother>=0&&GenPart_pdgId[GenPart_genPartIdxMother]!=23&&abs(GenPart_pdgId[GenPart_genPartIdxMother]>=1)&&abs(GenPart_pdgId[GenPart_genPartIdxMother]<=5))>0" )
+    TTZ_ISR.name    = "TTZ_ISR"
+    TTZ_ISR.texName = "ttZ (ISR)"
+    TTZ_ISR.color   += 1
+
+    TTZ_nonISR = copy.deepcopy( TTZ )
+    TTZ_nonISR.setSelectionString( "Sum$(GenPart_pdgId==23&&GenPart_genPartIdxMother>=0&&GenPart_pdgId[GenPart_genPartIdxMother]!=23&&abs(GenPart_pdgId[GenPart_genPartIdxMother]>=1)&&abs(GenPart_pdgId[GenPart_genPartIdxMother]<=5))==0" )
+    TTZ_nonISR.name     = "TTZ_nonISR"
+    TTZ_nonISR.texName  = "ttZ (nonISR)"
+
+    mc = [TTZ_ISR, TTZ_nonISR, WZ, TZQ, TTX_rare, triBoson, ZZ]
 
 # data sample
 try:
@@ -117,7 +129,7 @@ def drawPlots(plots, mode, dataMCScale):
           plotting.draw(plot,
             plot_directory = plot_directory_,
             ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
-            logX = False, logY = log, sorting = True,
+            logX = False, logY = log, sorting = False,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
             scaling = {0:1} if args.dataMCScaling else {},
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
@@ -171,12 +183,13 @@ read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F',
 #MVA
 import TMB.MVA.configs as configs
 config = configs.ttZ_3l_flavor
-read_variables = config.read_variables
+read_variables += config.read_variables
 
 # Add sequence that computes the MVA inputs
 def make_mva_inputs( event, sample ):
     for mva_variable, func in config.mva_variables:
         setattr( event, mva_variable, func(event, sample) )
+sequence.extend( config.sequence )
 sequence.append( make_mva_inputs )
 
 # load models
@@ -189,6 +202,7 @@ from keras.models import load_model
 #else:
 models = [
     ("ttZ_3l_flavor", False,  load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ttZ_3l_flavor/ttZ_3l_flavor/multiclass_model.h5")),
+    ("ttZ_3l_flavor_LSTM", True,  load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ttZ_3l_flavor_LSTM/ttZ_3l_flavor/multiclass_model.h5")),
 ]
 
 def keras_predict( event, sample ):
@@ -271,7 +285,6 @@ for i_mode, mode in enumerate(allModes):
     yields[mode] = {}
     if not args.noData:
         data_sample.texName = "data"
-        data_sample.setSelectionString([getLeptonSelection(mode)])
         data_sample.name           = "data"
         data_sample.style          = styles.errorStyle(ROOT.kBlack)
         lumi_scale                 = data_sample.lumi/1000
@@ -282,7 +295,6 @@ for i_mode, mode in enumerate(allModes):
     
     for sample in mc:
       sample.read_variables = read_variables_MC 
-      sample.setSelectionString([getLeptonSelection(mode)])
       sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
 
     #yt_TWZ_filter.scale = lumi_scale * 1.07314
@@ -293,7 +305,7 @@ for i_mode, mode in enumerate(allModes):
       stack = Stack(mc)
 
     # Use some defaults
-    Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString = cutInterpreter.cutString(args.selection))
+    Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString = "("+cutInterpreter.cutString(args.selection)+")&&("+getLeptonSelection(mode)+")")
 
     plots = []
 
@@ -311,6 +323,13 @@ for i_mode, mode in enumerate(allModes):
                 texX = disc_name, texY = 'Number of Events',
                 name = disc_name, attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
                 binning=[50, 0, 1],
+            ))
+        for i_tr_s, tr_s in enumerate( config.training_samples ):
+            disc_name = name+'_'+config.training_samples[i_tr_s].name
+            plots.append(Plot(
+                texX = disc_name, texY = 'Number of Events',
+                name = 'coarse_'+disc_name, attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
+                binning=[10, 0, 1],
             ))
 
     #for mva in mvas:

@@ -42,15 +42,14 @@ def getAUC( graph ):
 ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/tWZ/Tools/scripts/tdrstyle.C")
 ROOT.setTDRStyle()
 
-dirname = "/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/analysis/"
+dirname = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/tWZ_v1_noData/Run2016/"
 roc = {}
 auc = {}
-filename = "MVA_score_Run2017.root"
-models = ["MVA_tWZ_3l", "MVA_tWZ_3l_topReco", "MVA_tWZ_3l_lstm"]
+filename = "MVA_score.root"
+models = ["MVA_tWZ_3l", "MVA_tWZ_3l_topReco"]
 legends = {
     "MVA_tWZ_3l":           "MVA 3l",
-    "MVA_tWZ_3l_topReco":   "MVA 3l + #Delta#eta + top reco",
-    "MVA_tWZ_3l_lstm":      "MVA 3l + LSTM",
+    "MVA_tWZ_3l_topReco":   "MVA 3l + top reco",
 }
 
 for model in models:

@@ -66,13 +66,13 @@ elif args.era == "Run2018":
 elif args.era == "RunII":
 
     TTZ_ISR = copy.deepcopy( TTZ )
-    TTZ_ISR.setSelectionString( "Sum$(GenPart_pdgId==23&&GenPart_genPartIdxMother>=0&&GenPart_pdgId[GenPart_genPartIdxMother]!=23&&abs(GenPart_pdgId[GenPart_genPartIdxMother]>=1)&&abs(GenPart_pdgId[GenPart_genPartIdxMother]<=5))>0" )
+    TTZ_ISR.setSelectionString( "Sum$(GenPart_pdgId==23&&GenPart_genPartIdxMother>=0&&GenPart_pdgId[GenPart_genPartIdxMother]!=23&&abs(GenPart_pdgId[GenPart_genPartIdxMother])>=1&&abs(GenPart_pdgId[GenPart_genPartIdxMother])<=5)>0" )
     TTZ_ISR.name    = "TTZ_ISR"
     TTZ_ISR.texName = "ttZ (ISR)"
     TTZ_ISR.color   += 1
 
     TTZ_nonISR = copy.deepcopy( TTZ )
-    TTZ_nonISR.setSelectionString( "Sum$(GenPart_pdgId==23&&GenPart_genPartIdxMother>=0&&GenPart_pdgId[GenPart_genPartIdxMother]!=23&&abs(GenPart_pdgId[GenPart_genPartIdxMother]>=1)&&abs(GenPart_pdgId[GenPart_genPartIdxMother]<=5))==0" )
+    TTZ_nonISR.setSelectionString( "Sum$(GenPart_pdgId==23&&GenPart_genPartIdxMother>=0&&GenPart_pdgId[GenPart_genPartIdxMother]!=23&&abs(GenPart_pdgId[GenPart_genPartIdxMother])>=1&&abs(GenPart_pdgId[GenPart_genPartIdxMother])<=5)==0" )
     TTZ_nonISR.name     = "TTZ_nonISR"
     TTZ_nonISR.texName  = "ttZ (nonISR)"
 
@@ -134,7 +134,7 @@ def drawPlots(plots, mode, dataMCScale):
             scaling = {0:1} if args.dataMCScaling else {},
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
-            copyIndexPHP = True, extensions = ["png"],
+            copyIndexPHP = True, extensions = ["png", "root"],
           )
             
 # Read variables and sequences
@@ -451,6 +451,14 @@ for i_mode, mode in enumerate(allModes):
         texX = '#phi(E_{T}^{miss})', texY = 'Number of Events / 20 GeV',
         attribute = TreeVariable.fromString( "met_phi/F" ),
         binning=[10,-pi,pi],
+    ))
+
+    plots.append(Plot(
+        name = "Z1_eta",
+        texX = '#eta(Z_{1})', texY = 'Number of Events / 20 GeV',
+        attribute = TreeVariable.fromString( "Z1_eta/F" ),
+        binning=[20,-3,3],
+        addOverFlowBin='upper',
     ))
 
     plots.append(Plot(

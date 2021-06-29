@@ -32,7 +32,7 @@ special_cuts = {
   }
 
 continous_variables = [ ('ht','Sum$(JetGood_pt*(JetGood_pt>30&&abs(JetGood_eta)<2.4))'), ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1mass", "Z1_mass"), ("minDLmass", "minDLmass"), ("mT", "mT")]
-discrete_variables  = [ ("njet", "nJetGood"), ("btag", "nBTag")]
+discrete_variables  = [ ("njet", "nJetGood"), ("btag", "nBTag"), ("deepjet", "Sum$(JetGood_pt>30&&abs(JetGood_eta)<2.4&&((year==2016)*(JetGood_btagDeepFlavB>0.7221)+(year==2017)*(JetGood_btagDeepFlavB>0.7489)+(year==2018)*(JetGood_btagDeepFlavB>0.7264)))") ]
 
 class cutInterpreter:
     ''' Translate var100to200-var2p etc.
@@ -109,7 +109,7 @@ class cutInterpreter:
         cutString = "&&".join( map( cutInterpreter.translate_cut_to_string, cuts ) )
 
         return cutString
-    
+
     @staticmethod
     def cutList ( cut, select = [""], ignore = []):
         ''' Cutstring syntax: cut1-cut2-cut3
@@ -119,7 +119,7 @@ class cutInterpreter:
         cuts = filter( lambda c: any( sel in c for sel in select ), cuts )
         # ignore
         cuts = filter( lambda c: not any( ign in c for ign in ignore ), cuts )
-        return [ cutInterpreter.translate_cut_to_string(cut) for cut in cuts ] 
+        return [ cutInterpreter.translate_cut_to_string(cut) for cut in cuts ]
         #return  "&&".join( map( cutInterpreter.translate_cut_to_string, cuts ) )
 
 if __name__ == "__main__":

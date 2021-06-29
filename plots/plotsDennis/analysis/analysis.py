@@ -45,7 +45,7 @@ argParser.add_argument('--small',                             action='store_true
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
 argParser.add_argument('--plot_directory', action='store', default='tWZ_v1')
 argParser.add_argument('--era',            action='store', type=str, default="Run2016")
-argParser.add_argument('--selection',      action='store', default='trilepT-minDLmass12-onZ1-njet4p-btag1')
+argParser.add_argument('--selection',      action='store', default='trilepT-minDLmass12-onZ1-njet4p-deepjet1')
 args = argParser.parse_args()
 
 ################################################################################
@@ -144,11 +144,24 @@ def getBJetindex( event ):
     maxscore = 0.0
     index = -1
     for i in range(event.nJetGood):
-        btagscore = event.JetGood_btagDeepB[i]
+        btagscore = event.JetGood_btagDeepFlavB[i]
         if btagscore > maxscore:
             maxscore = btagscore
             index = i
     return index
+
+def getDeepJetsWP(disc,year):
+    WP_L = {2016:0.0614, 2017:0.0521, 2018:0.0494}
+    WP_M = {2016:0.3093, 2017:0.3033, 2018:0.2770}
+    WP_T = {2016:0.7221, 2017:0.7489, 2018:0.7264}
+    wp = 0
+    if disc > WP_L[year]: wp = 1
+    if disc > WP_M[year]: wp = 2
+    if disc > WP_T[year]: wp = 3
+    return wp
+
+
+
 
 ## top reco functions ##############################################################
 def getWlep( event ):
@@ -196,12 +209,12 @@ def getWlep( event ):
     return Wleps
 
 def calculate_chi2(toplep, tophad, Whad, blep_disc, bhad_disc, mode):
-    Mtlep_mean   = 174.
-    Mtlep_sigma  =  18.
-    Mthad_mean   = 181.
-    Mthad_sigma  =  15.
-    MWhad_mean   =  80.399
-    MWhad_sigma  =  12.
+    Mtlep_mean   = 171.
+    Mtlep_sigma  =  16.
+    Mthad_mean   = 171.
+    Mthad_sigma  =  17.
+    MWhad_mean   =  83.
+    MWhad_sigma  =  11.
     Mtdiff_sigma = sqrt(pow(Mtlep_sigma,2)+pow(Mthad_sigma,2))
     b_disc_mean  = 1.0
     b_disc_sigma = 0.4
@@ -223,7 +236,7 @@ def getTopHypos(event, Njetsmax):
     # Set maximum number of jets
     if event.nJetGood < Njetsmax:
         Njetsmax = event.nJetGood
-
+    if Njetsmax < 4: return[]
     # Find all possible solutions for the 4 missing jets
     # (blep,bhad,Wdecay1, Wdecay2)
     jet_permutations = []
@@ -249,7 +262,7 @@ def getTopHypos(event, Njetsmax):
                     jet_j.SetPtEtaPhiM(event.Jet_pt[jetidx_j], event.Jet_eta[jetidx_j], event.Jet_phi[jetidx_j], event.Jet_mass[jetidx_j])
                     jet_k.SetPtEtaPhiM(event.Jet_pt[jetidx_k], event.Jet_eta[jetidx_k], event.Jet_phi[jetidx_k], event.Jet_mass[jetidx_k])
                     jet_l.SetPtEtaPhiM(event.Jet_pt[jetidx_l], event.Jet_eta[jetidx_l], event.Jet_phi[jetidx_l], event.Jet_mass[jetidx_l])
-                    jet_permutations.append([[jet_i, jet_j, jet_k, jet_l], [event.JetGood_btagDeepB[i],event.JetGood_btagDeepB[j]]])
+                    jet_permutations.append([[jet_i, jet_j, jet_k, jet_l], [event.JetGood_btagDeepFlavB[i],event.JetGood_btagDeepFlavB[j]]])
 
     # Get Wlep from lepton + MET
     Wleps   = getWlep(event)
@@ -270,9 +283,7 @@ def getTopHypos(event, Njetsmax):
             hypo['bhad_disc']    = btag_disc[1]
             hypo['WhadDecay1']   = permutation[2]
             hypo['WhadDecay2']   = permutation[3]
-            hypo['chi2']         = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['bhad_disc'],hypo['blep_disc'],"normal")
-            hypo['chi2_topdiff'] = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['bhad_disc'],hypo['blep_disc'],"topdiff")
-            hypo['chi2_btag']    = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['bhad_disc'],hypo['blep_disc'],"btag")
+            hypo['chi2']         = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['blep_disc'],hypo['bhad_disc'],"normal")
             hypotheses.append(hypo)
     return hypotheses
 
@@ -398,7 +409,6 @@ def TopReco(event, sample):
     chistring = 'chi2'
     hypotheses=getTopHypos(event, 6)
     chi2min = 10000
-    hypo_selected = hypotheses[0]
     foundhypo = False
     for hypo in hypotheses:
         if hypo[chistring]<chi2min:
@@ -438,6 +448,23 @@ def TopReco(event, sample):
     event.dR_tophad_Z = hypo_selected['tophad'].DeltaR(Z) if foundhypo else -1
 sequence.append(TopReco)
 
+def getDeepJetTags(event, sample):
+    nDeepJetLoose = 0
+    nDeepJetMedium = 0
+    nDeepJetTight = 0
+    for i in range(event.nJetGood):
+        idx_jet = event.JetGood_index[i]
+        disc = event.Jet_btagDeepFlavB[idx_jet]
+        wp = getDeepJetsWP(disc,event.year)
+        if wp>=1: nDeepJetLoose+=1
+        if wp>=2: nDeepJetMedium+=1
+        if wp>=3: nDeepJetTight+=1
+    event.nLoose  = nDeepJetLoose
+    event.nMedium = nDeepJetMedium
+    event.nTight  = nDeepJetTight
+
+sequence.append(getDeepJetTags)
+
 ################################################################################
 # Read variables
 
@@ -446,7 +473,7 @@ read_variables = [
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l1_mvaTOP/F", "l1_mvaTOPWP/I", "l1_index/I",
     "l2_pt/F", "l2_eta/F" , "l2_phi/F", "l2_mvaTOP/F", "l2_mvaTOPWP/I", "l2_index/I",
     "l3_pt/F", "l3_eta/F" , "l3_phi/F", "l3_mvaTOP/F", "l3_mvaTOPWP/I", "l3_index/I",
-    "JetGood[pt/F,eta/F,phi/F,area/F,btagDeepB/F,index/I]",
+    "JetGood[pt/F,eta/F,phi/F,area/F,btagDeepB/F,btagDeepFlavB/F,index/I]",
     "Jet[pt/F,eta/F,phi/F,mass/F]",
     "lep[pt/F,eta/F,phi/F,pdgId/I,muIndex/I,eleIndex/I]",
     "Z1_l1_index/I", "Z1_l2_index/I", "nonZ1_l1_index/I", "nonZ1_l2_index/I",
@@ -482,8 +509,7 @@ from keras.models import load_model
 
 models = [
     ("tWZ_3l", False, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz/tWZ_3l/multiclass_model.h5")),
-    # ("tWZ_3l_topReco", False, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz_topReco/tWZ_3l_topReco/multiclass_model.h5")),
-    ("tWZ_3l_topReco", False, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz_topReco_mtop/tWZ_3l_topReco/multiclass_model.h5")),
+    ("tWZ_3l_topReco", False, load_model("/mnt/hephy/cms/dennis.schwarz/tWZ/models/tWZ_3l_ttz_topReco/tWZ_3l_topReco/multiclass_model.h5")),
 ]
 
 def keras_predict( event, sample ):
@@ -911,6 +937,27 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
+        name = 'Nbtag_DeepJet_L',
+        texX = 'Number of b-tagged jets (loose)', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nLoose,
+        binning=[11,-0.5, 10.5],
+    ))
+
+    plots.append(Plot(
+        name = 'Nbtag_DeepJet_M',
+        texX = 'Number of b-tagged jets (medium)', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nMedium,
+        binning=[11,-0.5, 10.5],
+    ))
+
+    plots.append(Plot(
+        name = 'Nbtag_DeepJet_T',
+        texX = 'Number of b-tagged jets (tight)', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nTight,
+        binning=[11,-0.5, 10.5],
+    ))
+
+    plots.append(Plot(
       texX = 'p_{T}(leading jet) (GeV)', texY = 'Number of Events / 30 GeV',
       name = 'jet0_pt', attribute = lambda event, sample: event.JetGood_pt[0],
       binning=[600/30,0,600],
@@ -1153,7 +1200,7 @@ for mode in ["comb1","comb2","all"]:
     if mode == "all":
         drawPlots(allPlots['mumumu'], mode, dataMCScale)
         # Write MVA score in root file
-        plot_dir = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era)
+        plot_dir = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, mode, args.selection)
         outfile = ROOT.TFile(plot_dir+'/MVA_score.root', 'recreate')
         outfile.cd()
         for plot in plots:

@@ -42,7 +42,7 @@ def getAUC( graph ):
 ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/tWZ/Tools/scripts/tdrstyle.C")
 ROOT.setTDRStyle()
 
-dirname = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/tWZ_v1_noData/Run2016/"
+dirname = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/tWZ_v3_noData/RunII/all/trilepT-minDLmass12-onZ1-njet4p-deepjet1/"
 roc = {}
 auc = {}
 filename = "MVA_score.root"

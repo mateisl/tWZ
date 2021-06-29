@@ -59,16 +59,16 @@ from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
 lumi_scale = 137.4
 
 if args.era == "Run2016":
-    mc = [Summer16.TWZ_NLO_DR]
+    mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ]
     lumi_scale = 35.9
 elif args.era == "Run2017":
-    mc = [Fall17.TWZ_NLO_DR]
+    mc = [Fall17.TWZ_NLO_DR, Fall17.TTZ]
     lumi_scale = 41.5
 elif args.era == "Run2018":
-    mc = [Autumn18.TWZ_NLO_DR]
+    mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ]
     lumi_scale = 60.0
 elif args.era == "RunII":
-    mc = [TWZ_NLO_DR]
+    mc = [TWZ_NLO_DR, TTZ]
 for sample in mc:
     sample.scale           = 1 # Scale MCs individually with lumi
 
@@ -350,6 +350,19 @@ def getOrientations(event, sample):
         event.mZ = Z.M()
 sequence.append(getOrientations)
 
+def genJetFlavor(event, sample):
+    nbjet = 0
+    nlightjet = 0
+    for i in range(event.nGenJet):
+        if abs(event.GenJet_partonFlavour[i]) == 5:
+            nbjet += 1
+        elif abs(event.GenJet_partonFlavour[i]) in [1,2,3,4]:
+            nlightjet += 1
+    event.nbjet = nbjet
+    event.nlightjet = nlightjet
+
+sequence.append(genJetFlavor)
+
 ################################################################################
 # Read variables
 
@@ -361,6 +374,7 @@ read_variables = [
 read_variables_MC = [
     'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F',
     "genZ1_pt/F", "genZ1_eta/F", "genZ1_phi/F",
+    "nGenJet/I",
     "GenJet[pt/F,eta/F,phi/F,partonFlavour/I,hadronFlavour/I]",
     VectorTreeVariable.fromString( "GenPart[pt/F,mass/F,phi/F,eta/F,pdgId/I,genPartIdxMother/I,status/I,statusFlags/I]", nMax=1000),
     'nGenPart/I',
@@ -444,6 +458,27 @@ for i_mode, mode in enumerate(allModes):
         name = "N_Bquarks",
         texX = 'Number of generated b', texY = 'Number of Events',
         attribute = lambda event, sample: event.NBquarks,
+        binning=[11,-0.5,10.5],
+    ))
+
+    plots.append(Plot(
+        name = "N_GenJets",
+        texX = 'Number of GenJets', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nGenJet,
+        binning=[11,-0.5,10.5],
+    ))
+
+    plots.append(Plot(
+        name = "N_GenJets_b",
+        texX = 'Number of b GenJets', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nbjet,
+        binning=[11,-0.5,10.5],
+    ))
+
+    plots.append(Plot(
+        name = "N_GenJets_light",
+        texX = 'Number of light GenJets', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nlightjet,
         binning=[11,-0.5,10.5],
     ))
 

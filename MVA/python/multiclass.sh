@@ -9,4 +9,4 @@
 
 # python $CMSSW_BASE/src/Analysis/MVA/python/multiclass.py --name tWZ_3l_ttz_topReco --input_directory /scratch-cbe/users/$USER/tWZ/training-ntuples-tWZ-topReco-v1/MVA-training --config_module tWZ.MVA.configs --config tWZ_3l_topReco --output_directory /mnt/hephy/cms/dennis.schwarz/tWZ/
 
-python $CMSSW_BASE/src/Analysis/MVA/python/multiclass.py --name tWZ_3l_ttz_topReco_mtop --input_directory /scratch-cbe/users/$USER/tWZ/training-ntuples-tWZ-topReco-mtop-v1/MVA-training --config_module tWZ.MVA.configs --config tWZ_3l_topReco --output_directory /mnt/hephy/cms/dennis.schwarz/tWZ/
+python $CMSSW_BASE/src/Analysis/MVA/python/multiclass.py --name tWZ_3l_ttz_topReco --input_directory /scratch-cbe/users/$USER/tWZ/training-ntuples-tWZ-topReco-v1/MVA-training --config_module tWZ.MVA.configs --config tWZ_3l_topReco --output_directory /mnt/hephy/cms/dennis.schwarz/tWZ/

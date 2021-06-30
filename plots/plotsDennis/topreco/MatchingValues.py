@@ -12,10 +12,11 @@ ROOT.gStyle.SetOptStat(0)
 dirname = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/tWZ_topreco_v1_shape/Run2016/"
 filename = "MatchHists.root"
 processes = ["ttZ", "tWZ"]
-plots = ["m_top_matched", "m_W_matched"]
+plots = ["m_tophad_matched", "m_toplep_matched", "m_Whad_matched"]
 axislabels = {
-    "m_top_matched" : "m_{t} [GeV]",
-    "m_W_matched"   : "m_{W} [GeV]",
+    "m_tophad_matched" : "m_{t} [GeV]",
+    "m_toplep_matched" : "m_{t} [GeV]",
+    "m_Whad_matched"   : "m_{W} [GeV]",
 }
 
 file = ROOT.TFile.Open(dirname+filename)
@@ -23,11 +24,16 @@ file = ROOT.TFile.Open(dirname+filename)
 for process in processes:
     for plot in plots:
         hist = file.Get(plot+"__"+process)
-        range = [100,250] if 'm_top' in plot else [40,150]
+        range = [140,200] if 'm_top' in plot else [40,110]
         fit = ROOT.TF1("fit","gaus",range[0], range[1])
         hist.Fit('fit','QR')
         mean = fit.GetParameter(1)
         sigma = fit.GetParameter(2)
+
+        print '---------------------------'
+        print '  --',plot,'(%s)' %(process)
+        print '      mu = %.2f' %(mean)
+        print '      sigma = %.2f' %(sigma)
 
         c1 = ROOT.TCanvas("c", "c", 600, 600)
         ROOT.gPad.SetTickx(1)

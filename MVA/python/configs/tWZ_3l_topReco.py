@@ -43,7 +43,7 @@ read_variables = [\
     "nonZ1_l1_index/I",
     "Jet[%s]"%(",".join(jetVars)),
     "nJet/I",
-    "JetGood[pt/F,eta/F,phi/F,btagDeepB/F,index/I]",
+    "JetGood[pt/F,eta/F,phi/F,btagDeepB/F,index/I,btagDeepFlavB/F]",
     "nlep/I",
     "Z1_lldPhi/F",
     "Z1_lldR/F",
@@ -60,7 +60,7 @@ def getBJetindex( event ):
     maxscore = 0.0
     index = -1
     for i in range(event.nJetGood):
-        btagscore = event.JetGood_btagDeepB[i]
+        btagscore = event.JetGood_btagDeepFlavB[i]
         if btagscore > maxscore:
             maxscore = btagscore
             index = i
@@ -112,12 +112,12 @@ def getWlep( event ):
     return Wleps
 
 def calculate_chi2(toplep, tophad, Whad, blep_disc, bhad_disc, mode):
-    Mtlep_mean   = 174.
-    Mtlep_sigma  =  18.
-    Mthad_mean   = 181.
-    Mthad_sigma  =  15.
-    MWhad_mean   =  80.399
-    MWhad_sigma  =  12.
+    Mtlep_mean   = 171.
+    Mtlep_sigma  =  16.
+    Mthad_mean   = 171.
+    Mthad_sigma  =  17.
+    MWhad_mean   =  83.
+    MWhad_sigma  =  11.
     Mtdiff_sigma = sqrt(pow(Mtlep_sigma,2)+pow(Mthad_sigma,2))
     b_disc_mean  = 1.0
     b_disc_sigma = 0.4
@@ -139,7 +139,7 @@ def getTopHypos(event, Njetsmax):
     # Set maximum number of jets
     if event.nJetGood < Njetsmax:
         Njetsmax = event.nJetGood
-
+    if Njetsmax < 4: return[]
     # Find all possible solutions for the 4 missing jets
     # (blep,bhad,Wdecay1, Wdecay2)
     jet_permutations = []
@@ -165,7 +165,7 @@ def getTopHypos(event, Njetsmax):
                     jet_j.SetPtEtaPhiM(event.Jet_pt[jetidx_j], event.Jet_eta[jetidx_j], event.Jet_phi[jetidx_j], event.Jet_mass[jetidx_j])
                     jet_k.SetPtEtaPhiM(event.Jet_pt[jetidx_k], event.Jet_eta[jetidx_k], event.Jet_phi[jetidx_k], event.Jet_mass[jetidx_k])
                     jet_l.SetPtEtaPhiM(event.Jet_pt[jetidx_l], event.Jet_eta[jetidx_l], event.Jet_phi[jetidx_l], event.Jet_mass[jetidx_l])
-                    jet_permutations.append([[jet_i, jet_j, jet_k, jet_l], [event.JetGood_btagDeepB[i],event.JetGood_btagDeepB[j]]])
+                    jet_permutations.append([[jet_i, jet_j, jet_k, jet_l], [event.JetGood_btagDeepFlavB[i],event.JetGood_btagDeepFlavB[j]]])
 
     # Get Wlep from lepton + MET
     Wleps   = getWlep(event)
@@ -186,17 +186,9 @@ def getTopHypos(event, Njetsmax):
             hypo['bhad_disc']    = btag_disc[1]
             hypo['WhadDecay1']   = permutation[2]
             hypo['WhadDecay2']   = permutation[3]
-            hypo['chi2']         = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['bhad_disc'],hypo['blep_disc'],"normal")
-            hypo['chi2_topdiff'] = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['bhad_disc'],hypo['blep_disc'],"topdiff")
-            hypo['chi2_btag']    = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['bhad_disc'],hypo['blep_disc'],"btag")
+            hypo['chi2']         = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['blep_disc'],hypo['bhad_disc'],"normal")
             hypotheses.append(hypo)
     return hypotheses
-
-
-
-
-
-
 
 ## Sequence ####################################################################
 sequence = []
@@ -213,7 +205,6 @@ sequence.append( getM3l )
 from tWZ.Tools.objectSelection import isBJet
 def make_jets( event, sample ):
     event.jets     = [getObjDict(event, 'JetGood_', jetVarNames, i) for i in range(int(event.nJetGood))]
-    event.bJets    = filter(lambda j:isBJet(j, year=event.year) and abs(j['eta'])<=2.4    , event.jets)
 sequence.append( make_jets )
 
 def getAngles(event, sample=None):
@@ -250,47 +241,14 @@ def forwardJets( event, sample=None ):
 sequence.append( forwardJets )
 
 
-def getDeltaMaxEta(event,sample):
-    jet1 = ROOT.TLorentzVector()
-    # First get jet with max eta
-    maxeta = 0
-    i_maxeta = -1
-    for i in range(event.nJet):
-        if abs(event.Jet_eta[i]) > maxeta and event.Jet_pt[i] > 30:
-            maxeta = abs(event.Jet_eta[i])
-            found_jet1 = True
-            i_maxeta = i
-    jet1.SetPtEtaPhiM(event.Jet_pt[i_maxeta], event.Jet_eta[i_maxeta], event.Jet_phi[i_maxeta], event.Jet_mass[i_maxeta])
-    # get second jet which is not the btag and gives max m_{ij}
-    i_bjet = getBJetindex(event)
-    maxdijetmass = 0
-    i_maxdijetmass = -1
-    for i in range(event.nJetGood):
-        if i==i_bjet: continue
-        jetindex = event.JetGood_index[i]
-        jetcandidate = ROOT.TLorentzVector()
-        jetcandidate.SetPtEtaPhiM(event.Jet_pt[jetindex], event.Jet_eta[jetindex], event.Jet_phi[jetindex], event.Jet_mass[jetindex])
-        dijet = jet1+jetcandidate
-        if dijet.M() > maxdijetmass:
-            maxdijetmass=dijet.M()
-            i_maxdijetmass=jetindex
-
-    if i_maxeta!=-1 and i_maxdijetmass!=-1:
-        event.deltamaxeta = abs(event.Jet_eta[i_maxdijetmass]-maxeta)
-    else:
-        event.deltamaxeta = float('nan')
-
-sequence.append( getDeltaMaxEta )
 ## Top Reco sequence ###########################################################
 def TopReco(event, sample):
-    chistring = 'chi2'
     hypotheses=getTopHypos(event, 6)
     chi2min = 10000
-    hypo_selected = hypotheses[0]
     foundhypo = False
     for hypo in hypotheses:
-        if hypo[chistring]<chi2min:
-            chi2min = hypo[chistring]
+        if hypo['chi2']<chi2min:
+            chi2min = hypo['chi2']
             hypo_selected = hypo
             foundhypo = True
 
@@ -319,9 +277,8 @@ def TopReco(event, sample):
     event.mW_had = hypo_selected['Whad'].M() if foundhypo else -1
     event.ptW_lep = hypo_selected['Wlep'].Pt() if foundhypo else -1
     event.ptW_had = hypo_selected['Whad'].Pt() if foundhypo else -1
-    event.chi2 = hypo_selected[chistring] if foundhypo else -1
+    event.chi2 = hypo_selected['chi2'] if foundhypo else -1
     event.pgof = exp(-0.5*hypo_selected['chi2']) if foundhypo else -1
-    event.hypofound = 1 if foundhypo else 0
     event.dR_toplep_Z = hypo_selected['toplep'].DeltaR(Z) if foundhypo else -1
     event.dR_tophad_Z = hypo_selected['tophad'].DeltaR(Z) if foundhypo else -1
 sequence.append(TopReco)
@@ -357,13 +314,13 @@ all_mva_variables = {
 # jet kinmatics
      "mva_jet0_pt"               :(lambda event, sample: event.JetGood_pt[0]          if event.nJetGood >=1 else 0),
      "mva_jet0_eta"              :(lambda event, sample: event.JetGood_eta[0]         if event.nJetGood >=1 else -10),
-     "mva_jet0_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[0] if (event.nJetGood >=1 and event.JetGood_btagDeepB[0]>-10) else -10),
+     "mva_jet0_btagDeepFlavB"    :(lambda event, sample: event.JetGood_btagDeepFlavB[0] if (event.nJetGood >=1 and event.JetGood_btagDeepFlavB[0]>-10) else -10),
      "mva_jet1_pt"               :(lambda event, sample: event.JetGood_pt[1]          if event.nJetGood >=2 else 0),
      "mva_jet1_eta"              :(lambda event, sample: event.JetGood_eta[1]         if event.nJetGood >=2 else -10),
-     "mva_jet1_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[1] if (event.nJetGood >=2 and event.JetGood_btagDeepB[1]>-10) else -10),
+     "mva_jet1_btagDeepFlavB"    :(lambda event, sample: event.JetGood_btagDeepFlavB[1] if (event.nJetGood >=2 and event.JetGood_btagDeepFlavB[1]>-10) else -10),
      "mva_jet2_pt"               :(lambda event, sample: event.JetGood_pt[2]          if event.nJetGood >=3 else 0),
      "mva_jet2_eta"              :(lambda event, sample: event.JetGood_eta[2]         if event.nJetGood >=3 else -10),
-     "mva_jet2_btagDeepB"        :(lambda event, sample: event.JetGood_btagDeepB[2]   if (event.nJetGood >=3 and event.JetGood_btagDeepB[1]>-10) else -10),
+     "mva_jet2_btagDeepFlavB"    :(lambda event, sample: event.JetGood_btagDeepFlavB[2]   if (event.nJetGood >=3 and event.JetGood_btagDeepFlavB[1]>-10) else -10),
 
 # Z1 kinematics
      "mva_Z1_pt"                 :(lambda event, sample: event.Z1_pt),
@@ -398,8 +355,6 @@ all_mva_variables = {
      "mva_l2_mvaTOPWP"           :(lambda event, sample: event.l2_mvaTOPWP),
      "mva_l3_mvaTOPWP"           :(lambda event, sample: event.l3_mvaTOPWP),
 
-# Delta eta
-     "mva_deltamaxeta"           :(lambda event, sample: event.deltamaxeta),
 
 }
 
@@ -448,4 +403,4 @@ assert len(training_samples)==len(set([s.name for s in training_samples])), "tra
 # training selection
 from tWZ.Tools.cutInterpreter import cutInterpreter
 # selectionString = cutInterpreter.cutString( 'trilepT-onZ1-btag1-njet3p' )
-selectionString = cutInterpreter.cutString( 'trilepT-minDLmass12-onZ1-njet4p-btag1' )
+selectionString = cutInterpreter.cutString( 'trilepT-minDLmass12-onZ1-njet2p-deepjet1' )

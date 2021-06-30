@@ -43,7 +43,7 @@ argParser.add_argument('--small',          action='store_true', help='Run only o
 argParser.add_argument('--shape',          action='store_true', help='Compare MC shapes?', )
 argParser.add_argument('--plot_directory', action='store', default='tWZ_topreco_v1')
 argParser.add_argument('--era',            action='store', type=str, default="Run2016")
-argParser.add_argument('--selection',      action='store', default='trilepT-minDLmass12-onZ1-njet4p-btag1')
+argParser.add_argument('--selection',      action='store', default='trilepT-minDLmass12-onZ1-njet4p-deepjet1')
 args = argParser.parse_args()
 
 ################################################################################
@@ -127,50 +127,6 @@ def drawPlots(plots, mode, compareShape):
           )
 
 
-def getGenWs(event):
-    indices = []
-    for i in range(event.nGenPart):
-        if abs(event.GenPart_pdgId[i]) == 24:
-            indices.append(i)
-
-    Whads = []
-    Wleps = []
-    quarkIDs = [1,2,3,4,5] #exclude top
-    leptonIDs = [11,12,13,14,15,16]
-    for i_mother in indices:
-        W = ROOT.TLorentzVector()
-        W.SetPtEtaPhiM(event.GenPart_pt[i_mother], event.GenPart_eta[i_mother], event.GenPart_phi[i_mother], event.GenPart_mass[i_mother])
-        for i in range(event.nGenPart):
-            if i_mother == event.GenPart_genPartIdxMother[i]:
-                if abs(event.GenPart_pdgId[i]) in quarkIDs:
-                    Whads.append(W)
-                    break # prevent double counting
-                elif abs(event.GenPart_pdgId[i]) in leptonIDs:
-                    Wleps.append(W)
-                    break # prevent double counting
-    return [Wleps, Whads]
-
-def matchBjets(event):
-    all_idxs = getTopDecays(event)
-    bjet_idxs = []
-    for idxs in all_idxs:
-        for idx in idxs:
-            if abs(event.GenPart_pdgId[idx])==5:
-                dRmin = 0.4
-                bjet_idx = -1
-                parton = ROOT.TLorentzVector()
-                parton.SetPtEtaPhiM(event.GenPart_pt[idx], event.GenPart_eta[idx], event.GenPart_phi[idx], event.GenPart_mass[idx])
-                for i in range(event.nJetGood):
-                    jetindex = event.JetGood_index[i]
-                    jet  = ROOT.TLorentzVector()
-                    jet.SetPtEtaPhiM(event.Jet_pt[jetindex], event.Jet_eta[jetindex], event.Jet_phi[jetindex], event.Jet_mass[jetindex])
-                    if jet.DeltaR(parton) < dRmin:
-                        dRmin = jet.DeltaR(parton)
-                        bjet_idx = i
-                if bjet_idx >= 0:
-                    bjet_idxs.append(bjet_idx)
-    return bjet_idxs
-
 def getBJetindex( event ):
     maxscore = 0.0
     index = -1
@@ -180,29 +136,6 @@ def getBJetindex( event ):
             maxscore = btagscore
             index = i
     return index
-
-
-def getWhad( event ):
-    min_dM = 1000.
-    mW = 80.4
-    Whad = ROOT.TLorentzVector()
-    for i in range(event.nJetGood):
-        jetindex1 = event.JetGood_index[i]
-        jet1  = ROOT.TLorentzVector()
-        jet1.SetPtEtaPhiM(event.Jet_pt[jetindex1], event.Jet_eta[jetindex1], event.Jet_phi[jetindex1], event.Jet_mass[jetindex1])
-        for j in range(event.nJetGood):
-            if j == i:
-                continue
-            jetindex2 = event.JetGood_index[j]
-            jet2  = ROOT.TLorentzVector()
-            jet2.SetPtEtaPhiM(event.Jet_pt[jetindex2], event.Jet_eta[jetindex2], event.Jet_phi[jetindex2], event.Jet_mass[jetindex2])
-
-            dijet = jet1+jet2
-            if abs(dijet.M()-mW) < min_dM:
-                min_dM = abs(dijet.M()-mW)
-                Whad = dijet
-
-    return Whad
 
 def getWlep( event ):
     Wlep = ROOT.TLorentzVector()
@@ -383,7 +316,7 @@ def getMatchingJets(event, parton_idxs):
     for i in parton_idxs:
         parton = ROOT.TLorentzVector()
         parton.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_mass[i])
-        min_dR = 0.4
+        min_dR = 0.2
         found_match = False
         selectedjet = ROOT.TLorentzVector()
         for j in range(event.nJetGood):
@@ -404,7 +337,6 @@ def getMatchingJets(event, parton_idxs):
 
 def isHadronicDecay(event, idxs):
     quarkIDs = [1,2,3,4,5]
-    leptonIDs = [11,12,13,14,15,16]
     isHadronic = True
     for i in idxs:
         if abs(event.GenPart_pdgId[i]) not in quarkIDs:
@@ -413,12 +345,12 @@ def isHadronicDecay(event, idxs):
 
 
 def calculate_chi2(toplep, tophad, Whad, blep_disc, bhad_disc, mode):
-    Mtlep_mean   = 174.
-    Mtlep_sigma  =  18.
-    Mthad_mean   = 181.
-    Mthad_sigma  =  15.
-    MWhad_mean   =  80.399
-    MWhad_sigma  =  12.
+    Mtlep_mean   = 171.
+    Mtlep_sigma  =  16.
+    Mthad_mean   = 171.
+    Mthad_sigma  =  17.
+    MWhad_mean   =  83.
+    MWhad_sigma  =  11.
     Mtdiff_sigma = sqrt(pow(Mtlep_sigma,2)+pow(Mthad_sigma,2))
     b_disc_mean  = 1.0
     b_disc_sigma = 0.4
@@ -487,161 +419,92 @@ def getTopHypos(event, Njetsmax):
             hypo['bhad_disc']    = btag_disc[1]
             hypo['WhadDecay1']   = permutation[2]
             hypo['WhadDecay2']   = permutation[3]
-            hypo['chi2']         = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['bhad_disc'],hypo['blep_disc'],"normal")
-            hypo['chi2_topdiff'] = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['bhad_disc'],hypo['blep_disc'],"topdiff")
-            hypo['chi2_btag']    = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['bhad_disc'],hypo['blep_disc'],"btag")
+            hypo['chi2']         = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['blep_disc'],hypo['bhad_disc'],"normal")
             hypotheses.append(hypo)
     return hypotheses
 
 def getMatchCategory(event, hypo):
+    leptonIDs = [11,13,15]
+    neutrinoIDs = [12,14,16]
+    matchdR = 0.4
     all_idxs = getTopDecays(event)
-    Whadrecos = [ hypo['WhadDecay1'], hypo['WhadDecay2'] ]
-    NWhaddecay_match = 0
-    MatchedLepton = False
-    MatchedBlep = False
-    MatchedBhad = False
-    Ntophad = 0
-    Ntoplep = 0
+    categories = []
     for topdecay_idxs in all_idxs:
+        # If decay is hadronic, check jets, each parton
         if isHadronicDecay(event, topdecay_idxs):
-            Ntophad += 1
-            for idx in topdecay_idxs:
-                if abs(event.GenPart_pdgId[idx])==5:
-                    bhad = ROOT.TLorentzVector()
-                    bhad.SetPtEtaPhiM(event.GenPart_pt[idx], event.GenPart_eta[idx], event.GenPart_phi[idx], event.GenPart_mass[idx])
-                    if bhad.DeltaR(hypo['bhad']) < 0.4:
-                        MatchedBhad = True
-                else:
+            hadmatch = 1
+            if len(topdecay_idxs) != 3: hadmatch = 4
+            elif not isMatchable(event,[topdecay_idxs]): hadmatch = 3
+            else:
+                for idx in topdecay_idxs:
                     parton = ROOT.TLorentzVector()
                     parton.SetPtEtaPhiM(event.GenPart_pt[idx], event.GenPart_eta[idx], event.GenPart_phi[idx], event.GenPart_mass[idx])
-                    for hadreco in Whadrecos:
-                        if parton.DeltaR(hadreco) < 0.4:
-                            NWhaddecay_match+=1
+                    if parton.DeltaR(hypo['bhad']) > matchdR and parton.DeltaR(hypo['WhadDecay1']) > matchdR and parton.DeltaR(hypo['WhadDecay2']) > matchdR:
+                        hadmatch=2
+            categories.append(hadmatch)
         else:
-            Ntoplep += 1
-            for idx in topdecay_idxs:
-                if abs(event.GenPart_pdgId[idx])==11 or abs(event.GenPart_pdgId[idx])==13:
-                    lepton = ROOT.TLorentzVector()
-                    lepton.SetPtEtaPhiM(event.GenPart_pt[idx], event.GenPart_eta[idx], event.GenPart_phi[idx], event.GenPart_mass[idx])
-                    if lepton.DeltaR(hypo['lepton']) < 0.4:
-                        MatchedLepton = True
-                elif abs(event.GenPart_pdgId[idx])==5:
-                    blep = ROOT.TLorentzVector()
-                    blep.SetPtEtaPhiM(event.GenPart_pt[idx], event.GenPart_eta[idx], event.GenPart_phi[idx], event.GenPart_mass[idx])
-                    if blep.DeltaR(hypo['blep']) < 0.4:
-                        MatchedBlep = True
+            lepmatch = 1
+            if len(topdecay_idxs) != 3: lepmatch = 4
+            elif not isMatchable(event,[topdecay_idxs]): lepmatch = 3
+            else:
+                for idx in topdecay_idxs:
+                    parton = ROOT.TLorentzVector()
+                    parton.SetPtEtaPhiM(event.GenPart_pt[idx], event.GenPart_eta[idx], event.GenPart_phi[idx], event.GenPart_mass[idx])
+                    if abs(event.GenPart_pdgId[idx]) == 5:
+                        if parton.DeltaR(hypo['blep']) > matchdR:
+                            lepmatch=2
+                    elif abs(event.GenPart_pdgId[idx]) in leptonIDs:
+                        if parton.DeltaR(hypo['lepton']) > matchdR:
+                            lepmatch=2
+                    # elif abs(event.GenPart_pdgId[idx]) in neutrinoIDs:
+                    #     if parton.DeltaR(hypo['neutrino']) > matchdR:
+                    #         lepmatch=2
+            categories.append(lepmatch+4)
 
-    category = -1
-    # First, all cases where semilep ttbar is matchable
-    if Ntoplep==1 and Ntophad==1:
-        if MatchedBlep and MatchedLepton and MatchedBhad and NWhaddecay_match==2:
-            category = 1
-        else:
-            category = 0
-    elif Ntoplep==0 and Ntophad==1:
-        if MatchedBhad and NWhaddecay_match==2:
-            category = 3
-        else:
-            category = 2
-    elif Ntoplep==1 and Ntophad==0:
-        if MatchedBlep and MatchedLepton:
-            category = 5
-        else:
-            category = 4
-    else:
-        category = 6
-    return category
+    return categories
+
+def getBGenJets(event):
+    genjets = []
+    for i in range(event.nGenJet):
+        if abs(event.GenJet_partonFlavour[i]) == 5:
+            genjet = ROOT.TLorentzVector()
+            genjet.SetPtEtaPhiM(event.GenJet_pt[i],event.GenJet_eta[i],event.GenJet_phi[i],event.GenJet_mass[i])
+            genjets.append(genjet)
+    return genjets
+
+def isMatchable(event,topdecay_idxs):
+    leptonIDs = [11,13,15]
+    neutrinoIDs = [12,14,16]
+    quarkIDs = [1,2,3,4,5]
+    matchdR = 0.4
+    foundlepton = True
+    foundjets = True
+    for topdecays in topdecay_idxs:
+        for idx in topdecays:
+            parton = ROOT.TLorentzVector()
+            parton.SetPtEtaPhiM(event.GenPart_pt[idx], event.GenPart_eta[idx], event.GenPart_phi[idx], event.GenPart_mass[idx])
+            if abs(event.GenPart_pdgId[idx]) in leptonIDs:
+                recolepton = ROOT.TLorentzVector()
+                recolepton.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
+                if parton.DeltaR(recolepton) > matchdR: foundlepton = False
+            elif abs(event.GenPart_pdgId[idx]) in quarkIDs:
+                foundjet = False
+                for i in range(event.nJetGood):
+                    jetidx = event.JetGood_index[i]
+                    recojet = ROOT.TLorentzVector()
+                    recojet.SetPtEtaPhiM(event.Jet_pt[jetidx], event.Jet_eta[jetidx], event.Jet_phi[jetidx], event.Jet_mass[jetidx])
+                    if parton.DeltaR(recojet) < 0.4: foundjet = True
+                if not foundjet: foundjets = False
+    ismatchable = (foundlepton and foundjets)
+    return ismatchable
+
+
+
+
 
 ################################################################################
 # Define sequences
 sequence       = []
-
-# def MatchWs(event, sample):
-#     Whads_gen = []
-#     Wleps_gen = []
-#     Wleps_gen, Whads_gen = getGenWs(event)
-#     event.NWlep = len(Wleps_gen)
-#     event.NWhad = len(Whads_gen)
-#
-#     Wlep_reco = getWlep(event)[0][0]
-#     Whad_reco = getWhad(event)
-#
-#     if len(Wleps_gen)!=1 or len(Whads_gen)!=1:
-#         return
-#
-#     event.dR_Wlep_gen_reco = Wlep_reco.DeltaR(Wleps_gen[0])
-#     event.dR_Whad_gen_reco = Whad_reco.DeltaR(Whads_gen[0])
-#
-#     event.mWlep = Wlep_reco.M()
-#     event.mWhad = Whad_reco.M()
-# sequence.append(MatchWs)
-
-# def MatchWlepDecay(event, sample):
-#     dR_lepton = -1
-#     dR_neutrino = -1
-#     lepton_reco = getWlep(event)[0][1]
-#     neutrino_reco = getWlep(event)[0][2]
-#     W_idxs = getGenWDecay_indices(event)
-#     Wlep_idxs = []
-#     for Wdecay1,Wdecay2 in W_idxs:
-#         if not isHadronicDecay(event, [Wdecay1,Wdecay2]):
-#             Wlep_idxs.append([Wdecay1,Wdecay2])
-#     event.NWlep_matching = len(Wlep_idxs)
-#     if len(Wlep_idxs) != 1:
-#         return
-#     else:
-#         lepton_gen = ROOT.TLorentzVector()
-#         neutrino_gen = ROOT.TLorentzVector()
-#         if abs(event.GenPart_pdgId[Wdecay1]) in [11,13,15]:
-#             lepton_gen.SetPtEtaPhiM(event.GenPart_pt[Wdecay1], event.GenPart_eta[Wdecay1], event.GenPart_phi[Wdecay1], event.GenPart_mass[Wdecay1])
-#             neutrino_gen.SetPtEtaPhiM(event.GenPart_pt[Wdecay2], event.GenPart_eta[Wdecay2], event.GenPart_phi[Wdecay2], event.GenPart_mass[Wdecay2])
-#         else:
-#             lepton_gen.SetPtEtaPhiM(event.GenPart_pt[Wdecay2], event.GenPart_eta[Wdecay2], event.GenPart_phi[Wdecay2], event.GenPart_mass[Wdecay2])
-#             neutrino_gen.SetPtEtaPhiM(event.GenPart_pt[Wdecay1], event.GenPart_eta[Wdecay1], event.GenPart_phi[Wdecay1], event.GenPart_mass[Wdecay1])
-#         dR_lepton = lepton_reco.DeltaR(lepton_gen)
-#         dR_neutrino = neutrino_reco.DeltaR(neutrino_gen)
-#     event.dR_lepton_gen_reco = dR_lepton
-#     event.dR_neutrino_gen_reco = dR_neutrino
-# sequence.append(MatchWlepDecay)
-
-# def BestWhadReco(event, sample):
-#     decays = getGenWhadDecays(event)
-#     if len(decays) != 1:
-#         event.mWhad_matching = float('nan')
-#         event.maxDR_Whaddecays = float('nan')
-#         return
-#
-#     WDecay1_had = decays[0][0]
-#     WDecay2_had = decays[0][1]
-#
-#     min_dR = 1000
-#     jet1 = ROOT.TLorentzVector()
-#     i_jet1 = -1
-#     for i in range(event.nJetGood):
-#         jetindex = event.JetGood_index[i]
-#         jet_tmp  = ROOT.TLorentzVector()
-#         jet_tmp.SetPtEtaPhiM(event.Jet_pt[jetindex], event.Jet_eta[jetindex], event.Jet_phi[jetindex], event.Jet_mass[jetindex])
-#         if WDecay1_had.DeltaR(jet_tmp) < min_dR:
-#             min_dR = WDecay1_had.DeltaR(jet_tmp)
-#             jet1 = jet_tmp
-#             i_jet1 = i
-#
-#     min_dR = 1000 # reset min_dR
-#     jet2 = ROOT.TLorentzVector()
-#     for i in range(event.nJetGood):
-#         if i == i_jet1:
-#             continue
-#         jetindex = event.JetGood_index[i]
-#         jet_tmp  = ROOT.TLorentzVector()
-#         jet_tmp.SetPtEtaPhiM(event.Jet_pt[jetindex], event.Jet_eta[jetindex], event.Jet_phi[jetindex], event.Jet_mass[jetindex])
-#         if WDecay2_had.DeltaR(jet_tmp) < min_dR:
-#             min_dR = WDecay2_had.DeltaR(jet_tmp)
-#             jet2 = jet_tmp
-#
-#     Wreco = jet1+jet2
-#     event.mWhad_matching = Wreco.M()
-#     event.maxDR_Whaddecays = WDecay1_had.DeltaR(jet1) if WDecay1_had.DeltaR(jet1) > WDecay2_had.DeltaR(jet2) else WDecay2_had.DeltaR(jet2)
-# sequence.append(BestWhadReco)
 
 def Matching(event, sample):
     top_idxs = getGenTop_indices(event, "production")
@@ -649,22 +512,27 @@ def Matching(event, sample):
     event.Ntops = len(top_idxs)
     event.Nbots = len(bot_idxs)
     event.mtophad_matched = -1
+    event.mtoplep_matched = -1
     event.mtophadreduced_matched = -1
     event.mWhad_matched = -1
 
     topdecay_idxs = getTopDecays(event)
+    event.ismatchable = isMatchable(event,topdecay_idxs)
     Nt=0
     Nthad=0
     Ntlep=0
     numberoftopdecays = []
     for topdecays in topdecay_idxs:
         numberoftopdecays.append(len(topdecays))
+        # save W decay partons in additional list
         Wdecays = []
         for decay in topdecays:
             if abs(event.GenPart_pdgId[decay]) != 5:
                 Wdecays.append(decay)
+        # Firts look at top decay
         if len(topdecays) == 3:
             Nt+=1
+            # match hadronic top and reconstruct mass
             if isHadronicDecay(event, topdecays):
                 Nthad+=1
                 matched_jets = getMatchingJets(event, topdecays)
@@ -675,13 +543,41 @@ def Matching(event, sample):
                 elif len(matched_jets) == 2:
                     top = matched_jets[0]+matched_jets[1]
                     event.mtophadreduced_matched = top.M()
+            # match leptonic top and reconstruct mass
             else:
                 Ntlep+=1
+                bparton = []
+                lepton_gen = ROOT.TLorentzVector()
+                neutrino_gen = ROOT.TLorentzVector()
+                leptonIDs = [11,13,15]
+                neutrinoIDs = [12,14,16]
+                foundb = False
+                foundlep = False
+                foundneu = False
+                for idx in topdecays:
+                    if abs(event.GenPart_pdgId[idx]) == 5:
+                        bparton.append(idx)
+                        foundb = True
+                    elif abs(event.GenPart_pdgId[idx]) in leptonIDs:
+                        lepton_gen.SetPtEtaPhiM(event.GenPart_pt[idx],event.GenPart_eta[idx],event.GenPart_phi[idx],event.GenPart_mass[idx])
+                        foundlep = True
+                    elif abs(event.GenPart_pdgId[idx]) in neutrinoIDs:
+                        neutrino_gen.SetPtEtaPhiM(event.GenPart_pt[idx],event.GenPart_eta[idx],event.GenPart_phi[idx],event.GenPart_mass[idx])
+                        foundneu = True
+                if len(bparton) == 1:
+                    matched_jets_blep = getMatchingJets(event, bparton)
+                    if len(matched_jets_blep) == 1 and foundb and foundlep and foundneu:
+                        Wlephypos = getWlep(event)
+                        for Wlep, lepton, neutrino in Wlephypos:
+                            if lepton.DeltaR(lepton_gen) < 0.3 and neutrino.DeltaR(neutrino_gen) < 0.3:
+                                toplep = lepton+neutrino+matched_jets_blep[0]
+                                event.mtoplep_matched = toplep.M()
+        # match hadronic W and reconstruct mass
         if len(Wdecays) == 2:
             if isHadronicDecay(event, Wdecays):
                 matched_jets_W = getMatchingJets(event, Wdecays)
                 if len(matched_jets_W) == 2:
-                    W = matched_jets[0]+matched_jets[1]
+                    W = matched_jets_W[0]+matched_jets_W[1]
                     event.mWhad_matched = W.M()
 
     event.Ntops_matching = Nt
@@ -693,28 +589,12 @@ sequence.append(Matching)
 def TopReco(event, sample):
     hypotheses=getTopHypos(event, 6)
     chi2min = 10000
-    chi2min_topdiff = 10000
-    chi2min_btag = 10000
-    hypo_selected = hypotheses[0]
-    hypo_selected_topdiff = hypotheses[0]
-    hypo_selected_btag = hypotheses[0]
     foundhypo = False
-    foundhypo_topdiff = False
-    foundhypo_btag = False
     for hypo in hypotheses:
         if hypo['chi2']<chi2min:
             chi2min = hypo['chi2']
             hypo_selected = hypo
             foundhypo = True
-        if hypo['chi2_topdiff']<chi2min_topdiff:
-            chi2min_topdiff = hypo['chi2_topdiff']
-            hypo_selected_topdiff = hypo
-            foundhypo_topdiff = True
-        if hypo['chi2_btag']<chi2min_btag:
-            chi2min_btag = hypo['chi2_btag']
-            hypo_selected_btag = hypo
-            foundhypo_btag = True
-
     if foundhypo:
         if hypo_selected['toplep'].M() > hypo_selected['tophad'].M():
             mtop_hi = hypo_selected['toplep'].M()
@@ -722,20 +602,6 @@ def TopReco(event, sample):
         else:
             mtop_hi = hypo_selected['tophad'].M()
             mtop_lo = hypo_selected['toplep'].M()
-    if foundhypo_topdiff:
-        if hypo_selected_topdiff['toplep'].M() > hypo_selected_topdiff['tophad'].M():
-            mtop_hi_topdiff = hypo_selected_topdiff['toplep'].M()
-            mtop_lo_topdiff = hypo_selected_topdiff['tophad'].M()
-        else:
-            mtop_hi_topdiff = hypo_selected_topdiff['tophad'].M()
-            mtop_lo_topdiff = hypo_selected_topdiff['toplep'].M()
-    if foundhypo_btag:
-        if hypo_selected_btag['toplep'].M() > hypo_selected_btag['tophad'].M():
-            mtop_hi_btag = hypo_selected_btag['toplep'].M()
-            mtop_lo_btag = hypo_selected_btag['tophad'].M()
-        else:
-            mtop_hi_btag = hypo_selected_btag['tophad'].M()
-            mtop_lo_btag = hypo_selected_btag['toplep'].M()
 
     # Also get Z
     Z = ROOT.TLorentzVector()
@@ -757,84 +623,24 @@ def TopReco(event, sample):
     event.chi2 = hypo_selected['chi2'] if foundhypo else -1
     event.pgof = exp(-0.5*hypo_selected['chi2']) if foundhypo else -1
     event.hypofound = 1 if foundhypo else 0
-    event.dR_toplep_Z = hypo_selected['toplep'].DeltaR(Z) if foundhypo else 0
-    event.dR_tophad_Z = hypo_selected['tophad'].DeltaR(Z) if foundhypo else 0
+    event.dR_toplep_Z = hypo_selected['toplep'].DeltaR(Z) if foundhypo else -1
+    event.dR_tophad_Z = hypo_selected['tophad'].DeltaR(Z) if foundhypo else -1
+    event.blep_disc = hypo_selected['blep_disc'] if foundhypo else -1
+    event.bhad_disc = hypo_selected['bhad_disc'] if foundhypo else -1
 
-    # observables for mtop1 closest to mtop2
-    event.mtop_average_topdiff = (hypo_selected_topdiff['toplep'].M()+hypo_selected_topdiff['tophad'].M())/2 if foundhypo_topdiff else -1
-    event.mtoplep_topdiff = hypo_selected_topdiff['toplep'].M() if foundhypo_topdiff else -1
-    event.mtophad_topdiff = hypo_selected_topdiff['tophad'].M() if foundhypo_topdiff else -1
-    event.mtop_hi_topdiff = mtop_hi_topdiff if foundhypo_topdiff else -1
-    event.mtop_lo_topdiff = mtop_lo_topdiff if foundhypo_topdiff else -1
-    event.mtop_diff_topdiff = (mtop_hi_topdiff-mtop_lo_topdiff)/(mtop_hi_topdiff+mtop_lo_topdiff) if foundhypo_topdiff else -1
-    event.pt_diff_topdiff = abs(hypo_selected_topdiff['toplep'].Pt()-hypo_selected_topdiff['tophad'].Pt()) if foundhypo_topdiff else -1
-    event.dR_tops_topdiff = hypo_selected_topdiff['toplep'].DeltaR(hypo_selected_topdiff['tophad']) if foundhypo_topdiff else -1
-    event.mW_lep_topdiff = hypo_selected_topdiff['Wlep'].M() if foundhypo_topdiff else -1
-    event.mW_had_topdiff = hypo_selected_topdiff['Whad'].M() if foundhypo_topdiff else -1
-    event.ptW_lep_topdiff = hypo_selected_topdiff['Wlep'].Pt() if foundhypo_topdiff else -1
-    event.ptW_had_topdiff = hypo_selected_topdiff['Whad'].Pt() if foundhypo_topdiff else -1
-    event.chi2_topdiff = hypo_selected_topdiff['chi2_topdiff'] if foundhypo_topdiff else -1
-    event.pgof_topdiff = exp(-0.5*hypo_selected_topdiff['chi2']) if foundhypo_topdiff else -1
-    event.hypofound_topdiff = 1 if foundhypo_topdiff else 0
-    event.dR_toplep_Z_topdiff = hypo_selected_topdiff['toplep'].DeltaR(Z) if foundhypo_topdiff else 0
-    event.dR_tophad_Z_topdiff = hypo_selected_topdiff['tophad'].DeltaR(Z) if foundhypo_topdiff else 0
+    # Match hypo with b genjet in event
+    genBjets = getBGenJets(event)
+    bmatch         = 0
+    for genjet in genBjets:
+        if   genjet.DeltaR(hypo_selected['blep']) < 0.4: bmatch += 1
+        elif genjet.DeltaR(hypo_selected['bhad']) < 0.4: bmatch += 2
 
-    # observables for mtop1 closest to mtop2 + btag
-    event.mtop_average_btag = (hypo_selected_btag['toplep'].M()+hypo_selected_btag['tophad'].M())/2 if foundhypo_btag else -1
-    event.mtoplep_btag = hypo_selected_btag['toplep'].M() if foundhypo_btag else -1
-    event.mtophad_btag = hypo_selected_btag['tophad'].M() if foundhypo_btag else -1
-    event.mtop_hi_btag = mtop_hi_btag if foundhypo_btag else -1
-    event.mtop_lo_btag = mtop_lo_btag if foundhypo_btag else -1
-    event.mtop_diff_btag = (mtop_hi_btag-mtop_lo_btag)/(mtop_hi_btag+mtop_lo_btag) if foundhypo_btag else -1
-    event.pt_diff_btag = abs(hypo_selected_btag['toplep'].Pt()-hypo_selected_btag['tophad'].Pt()) if foundhypo_btag else -1
-    event.dR_tops_btag = hypo_selected_btag['toplep'].DeltaR(hypo_selected_btag['tophad']) if foundhypo_btag else -1
-    event.mW_lep_btag = hypo_selected_btag['Wlep'].M() if foundhypo_btag else -1
-    event.mW_had_btag = hypo_selected_btag['Whad'].M() if foundhypo_btag else -1
-    event.ptW_lep_btag = hypo_selected_btag['Wlep'].Pt() if foundhypo_btag else -1
-    event.ptW_had_btag = hypo_selected_btag['Whad'].Pt() if foundhypo_btag else -1
-    event.chi2_btag = hypo_selected_btag['chi2_btag'] if foundhypo_btag else -1
-    event.pgof_btag = exp(-0.5*hypo_selected_btag['chi2']) if foundhypo_btag else -1
-    event.hypofound_btag = 1 if foundhypo_btag else 0
-    event.dR_toplep_Z_btag = hypo_selected_btag['toplep'].DeltaR(Z) if foundhypo_btag else 0
-    event.dR_tophad_Z_btag = hypo_selected_btag['tophad'].DeltaR(Z) if foundhypo_btag else 0
-
-    # Match hypo with b tag in event
-    bjet_goodjet_idx = getBJetindex(event)
-    bjet_idx = event.JetGood_index[bjet_goodjet_idx]
-    bjet = ROOT.TLorentzVector()
-    bjet.SetPtEtaPhiM(event.Jet_pt[bjet_idx], event.Jet_eta[bjet_idx], event.Jet_phi[bjet_idx], event.Jet_mass[bjet_idx])
-    bmatch = 0
-    if bjet.DeltaR(hypo_selected['blep']) < 0.01:
-        bmatch = 1
-    elif bjet.DeltaR(hypo_selected['bhad']) < 0.01:
-        bmatch = 2
-    bmatch_topdiff = 0
-    if bjet.DeltaR(hypo_selected_topdiff['blep']) < 0.01:
-        bmatch_topdiff = 1
-    elif bjet.DeltaR(hypo_selected_topdiff['bhad']) < 0.01:
-        bmatch_topdiff = 2
-    bmatch_btag = 0
-    if bjet.DeltaR(hypo_selected_btag['blep']) < 0.01:
-        bmatch_btag = 1
-    elif bjet.DeltaR(hypo_selected_btag['bhad']) < 0.01:
-        bmatch_btag = 2
-    event.bmatch = bmatch
-    event.bmatch_topdiff = bmatch_topdiff
-    event.bmatch_btag = bmatch_btag
+    event.bmatch         = bmatch         if bmatch < 4 else 4
 
     # Match with Gen Level
     event.category = getMatchCategory(event, hypo_selected) if foundhypo else -1
-    event.category_topdiff = getMatchCategory(event, hypo_selected_topdiff) if foundhypo_topdiff else -1
-    event.category_btag = getMatchCategory(event, hypo_selected_btag) if foundhypo_btag else -1
-sequence.append(TopReco)
 
-def getMatchedBjetProperties(event, sample):
-    btag_values = []
-    jet_idxs = matchBjets(event)
-    for idx in jet_idxs:
-        btag_values.append(event.JetGood_btagDeepB[idx])
-    event.btag_disc_matched = btag_values
-sequence.append(getMatchedBjetProperties)
+sequence.append(TopReco)
 
 # def printGenParticles(event,sample):
 #     print '-------'
@@ -854,6 +660,37 @@ def Zmother(event, sample):
                 event.Zmother = abs(pdgid_mother)
 sequence.append(Zmother)
 
+def bjetMatch(event, sample):
+    btagscoreList = []
+    genBjets = getBGenJets(event)
+    for genjet in genBjets:
+        dRmin = 0.4
+        i_match = -1
+        for i in range(event.nJetGood):
+            jetidx = event.JetGood_index[i]
+            jet = ROOT.TLorentzVector()
+            jet.SetPtEtaPhiM(event.Jet_pt[jetidx], event.Jet_eta[jetidx], event.Jet_phi[jetidx], event.Jet_mass[jetidx])
+            if jet.DeltaR(genjet) < dRmin:
+                dRmin = jet.DeltaR(genjet)
+                i_match = i
+        if i_match != -1:
+            btagscoreList.append(event.JetGood_btagDeepB[i_match])
+    event.btagscore_matched = btagscoreList
+sequence.append(bjetMatch)
+
+def genJetFlavor(event, sample):
+    nbjet = 0
+    nlightjet = 0
+    for i in range(event.nGenJet):
+        if abs(event.GenJet_partonFlavour[i]) == 5:
+            nbjet += 1
+        elif abs(event.GenJet_partonFlavour[i]) in [1,2,3,4]:
+            nlightjet += 1
+    event.nbjet = nbjet
+    event.nlightjet = nlightjet
+
+sequence.append(genJetFlavor)
+
 ################################################################################
 # Read variables
 
@@ -862,7 +699,7 @@ read_variables = [
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l1_mvaTOP/F", "l1_mvaTOPWP/I", "l1_index/I",
     "l2_pt/F", "l2_eta/F" , "l2_phi/F", "l2_mvaTOP/F", "l2_mvaTOPWP/I", "l2_index/I",
     "l3_pt/F", "l3_eta/F" , "l3_phi/F", "l3_mvaTOP/F", "l3_mvaTOPWP/I", "l3_index/I",
-    "JetGood[pt/F,eta/F,phi/F,area/F,btagDeepB/F,index/I]",
+    "JetGood[pt/F,eta/F,phi/F,area/F,btagDeepB/F,btagDeepFlavB/F,index/I]",
     "Jet[pt/F,eta/F,phi/F,mass/F]",
     "lep[pt/F,eta/F,phi/F,pdgId/I,muIndex/I,eleIndex/I]",
     "Z1_l1_index/I", "Z1_l2_index/I", "nonZ1_l1_index/I", "nonZ1_l2_index/I",
@@ -874,7 +711,8 @@ read_variables = [
 read_variables_MC = [
     'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F',
     "genZ1_pt/F", "genZ1_eta/F", "genZ1_phi/F",
-    "GenJet[pt/F,eta/F,phi/F,partonFlavour/I,hadronFlavour/I]",
+    "nGenJet/I",
+    "GenJet[pt/F,eta/F,phi/F,partonFlavour/I,hadronFlavour/I,mass/F]",
     VectorTreeVariable.fromString( "GenPart[pt/F,mass/F,phi/F,eta/F,pdgId/I,genPartIdxMother/I,status/I,statusFlags/I]", nMax=1000),
     'nGenPart/I',
 ]
@@ -949,6 +787,26 @@ for i_mode, mode in enumerate(allModes):
 
     plots = []
 
+    plots.append(Plot(
+        name = "N_GenJets_b",
+        texX = 'Number of b GenJets', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nbjet,
+        binning=[11,-0.5,10.5],
+    ))
+
+    plots.append(Plot(
+        name = "N_GenJets_light",
+        texX = 'Number of light GenJets', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nlightjet,
+        binning=[11,-0.5,10.5],
+    ))
+
+    plots.append(Plot(
+        name = 'isMatchable',
+        texX = 'top decay is matchable', texY = 'Number of Events',
+        attribute = lambda event, sample: event.ismatchable,
+        binning=[2,-0.5,1.5],
+    ))
 
     plots.append(Plot(
         name = 'N_tops',
@@ -986,24 +844,38 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
-        name = 'm_top_matched',
+        name = 'm_tophad_matched',
         texX = 'm(top_{had}) after matching', texY = 'Number of Events',
         attribute = lambda event, sample: event.mtophad_matched,
         binning=[40, 0.0, 400],
     ))
 
     plots.append(Plot(
-        name = 'm_W_matched',
+        name = 'm_toplep_matched',
+        texX = 'm(top_{lep}) after matching', texY = 'Number of Events',
+        attribute = lambda event, sample: event.mtoplep_matched,
+        binning=[40, 0.0, 400],
+    ))
+
+    plots.append(Plot(
+        name = 'm_Whad_matched',
         texX = 'm(W_{had}) after matching', texY = 'Number of Events',
         attribute = lambda event, sample: event.mWhad_matched,
         binning=[40, 0.0, 400],
     ))
 
     plots.append(Plot(
-        name = 'm_top_reduced_matched',
+        name = 'm_tophad_reduced_matched',
         texX = 'm(reduced top_{had}) after matching', texY = 'Number of Events',
         attribute = lambda event, sample: event.mtophadreduced_matched,
         binning=[40, 0.0, 400],
+    ))
+
+    plots.append(Plot(
+        name = 'btagscore_matched',
+        texX = 'b tag score after matching', texY = 'Number of Events',
+        attribute = lambda event, sample: event.btagscore_matched,
+        binning=[25, 0.0, 1.0],
     ))
 
 
@@ -1020,13 +892,6 @@ for i_mode, mode in enumerate(allModes):
         texX = 'number of generated bottoms', texY = 'Number of Events',
         attribute = lambda event, sample: event.Nbots,
         binning=[11,-0.5,10.5],
-    ))
-
-    plots.append(Plot(
-        name = 'btag_disc_matched',
-        texX = 'b tag score of matched b jets', texY = 'Number of Events',
-        attribute = lambda event, sample: event.btag_disc_matched,
-        binning=[25,0.0,1.0],
     ))
 
     plots.append(Plot(
@@ -1135,7 +1000,7 @@ for i_mode, mode in enumerate(allModes):
         name = 'bmatch',
         texX = ' ', texY = 'Number of Events',
         attribute = lambda event, sample: event.bmatch,
-        binning=[3, -0.5, 2.5],
+        binning=[5, -0.5, 4.5],
         addOverFlowBin='upper',
     ))
 
@@ -1165,7 +1030,7 @@ for i_mode, mode in enumerate(allModes):
         name = 'category',
         texX = 'matching category', texY = 'Number of Events',
         attribute = lambda event, sample: event.category,
-        binning=[7, -0.5, 6.5],
+        binning=[8, 0.5, 8.5],
     ))
 
     plots.append(Plot(
@@ -1183,304 +1048,19 @@ for i_mode, mode in enumerate(allModes):
         binning=[35, 0.0, 7],
         addOverFlowBin = 'upper',
     ))
-    ############################################################################
-    ## Top Reco Plots
+
     plots.append(Plot(
-        name = 'm_top_average_topdiff',
-        texX = '(m_{t1}+m_{t2})/2 (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtop_average_topdiff,
-        binning=[40, 0.0, 400],
+        name = 'blep_disc',
+        texX = 'b tag score of b_{lep} jet', texY = 'Number of Events',
+        attribute = lambda event, sample: event.blep_disc,
+        binning=[40, 0.0, 1.0],
     ))
 
     plots.append(Plot(
-        name = 'm_top_lep_topdiff',
-        texX = 'm_{tlep} (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtoplep_topdiff,
-        binning=[40, 0.0, 400],
-    ))
-
-    plots.append(Plot(
-        name = 'm_top_had_topdiff',
-        texX = 'm_{thad} (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtophad_topdiff,
-        binning=[40, 0.0, 400],
-    ))
-
-    plots.append(Plot(
-        name = 'm_top_hi_topdiff',
-        texX = 'max(m_{t1},m_{t2}) (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtop_hi_topdiff,
-        binning=[40, 0.0, 400],
-    ))
-
-    plots.append(Plot(
-        name = 'm_top_lo_topdiff',
-        texX = 'min(m_{t1},m_{t2}) (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtop_lo_topdiff,
-        binning=[40, 0.0, 400],
-    ))
-
-    plots.append(Plot(
-        name = 'm_top_diff_topdiff',
-        texX = '|m_{t1}-m_{t2}|/|m_{t1}+m_{t2}| (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtop_diff_topdiff,
-        binning=[50, 0.0, 1.0],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'pt_top_diff_topdiff',
-        texX = '|p_{T}^{t1}-p_{T}^{t2}| (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.pt_diff_topdiff,
-        binning=[40, 0.0, 400],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'dR_tops_topdiff',
-        texX = '#Delta R(top_{lep},top_{had}) (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.dR_tops_topdiff,
-        binning=[35, 0.0, 7],
-        addOverFlowBin = 'upper',
-    ))
-
-    plots.append(Plot(
-        name = 'mW_lep_topdiff',
-        texX = 'm_{Wlep} (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mW_lep_topdiff,
-        binning=[40, 0.0, 200],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'mW_had_topdiff',
-        texX = 'm_{Whad} (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mW_had_topdiff,
-        binning=[40, 0.0, 200],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'ptW_lep_topdiff',
-        texX = 'p_{T}^{Wlep} (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.ptW_lep_topdiff,
-        binning=[40, 0.0, 400],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'ptW_had_topdiff',
-        texX = 'p_{T}^{Whad} (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.ptW_had_topdiff,
-        binning=[40, 0.0, 400],
-        addOverFlowBin='upper',
-    ))
-
-
-    plots.append(Plot(
-        name = 'bmatch_topdiff',
-        texX = ' ', texY = 'Number of Events',
-        attribute = lambda event, sample: event.bmatch_topdiff,
-        binning=[3, -0.5, 2.5],
-        addOverFlowBin='upper',
-    ))
-
-
-    plots.append(Plot(
-        name = 'chi2_topdiff',
-        texX = '#chi^{2} (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.chi2_topdiff,
-        binning=[40, 0.0, 80.],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'p_gof_topdiff',
-        texX = 'P_{gof} (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.pgof_topdiff,
-        binning=[50, 0., 1.],
-    ))
-
-
-
-    plots.append(Plot(
-        name = 'hypofound_topdiff',
-        texX = 'found ttbar hypothesis (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.hypofound_topdiff,
-        binning=[2, -0.5, 1.5],
-    ))
-
-    plots.append(Plot(
-        name = 'category_topdiff',
-        texX = 'matching category (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.category_topdiff,
-        binning=[7, -0.5, 6.5],
-    ))
-
-    plots.append(Plot(
-        name = 'dR_toplep_Z_topdiff',
-        texX = '#Delta R(top_{lep},Z) (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.dR_toplep_Z_topdiff,
-        binning=[35, 0.0, 7],
-        addOverFlowBin = 'upper',
-    ))
-
-    plots.append(Plot(
-        name = 'dR_tophad_Z_topdiff',
-        texX = '#Delta R(top_{had},Z) (top symmetry)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.dR_tophad_Z_topdiff,
-        binning=[35, 0.0, 7],
-        addOverFlowBin = 'upper',
-    ))
-
-    ############################################################################
-    ## Top Reco Plots
-    plots.append(Plot(
-        name = 'm_top_average_btag',
-        texX = '(m_{t1}+m_{t2})/2 (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtop_average_btag,
-        binning=[40, 0.0, 400],
-    ))
-
-    plots.append(Plot(
-        name = 'm_top_lep_btag',
-        texX = 'm_{tlep} (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtoplep_btag,
-        binning=[40, 0.0, 400],
-    ))
-
-    plots.append(Plot(
-        name = 'm_top_had_btag',
-        texX = 'm_{thad} (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtophad_btag,
-        binning=[40, 0.0, 400],
-    ))
-
-    plots.append(Plot(
-        name = 'm_top_hi_btag',
-        texX = 'max(m_{t1},m_{t2}) (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtop_hi_btag,
-        binning=[40, 0.0, 400],
-    ))
-
-    plots.append(Plot(
-        name = 'm_top_lo_btag',
-        texX = 'min(m_{t1},m_{t2}) (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtop_lo_btag,
-        binning=[40, 0.0, 400],
-    ))
-
-    plots.append(Plot(
-        name = 'm_top_diff_btag',
-        texX = '|m_{t1}-m_{t2}|/|m_{t1}+m_{t2}| (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mtop_diff_btag,
-        binning=[50, 0.0, 1.0],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'pt_top_diff_btag',
-        texX = '|p_{T}^{t1}-p_{T}^{t2}| (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.pt_diff_btag,
-        binning=[40, 0.0, 400],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'dR_tops_btag',
-        texX = '#Delta R(top_{lep},top_{had}) (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.dR_tops_btag,
-        binning=[35, 0.0, 7],
-        addOverFlowBin = 'upper',
-    ))
-
-    plots.append(Plot(
-        name = 'mW_lep_btag',
-        texX = 'm_{Wlep} (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mW_lep_btag,
-        binning=[40, 0.0, 200],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'mW_had_btag',
-        texX = 'm_{Whad} (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.mW_had_btag,
-        binning=[40, 0.0, 200],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'ptW_lep_btag',
-        texX = 'p_{T}^{Wlep} (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.ptW_lep_btag,
-        binning=[40, 0.0, 400],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'ptW_had_btag',
-        texX = 'p_{T}^{Whad} (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.ptW_had_btag,
-        binning=[40, 0.0, 400],
-        addOverFlowBin='upper',
-    ))
-
-
-    plots.append(Plot(
-        name = 'bmatch_btag',
-        texX = ' ', texY = 'Number of Events',
-        attribute = lambda event, sample: event.bmatch_btag,
-        binning=[3, -0.5, 2.5],
-        addOverFlowBin='upper',
-    ))
-
-
-    plots.append(Plot(
-        name = 'chi2_btag',
-        texX = '#chi^{2} (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.chi2_btag,
-        binning=[40, 0.0, 80.],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'p_gof_btag',
-        texX = 'P_{gof} (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.pgof_btag,
-        binning=[50, 0., 1.],
-    ))
-
-
-
-    plots.append(Plot(
-        name = 'hypofound_btag',
-        texX = 'found ttbar hypothesis (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.hypofound_btag,
-        binning=[2, -0.5, 1.5],
-    ))
-
-    plots.append(Plot(
-        name = 'category_btag',
-        texX = 'matching category (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.category_btag,
-        binning=[7, -0.5, 6.5],
-    ))
-
-    plots.append(Plot(
-        name = 'dR_toplep_Z_btag',
-        texX = '#Delta R(top_{lep},Z) (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.dR_toplep_Z_btag,
-        binning=[35, 0.0, 7],
-        addOverFlowBin = 'upper',
-    ))
-
-    plots.append(Plot(
-        name = 'dR_tophad_Z_btag',
-        texX = '#Delta R(top_{had},Z) (top symmetry + b discriminator)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.dR_tophad_Z_btag,
-        binning=[35, 0.0, 7],
-        addOverFlowBin = 'upper',
+        name = 'bhad_disc',
+        texX = 'b tag score of b_{had} jet', texY = 'Number of Events',
+        attribute = lambda event, sample: event.bhad_disc,
+        binning=[40, 0.0, 1.0],
     ))
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)
@@ -1493,9 +1073,22 @@ for i_mode, mode in enumerate(allModes):
       if "bmatch" in plot.name:
         for i, l in enumerate(plot.histos):
           for j, h in enumerate(l):
-            h.GetXaxis().SetBinLabel(1, "not matched")
+            h.GetXaxis().SetBinLabel(1, "no match")
             h.GetXaxis().SetBinLabel(2, "b_{lep}")
             h.GetXaxis().SetBinLabel(3, "b_{had}")
+            h.GetXaxis().SetBinLabel(4, "b_{lep}+b_{had}")
+            h.GetXaxis().SetBinLabel(5, " ")
+      if "category" in plot.name:
+        for i, l in enumerate(plot.histos):
+          for j, h in enumerate(l):
+            h.GetXaxis().SetBinLabel(1, "m_{had}")
+            h.GetXaxis().SetBinLabel(2, "u_{had}")
+            h.GetXaxis().SetBinLabel(3, "n_{had}")
+            h.GetXaxis().SetBinLabel(4, "e_{had}")
+            h.GetXaxis().SetBinLabel(5, "m_{lep}")
+            h.GetXaxis().SetBinLabel(6, "u_{lep}")
+            h.GetXaxis().SetBinLabel(7, "n_{lep}")
+            h.GetXaxis().SetBinLabel(8, "e_{lep}")
 
 ################################################################################
 # Add the different channels into SF and all

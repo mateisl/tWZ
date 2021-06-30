@@ -4,7 +4,6 @@ import os
 import ROOT
 import array
 
-
 ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/TMB/Tools/scripts/tdrstyle.C")
 ROOT.setTDRStyle()
 

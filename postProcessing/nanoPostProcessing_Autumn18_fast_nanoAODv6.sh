@@ -6,14 +6,15 @@
 #python nanoPostProcessing.py  --overwrite --forceProxy --skim singlelep-photon --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample ttG_noFullyHad_fast #SPLIT500
 #python nanoPostProcessing.py  --overwrite --forceProxy --skim singlelep-photon --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample WGToLNu_fast #SPLIT200
 #python nanoPostProcessing.py  --overwrite --forceProxy --skim singlelep-photon --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample ZGTo2L_fast #SPLIT200
-python nanoPostProcessing.py  --overwrite --forceProxy --skim singlelep-photon --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample ttZ01j_fast #SPLIT98
-python nanoPostProcessing.py  --overwrite --forceProxy --skim singlelep-photon --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample WZTo3L1Nu_fast #SPLIT100
-python nanoPostProcessing.py  --overwrite --forceProxy --skim singlelep-photon --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample ZZ_fast #SPLIT100
 #python nanoPostProcessing.py  --overwrite --forceProxy --skim singlelep-photon --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample ttW01j_fast #SPLIT100
 #python nanoPostProcessing.py  --overwrite --forceProxy --skim singlelep-photon --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample WZTojj2L_fast #SPLIT 99
 #python nanoPostProcessing.py  --overwrite --forceProxy --skim singlelep-photon --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample WZToLNujj_fast #SPLIT100
 #python nanoPostProcessing.py  --overwrite --forceProxy --skim singlelep-photon --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WW_fast #SPLIT100
 
+
+python nanoPostProcessing.py  --overwrite --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample ttZ01j_fast #SPLIT100
+python nanoPostProcessing.py  --overwrite --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample WZTo3L1Nu_fast #SPLIT100
+python nanoPostProcessing.py  --overwrite --forceProxy --skim trilep --year 2018 --processingEra tWZ_nAODv6_private_v6 --sample ZZ_fast #SPLIT100
 
 #python nanoPostProcessing.py  --overwrite --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample ttZ01j_fast #SPLIT98
 #python nanoPostProcessing.py  --overwrite --forceProxy --skim dilep --year 2018 --processingEra tWZ_nAODv6_private_v4 --sample WZTo3L1Nu_fast #SPLIT100

@@ -607,6 +607,9 @@ def TopReco(event, sample):
     Z = ROOT.TLorentzVector()
     Z.SetPtEtaPhiM(event.Z1_pt, event.Z1_eta, event.Z1_phi, event.Z1_mass)
 
+    LeptonNoZ = ROOT.TLorentzVector()
+    LeptonNoZ.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
+
     # observables for mtop1 and mtop2 closest to mtop
     event.mtop_average = (hypo_selected['toplep'].M()+hypo_selected['tophad'].M())/2 if foundhypo else -1
     event.mtoplep = hypo_selected['toplep'].M() if foundhypo else -1
@@ -615,7 +618,6 @@ def TopReco(event, sample):
     event.mtop_lo = mtop_lo if foundhypo else -1
     event.mtop_diff = (mtop_hi-mtop_lo)/(mtop_hi+mtop_lo) if foundhypo else -1
     event.pt_diff = abs(hypo_selected['toplep'].Pt()-hypo_selected['tophad'].Pt()) if foundhypo else -1
-    event.dR_tops = hypo_selected['toplep'].DeltaR(hypo_selected['tophad']) if foundhypo else -1
     event.mW_lep = hypo_selected['Wlep'].M() if foundhypo else -1
     event.mW_had = hypo_selected['Whad'].M() if foundhypo else -1
     event.ptW_lep = hypo_selected['Wlep'].Pt() if foundhypo else -1
@@ -623,17 +625,27 @@ def TopReco(event, sample):
     event.chi2 = hypo_selected['chi2'] if foundhypo else -1
     event.pgof = exp(-0.5*hypo_selected['chi2']) if foundhypo else -1
     event.hypofound = 1 if foundhypo else 0
+    event.dR_tops = hypo_selected['toplep'].DeltaR(hypo_selected['tophad']) if foundhypo else -1
+    event.dR_Ws = hypo_selected['Wlep'].DeltaR(hypo_selected['Whad']) if foundhypo else -1
+    event.dR_bottoms = hypo_selected['bhad'].DeltaR(hypo_selected['blep']) if foundhypo else -1
     event.dR_toplep_Z = hypo_selected['toplep'].DeltaR(Z) if foundhypo else -1
     event.dR_tophad_Z = hypo_selected['tophad'].DeltaR(Z) if foundhypo else -1
+    event.dR_toplep_LepNoZ = hypo_selected['toplep'].DeltaR(LeptonNoZ) if foundhypo else -1
+    event.dR_tophad_LepNoZ = hypo_selected['tophad'].DeltaR(LeptonNoZ) if foundhypo else -1
+    event.dR_Wlep_LepNoZ = hypo_selected['Wlep'].DeltaR(LeptonNoZ) if foundhypo else -1
+    event.dR_Whad_LepNoZ = hypo_selected['Whad'].DeltaR(LeptonNoZ) if foundhypo else -1
+    event.dR_blep_LepNoZ = hypo_selected['blep'].DeltaR(LeptonNoZ) if foundhypo else -1
+    event.dR_bhad_LepNoZ = hypo_selected['bhad'].DeltaR(LeptonNoZ) if foundhypo else -1
     event.blep_disc = hypo_selected['blep_disc'] if foundhypo else -1
     event.bhad_disc = hypo_selected['bhad_disc'] if foundhypo else -1
 
     # Match hypo with b genjet in event
     genBjets = getBGenJets(event)
     bmatch         = 0
-    for genjet in genBjets:
-        if   genjet.DeltaR(hypo_selected['blep']) < 0.4: bmatch += 1
-        elif genjet.DeltaR(hypo_selected['bhad']) < 0.4: bmatch += 2
+    if foundhypo:
+        for genjet in genBjets:
+            if   genjet.DeltaR(hypo_selected['blep']) < 0.4: bmatch += 1
+            elif genjet.DeltaR(hypo_selected['bhad']) < 0.4: bmatch += 2
 
     event.bmatch         = bmatch         if bmatch < 4 else 4
 
@@ -957,14 +969,6 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
-        name = 'dR_tops',
-        texX = '#Delta R(top_{lep},top_{had})', texY = 'Number of Events',
-        attribute = lambda event, sample: event.dR_tops,
-        binning=[35, 0.0, 7],
-        addOverFlowBin = 'upper',
-    ))
-
-    plots.append(Plot(
         name = 'mW_lep',
         texX = 'm_{Wlep}', texY = 'Number of Events',
         attribute = lambda event, sample: event.mW_lep,
@@ -1033,6 +1037,31 @@ for i_mode, mode in enumerate(allModes):
         binning=[8, 0.5, 8.5],
     ))
 
+
+    plots.append(Plot(
+        name = 'dR_tops',
+        texX = '#Delta R(top_{lep},top_{had})', texY = 'Number of Events',
+        attribute = lambda event, sample: event.dR_tops,
+        binning=[35, 0.0, 7],
+        addOverFlowBin = 'upper',
+    ))
+
+    plots.append(Plot(
+    name = 'dR_Ws',
+    texX = '#Delta R(W_{lep},W_{had})', texY = 'Number of Events',
+    attribute = lambda event, sample: event.dR_Ws,
+    binning=[35, 0.0, 7],
+    addOverFlowBin = 'upper',
+    ))
+
+    plots.append(Plot(
+        name = 'dR_bottoms',
+        texX = '#Delta R(b_{lep},b_{had})', texY = 'Number of Events',
+        attribute = lambda event, sample: event.dR_bottoms,
+        binning=[35, 0.0, 7],
+        addOverFlowBin = 'upper',
+    ))
+
     plots.append(Plot(
         name = 'dR_toplep_Z',
         texX = '#Delta R(top_{lep},Z)', texY = 'Number of Events',
@@ -1045,6 +1074,54 @@ for i_mode, mode in enumerate(allModes):
         name = 'dR_tophad_Z',
         texX = '#Delta R(top_{had},Z)', texY = 'Number of Events',
         attribute = lambda event, sample: event.dR_tophad_Z,
+        binning=[35, 0.0, 7],
+        addOverFlowBin = 'upper',
+    ))
+
+    plots.append(Plot(
+        name = 'dR_toplep_LepNoZ',
+        texX = '#Delta R(top_{lep},lep (not Z))', texY = 'Number of Events',
+        attribute = lambda event, sample: event.dR_toplep_LepNoZ,
+        binning=[35, 0.0, 7],
+        addOverFlowBin = 'upper',
+    ))
+
+    plots.append(Plot(
+        name = 'dR_tophad_LepNoZ',
+        texX = '#Delta R(top_{had},lep (no Z))', texY = 'Number of Events',
+        attribute = lambda event, sample: event.dR_tophad_LepNoZ,
+        binning=[35, 0.0, 7],
+        addOverFlowBin = 'upper',
+    ))
+
+    plots.append(Plot(
+        name = 'dR_Wlep_LepNoZ',
+        texX = '#Delta R(W_{lep},lep (not Z))', texY = 'Number of Events',
+        attribute = lambda event, sample: event.dR_Wlep_LepNoZ,
+        binning=[35, 0.0, 7],
+        addOverFlowBin = 'upper',
+    ))
+
+    plots.append(Plot(
+        name = 'dR_Whad_LepNoZ',
+        texX = '#Delta R(W_{had},lep (no Z))', texY = 'Number of Events',
+        attribute = lambda event, sample: event.dR_Whad_LepNoZ,
+        binning=[35, 0.0, 7],
+        addOverFlowBin = 'upper',
+    ))
+
+    plots.append(Plot(
+        name = 'dR_blep_LepNoZ',
+        texX = '#Delta R(b_{lep},lep (not Z))', texY = 'Number of Events',
+        attribute = lambda event, sample: event.dR_blep_LepNoZ,
+        binning=[35, 0.0, 7],
+        addOverFlowBin = 'upper',
+    ))
+
+    plots.append(Plot(
+        name = 'dR_bhad_LepNoZ',
+        texX = '#Delta R(b_{had},lep (no Z))', texY = 'Number of Events',
+        attribute = lambda event, sample: event.dR_bhad_LepNoZ,
         binning=[35, 0.0, 7],
         addOverFlowBin = 'upper',
     ))

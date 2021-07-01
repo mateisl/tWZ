@@ -251,7 +251,6 @@ def TopReco(event, sample):
             chi2min = hypo['chi2']
             hypo_selected = hypo
             foundhypo = True
-
     if foundhypo:
         if hypo_selected['toplep'].M() > hypo_selected['tophad'].M():
             mtop_hi = hypo_selected['toplep'].M()
@@ -264,6 +263,9 @@ def TopReco(event, sample):
     Z = ROOT.TLorentzVector()
     Z.SetPtEtaPhiM(event.Z1_pt, event.Z1_eta, event.Z1_phi, event.Z1_mass)
 
+    LeptonNoZ = ROOT.TLorentzVector()
+    LeptonNoZ.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
+
     # observables for mtop1 and mtop2 closest to mtop
     event.mtop_average = (hypo_selected['toplep'].M()+hypo_selected['tophad'].M())/2 if foundhypo else -1
     event.mtoplep = hypo_selected['toplep'].M() if foundhypo else -1
@@ -272,17 +274,27 @@ def TopReco(event, sample):
     event.mtop_lo = mtop_lo if foundhypo else -1
     event.mtop_diff = (mtop_hi-mtop_lo)/(mtop_hi+mtop_lo) if foundhypo else -1
     event.pt_diff = abs(hypo_selected['toplep'].Pt()-hypo_selected['tophad'].Pt()) if foundhypo else -1
-    event.dR_tops = hypo_selected['toplep'].DeltaR(hypo_selected['tophad']) if foundhypo else -1
     event.mW_lep = hypo_selected['Wlep'].M() if foundhypo else -1
     event.mW_had = hypo_selected['Whad'].M() if foundhypo else -1
     event.ptW_lep = hypo_selected['Wlep'].Pt() if foundhypo else -1
     event.ptW_had = hypo_selected['Whad'].Pt() if foundhypo else -1
     event.chi2 = hypo_selected['chi2'] if foundhypo else -1
     event.pgof = exp(-0.5*hypo_selected['chi2']) if foundhypo else -1
+    event.hypofound = 1 if foundhypo else 0
+    event.dR_tops = hypo_selected['toplep'].DeltaR(hypo_selected['tophad']) if foundhypo else -1
+    event.dR_Ws = hypo_selected['Wlep'].DeltaR(hypo_selected['Whad']) if foundhypo else -1
+    event.dR_bottoms = hypo_selected['bhad'].DeltaR(hypo_selected['blep']) if foundhypo else -1
     event.dR_toplep_Z = hypo_selected['toplep'].DeltaR(Z) if foundhypo else -1
     event.dR_tophad_Z = hypo_selected['tophad'].DeltaR(Z) if foundhypo else -1
+    event.dR_toplep_LepNoZ = hypo_selected['toplep'].DeltaR(LeptonNoZ) if foundhypo else -1
+    event.dR_tophad_LepNoZ = hypo_selected['tophad'].DeltaR(LeptonNoZ) if foundhypo else -1
+    event.dR_Wlep_LepNoZ = hypo_selected['Wlep'].DeltaR(LeptonNoZ) if foundhypo else -1
+    event.dR_Whad_LepNoZ = hypo_selected['Whad'].DeltaR(LeptonNoZ) if foundhypo else -1
+    event.dR_blep_LepNoZ = hypo_selected['blep'].DeltaR(LeptonNoZ) if foundhypo else -1
+    event.dR_bhad_LepNoZ = hypo_selected['bhad'].DeltaR(LeptonNoZ) if foundhypo else -1
+    event.blep_disc = hypo_selected['blep_disc'] if foundhypo else -1
+    event.bhad_disc = hypo_selected['bhad_disc'] if foundhypo else -1
 sequence.append(TopReco)
-
 ################################################################################
 
 all_mva_variables = {
@@ -301,15 +313,25 @@ all_mva_variables = {
      "mva_mtop_hi"               :(lambda event, sample: event.mtop_hi),
      "mva_mtop_lo"               :(lambda event, sample: event.mtop_lo),
      "mva_mtop_diff"             :(lambda event, sample: event.mtop_diff),
-     "mva_dR_tops"               :(lambda event, sample: event.dR_tops),
      "mva_mW_lep"                :(lambda event, sample: event.mW_lep),
      "mva_mW_had"                :(lambda event, sample: event.mW_had),
      "mva_ptW_lep"               :(lambda event, sample: event.ptW_lep),
      "mva_ptW_had"               :(lambda event, sample: event.ptW_had),
      "mva_chi2"                  :(lambda event, sample: event.chi2),
      "mva_pgof"                  :(lambda event, sample: event.pgof),
+     "mva_dR_tops"               :(lambda event, sample: event.dR_tops),
      "mva_dR_toplep_Z"           :(lambda event, sample: event.dR_toplep_Z),
      "mva_dR_tophad_Z"           :(lambda event, sample: event.dR_tophad_Z),
+     "mva_dR_Ws"                 :(lambda event, sample: event.dR_Ws),
+     "mva_dR_bottoms"            :(lambda event, sample: event.dR_bottoms),
+     "mva_dR_toplep_LepNoZ"      :(lambda event, sample: event.dR_toplep_LepNoZ),
+     "mva_dR_tophad_LepNoZ"      :(lambda event, sample: event.dR_tophad_LepNoZ),
+     "mva_dR_Wlep_LepNoZ"        :(lambda event, sample: event.dR_Wlep_LepNoZ),
+     "mva_dR_Whad_LepNoZ"        :(lambda event, sample: event.dR_Whad_LepNoZ),
+     "mva_dR_blep_LepNoZ"        :(lambda event, sample: event.dR_blep_LepNoZ),
+     "mva_dR_bhad_LepNoZ"        :(lambda event, sample: event.dR_bhad_LepNoZ),
+
+
 
 # jet kinmatics
      "mva_jet0_pt"               :(lambda event, sample: event.JetGood_pt[0]          if event.nJetGood >=1 else 0),
@@ -403,4 +425,4 @@ assert len(training_samples)==len(set([s.name for s in training_samples])), "tra
 # training selection
 from tWZ.Tools.cutInterpreter import cutInterpreter
 # selectionString = cutInterpreter.cutString( 'trilepT-onZ1-btag1-njet3p' )
-selectionString = cutInterpreter.cutString( 'trilepT-minDLmass12-onZ1-njet2p-deepjet1' )
+selectionString = cutInterpreter.cutString( 'trilepT-minDLmass12-onZ1-njet4p-deepjet1' )

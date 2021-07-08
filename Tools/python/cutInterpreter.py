@@ -27,12 +27,13 @@ special_cuts = {
     "dilepT" :        "l1_pt>40&&l2_pt>20&&l1_mvaTOPWP>=4&&l2_mvaTOPWP>=4",
     "trilepMini0p12" : "Sum$(lep_pt>40&&lep_miniPFRelIso_all<0.12&&{lep_string})>=1 && Sum$(lep_pt>20&&lep_miniPFRelIso_all<0.12&&{lep_string})>=2&&Sum$(lep_pt>10&&lep_miniPFRelIso_all<0.12&&{lep_string})==3".format(lep_string=lep_string_TTH),
     "onZ1"   : "abs(Z1_mass-91.2)<10",
+    "onZ2"   : "abs(Z2_mass-91.2)<10",
     "offZ1"    : "(abs(Z1_mass-91.2)>10)",
     "offZ2"  : "(!(abs(Z2_mass-91.2)<20))",
   }
 
 continous_variables = [ ('ht','Sum$(JetGood_pt*(JetGood_pt>30&&abs(JetGood_eta)<2.4))'), ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1mass", "Z1_mass"), ("minDLmass", "minDLmass"), ("mT", "mT")]
-discrete_variables  = [ ("njet", "nJetGood"), ("btag", "nBTag"), ("deepjet", "Sum$(JetGood_pt>30&&abs(JetGood_eta)<2.4&&((year==2016)*(JetGood_btagDeepFlavB>0.7221)+(year==2017)*(JetGood_btagDeepFlavB>0.7489)+(year==2018)*(JetGood_btagDeepFlavB>0.7264)))") ]
+discrete_variables  = [ ("njet", "nJetGood"), ("btag", "nBTag"), ("nLeptons", "nGoodLeptons"), ("deepjet", "Sum$(JetGood_pt>30&&abs(JetGood_eta)<2.4&&((year==2016)*(JetGood_btagDeepFlavB>0.7221)+(year==2017)*(JetGood_btagDeepFlavB>0.7489)+(year==2018)*(JetGood_btagDeepFlavB>0.7264)))") ]
 
 class cutInterpreter:
     ''' Translate var100to200-var2p etc.

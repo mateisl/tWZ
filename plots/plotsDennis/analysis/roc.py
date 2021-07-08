@@ -42,10 +42,11 @@ def getAUC( graph ):
 ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/tWZ/Tools/scripts/tdrstyle.C")
 ROOT.setTDRStyle()
 
-dirname = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/tWZ_v3_noData/RunII/all/trilepT-minDLmass12-onZ1-njet4p-deepjet1/"
+dirname = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/tWZ_v3_noData/Run2016/all/trilepT-minDLmass12-onZ1-njet4p-deepjet1/"
 roc = {}
 auc = {}
 filename = "MVA_score.root"
+f = ROOT.TFile.Open(dirname+filename)
 models = ["MVA_tWZ_3l", "MVA_tWZ_3l_topReco"]
 legends = {
     "MVA_tWZ_3l":           "MVA 3l",
@@ -57,11 +58,7 @@ for model in models:
     signal = "tWZ"
     # backgrounds = ["ttZ", "ttX", "tZq", "WZ", "ZZ", "triBoson", "nonprompt"]
     backgrounds = ["ttZ"]
-
     print "Getting histograms from model %s" %(model)
-
-    f = ROOT.TFile.Open(dirname+filename)
-
     # get signal and backgrounds
     print "  reading", model+"__"+signal+"__"+node, "..."
     sig = f.Get(model+"__"+signal+"__"+node)
@@ -75,7 +72,6 @@ for model in models:
                 print "  reading", model+"__"+backgrounds[i]+"__"+node, "..."
                 tmp = f.Get(model+"__"+backgrounds[i]+"__"+node)
                 bkg.Add(tmp)
-
     # normalize to unit area
     sig.Scale(1./sig.Integral())
     bkg.Scale(1./bkg.Integral())
@@ -83,10 +79,8 @@ for model in models:
     sig_eff = []
     bkg_eff = []
     for i_bin in reversed(range(1,sig.GetNbinsX()+1)):
-        sig_eff .append( sig.Integral(i_bin, sig.GetNbinsX()))
-        bkg_eff .append( bkg.Integral(i_bin, sig.GetNbinsX()))
-        #print i_bin, sig_eff, bkg_eff
-
+        sig_eff.append( sig.Integral(i_bin, sig.GetNbinsX()))
+        bkg_eff.append( bkg.Integral(i_bin, sig.GetNbinsX()))
 
     roc[model] = ROOT.TGraph(len(sig_eff), array.array('d',bkg_eff), array.array('d',sig_eff))
     auc[model] = getAUC(roc[model])
@@ -103,15 +97,12 @@ leg = ROOT.TLegend(0.33, 0.2, 0.9, 0.35)
 leg.SetFillStyle(0)
 leg.SetShadowColor(ROOT.kWhite)
 leg.SetBorderSize(0)
-
 firstkey = roc.keys()[0]
-
 roc[firstkey].Draw("AL")
 roc[firstkey].GetXaxis().SetTitle("ttZ background efficiency")
 roc[firstkey].GetYaxis().SetTitle("tWZ signal efficiency")
 roc[firstkey].GetXaxis().SetRangeUser(0,1)
 roc[firstkey].GetYaxis().SetRangeUser(0,1)
-
 icol = 0
 for model in models:
     roc[model].SetLineColor(colors[icol])
@@ -121,17 +112,42 @@ for model in models:
     roc[model].Draw("L SAME")
     leg.AddEntry( roc[model], legends[model]+", auc = %.2f" %(auc[model]), "l")
     icol += 1
-
 leg.Draw()
-
 diagonal = ROOT.TLine(0,0,1,1)
 diagonal.SetLineWidth(2)
 diagonal.SetLineColor(13)
 diagonal.SetLineStyle(7)
 diagonal.Draw("SAME")
-
 c1.SetTitle("")
 c1.RedrawAxis()
-c1.Print(os.path.join(plot_directory, "roc.png"))
 c1.Print(os.path.join(plot_directory, "roc.pdf"))
+
+##### MVA scores
+for model in models:
+    h_tWZ = f.Get(model+"__tWZ__"+node)
+    h_ttZ = f.Get(model+"__ttZ__"+node)
+    h_tWZ.Scale(1./h_tWZ.Integral())
+    h_ttZ.Scale(1./h_ttZ.Integral())
+    c2 = ROOT.TCanvas()
+    h_tWZ.GetXaxis().SetTitle("tWZ MVA score")
+    h_tWZ.GetXaxis().SetNdivisions(505)
+    h_tWZ.SetLineColor(ROOT.kRed)
+    h_tWZ.SetFillStyle(0)
+    h_tWZ.SetLineWidth(2)
+    h_ttZ.SetLineColor(ROOT.kAzure+4)
+    h_ttZ.SetFillStyle(0)
+    h_ttZ.SetLineWidth(2)
+    h_tWZ.Draw("HIST")
+    h_ttZ.Draw("HIST SAME")
+    leg = ROOT.TLegend(0.2, 0.65, 0.5, 0.85)
+    leg.SetFillStyle(0)
+    leg.SetShadowColor(ROOT.kWhite)
+    leg.SetBorderSize(0)
+    leg.AddEntry(h_tWZ, "tWZ", "l")
+    leg.AddEntry(h_ttZ, "ttZ", "l")
+    leg.Draw()
+    c2.SetTitle("")
+    c2.RedrawAxis()
+    c2.Print(os.path.join(plot_directory, model+"_score.pdf"))
+
 Analysis.Tools.syncer.sync()

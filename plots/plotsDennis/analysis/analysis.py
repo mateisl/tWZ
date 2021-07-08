@@ -1007,7 +1007,7 @@ for i_mode, mode in enumerate(allModes):
         binning=[20,0,7],
     ))
 
-    # Top reco plots
+    #### Top reco plots ########################################################
     plots.append(Plot(
         name = 'm_top_average',
         texX = '(m_{t1}+m_{t2})/2', texY = 'Number of Events',

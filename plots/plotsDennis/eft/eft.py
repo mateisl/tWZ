@@ -107,7 +107,7 @@ tex.SetTextAlign(11) # align right
 import sys
 sys.path.append('/users/dennis.schwarz/CMSSW_10_6_0/src/BIT/')
 from  BoostedInformationTree import BoostedInformationTree
-bit = BoostedInformationTree.load('/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/BIT/python/BIT_ttZ.pkl')
+bit = BoostedInformationTree.load('/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/BIT/BIT_ttZ.pkl')
 
 
 def charge(pdgId):

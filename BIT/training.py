@@ -46,9 +46,8 @@ argParser.add_argument('--plot_directory', action='store', default='BIT_training
 args = argParser.parse_args()
 
 training_features = []
-training_weights = []
-training_diff_weights = []
-
+weights = []
+diff_weights = []
 # Logger
 import tWZ.Tools.logger as logger
 import RootTools.core.logger as logger_rt
@@ -155,13 +154,15 @@ def WriteTrainingData(event,sample):
     feature_list.append(event.lep_pt[event.Z1_l2_index])
     feature_list.append(event.lep_phi[event.Z1_l2_index])
     feature_list.append(event.lep_eta[event.Z1_l2_index])
+    feature_list.append(event.nBTag)
+    feature_list.append(event.nJetGood)
     training_features.append(feature_list)
 
-    weight = w.get_weight_func(cHq1Re11=0)
-    weight_diff_cHq1Re11 = w.get_diff_weight_func('cHq1Re11', cHq1Re11=0)
+    weight = w.get_weight_func(cHq1Re33=0)
+    weight_diff_cHq1Re11 = w.get_diff_weight_func('cHq1Re33', cHq1Re33=0)
 
-    training_weights.append(weight(event,sample))
-    training_diff_weights.append(weight_diff_cHq1Re11(event,sample))
+    weights.append(weight(event,sample))
+    diff_weights.append(weight_diff_cHq1Re11(event,sample))
 sequence.append(WriteTrainingData)
 
 read_variables = [
@@ -258,6 +259,23 @@ plots.append(Plot(
     addOverFlowBin='upper',
 ))
 
+plots.append(Plot(
+    name = "n_Jet",
+    texX = 'Number of jets', texY = 'Number of Events',
+    attribute = TreeVariable.fromString( "nJetGood/I" ),
+    binning=[11,-0.5,10.5],
+    addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+    name = "n_bTags",
+    texX = 'Number of b tagged jets', texY = 'Number of Events',
+    attribute = TreeVariable.fromString( "nBTag/I" ),
+    binning=[11,-0.5,10.5],
+    addOverFlowBin='upper',
+))
+
+
 plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 
 for plot in plots:
@@ -279,6 +297,16 @@ learning_rate = 0.2
 max_depth     = 11
 min_size      = 50
 
+# split into training and validation
+validation_fraction = 0.3
+Nevents = len(weights)
+middle_index = Nevents//(1/validation_fraction) # divide and round down
+
+training_weights = weights[middle_index:]
+training_diff_weights = diff_weights[middle_index:]
+validation_weights = weights[:middle_index]
+validation_diff_weights = diff_weights[:middle_index]
+
 bit = BoostedInformationTree(
         training_features = np.array(training_features),
         training_weights      = np.array(training_weights),
@@ -291,6 +319,6 @@ bit = BoostedInformationTree(
         weights_update_method='vectorized')
 
 bit.boost()
-bit.save('BIT_ttZ.pkl')
+bit.save('BIT_ttZ_cHq1Re33_0.pkl')
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )

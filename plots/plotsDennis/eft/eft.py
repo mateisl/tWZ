@@ -107,8 +107,11 @@ tex.SetTextAlign(11) # align right
 import sys
 sys.path.append('/users/dennis.schwarz/CMSSW_10_6_0/src/BIT/')
 from  BoostedInformationTree import BoostedInformationTree
-bit = BoostedInformationTree.load('/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/BIT/BIT_ttZ.pkl')
+bit_cHq1Re11_0 = BoostedInformationTree.load('/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/BIT/BIT_ttZ_cHq1Re11_0.pkl')
+bit_cHq1Re11_2 = BoostedInformationTree.load('/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/BIT/BIT_ttZ_cHq1Re11_2.pkl')
+bit_cHq1Re33_0 = BoostedInformationTree.load('/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/BIT/BIT_ttZ_cHq1Re33_0.pkl')
 
+bins_BIT = [-1., 0.0, 0.2, 0.4, 0.8, 1.] # for plots
 
 def charge(pdgId):
     return -pdgId/abs(pdgId)
@@ -140,129 +143,6 @@ def drawPlots(plots):
             copyIndexPHP = True, extensions = ["png", "pdf"],
           )
 
-## top reco functions ##############################################################
-def getWlep( event ):
-    Wlep = ROOT.TLorentzVector()
-    lepton  = ROOT.TLorentzVector()
-    met     = ROOT.TLorentzVector()
-    lepton.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
-    met.SetPtEtaPhiM(event.met_pt, 0, event.met_phi, 0)
-
-    lepton_pT = ROOT.TVector3(lepton.Px(), lepton.Py(), 0)
-    neutrino_pT = ROOT.TVector3(met.Px(), met.Py(), 0)
-
-    mass_w = 80.399
-    mu = mass_w * mass_w / 2 + lepton_pT * neutrino_pT
-    A = - (lepton_pT * lepton_pT)
-    B = mu * lepton.Pz()
-    C = mu * mu - lepton.E() * lepton.E() * (neutrino_pT * neutrino_pT)
-    discriminant = B * B - A * C
-    neutrinos = []
-    if discriminant <= 0:
-        # Take only real part of the solution for pz:
-        neutrino = ROOT.TLorentzVector()
-        neutrino.SetPxPyPzE(met.Px(),met.Py(),-B / A,0)
-        neutrino.SetE(neutrino.P())
-        neutrinos.append(neutrino)
-    else:
-        discriminant = sqrt(discriminant)
-        neutrino1 = ROOT.TLorentzVector()
-        neutrino1.SetPxPyPzE(met.Px(),met.Py(),(-B - discriminant) / A,0)
-        neutrino1.SetE(neutrino1.P())
-        neutrino2 = ROOT.TLorentzVector()
-        neutrino2.SetPxPyPzE(met.Px(),met.Py(),(-B + discriminant) / A,0)
-        neutrino2.SetE(neutrino2.P())
-        if neutrino1.E() > neutrino2.E():
-            neutrinos.append(neutrino1)
-            neutrinos.append(neutrino2)
-        else:
-            neutrinos.append(neutrino2)
-            neutrinos.append(neutrino1)
-
-    Wleps = []
-    for neu in neutrinos:
-        Wlep = lepton + neu
-        Wleps.append([Wlep, lepton, neu])
-    return Wleps
-
-def calculate_chi2(toplep, tophad, Whad, blep_disc, bhad_disc, mode):
-    Mtlep_mean   = 171.
-    Mtlep_sigma  =  16.
-    Mthad_mean   = 171.
-    Mthad_sigma  =  17.
-    MWhad_mean   =  83.
-    MWhad_sigma  =  11.
-    Mtdiff_sigma = sqrt(pow(Mtlep_sigma,2)+pow(Mthad_sigma,2))
-    b_disc_mean  = 1.0
-    b_disc_sigma = 0.4
-    toplepterm  = pow((toplep.M()-Mtlep_mean)/Mtlep_sigma,2)
-    tophadterm  = pow((tophad.M()-Mthad_mean)/Mthad_sigma,2)
-    Whadterm    = pow((  Whad.M()-MWhad_mean)/MWhad_sigma,2)
-    topdiffterm = pow((toplep.M()-tophad.M())/Mtdiff_sigma,2)
-    blepterm    = pow((blep_disc-b_disc_mean)/b_disc_sigma,2)
-    bhadterm    = pow((bhad_disc-b_disc_mean)/b_disc_sigma,2)
-    if mode=="topdiff":
-        chi2 = topdiffterm+Whadterm
-    elif mode=="btag":
-        chi2 = topdiffterm+Whadterm+blepterm+bhadterm
-    else:
-        chi2 = toplepterm+tophadterm+Whadterm
-    return chi2
-
-def getTopHypos(event, Njetsmax):
-    # Set maximum number of jets
-    if event.nJetGood < Njetsmax:
-        Njetsmax = event.nJetGood
-    if Njetsmax < 4: return []
-    # Find all possible solutions for the 4 missing jets
-    # (blep,bhad,Wdecay1, Wdecay2)
-    jet_permutations = []
-    for i in range(Njetsmax):
-        for j in range(Njetsmax):
-            if j == i:
-                continue
-            for k in range(Njetsmax):
-                if k==i or k==j:
-                    continue
-                for l in range(Njetsmax):
-                    if l==i or l==j or l==k:
-                        continue
-                    jet_i = ROOT.TLorentzVector()
-                    jet_j = ROOT.TLorentzVector()
-                    jet_k = ROOT.TLorentzVector()
-                    jet_l = ROOT.TLorentzVector()
-                    jetidx_i = event.JetGood_index[i]
-                    jetidx_j = event.JetGood_index[j]
-                    jetidx_k = event.JetGood_index[k]
-                    jetidx_l = event.JetGood_index[l]
-                    jet_i.SetPtEtaPhiM(event.Jet_pt[jetidx_i], event.Jet_eta[jetidx_i], event.Jet_phi[jetidx_i], event.Jet_mass[jetidx_i])
-                    jet_j.SetPtEtaPhiM(event.Jet_pt[jetidx_j], event.Jet_eta[jetidx_j], event.Jet_phi[jetidx_j], event.Jet_mass[jetidx_j])
-                    jet_k.SetPtEtaPhiM(event.Jet_pt[jetidx_k], event.Jet_eta[jetidx_k], event.Jet_phi[jetidx_k], event.Jet_mass[jetidx_k])
-                    jet_l.SetPtEtaPhiM(event.Jet_pt[jetidx_l], event.Jet_eta[jetidx_l], event.Jet_phi[jetidx_l], event.Jet_mass[jetidx_l])
-                    jet_permutations.append([[jet_i, jet_j, jet_k, jet_l], [event.JetGood_btagDeepFlavB[i],event.JetGood_btagDeepFlavB[j]]])
-    # Get Wlep from lepton + MET
-    Wleps   = getWlep(event)
-    # build hypotheses
-    hypotheses = []
-    for Wlep, lepton, neutrino in Wleps:
-        for permutation, btag_disc in jet_permutations:
-            hypo = {}
-            hypo['toplep']       = Wlep + permutation[0]
-            hypo['Wlep']         = Wlep
-            hypo['lepton']       = lepton
-            hypo['neutrino']     = neutrino
-            hypo['blep']         = permutation[0]
-            hypo['blep_disc']    = btag_disc[0]
-            hypo['tophad']       = permutation[1] + permutation[2] + permutation[3]
-            hypo['Whad']         = permutation[2] + permutation[3]
-            hypo['bhad']         = permutation[1]
-            hypo['bhad_disc']    = btag_disc[1]
-            hypo['WhadDecay1']   = permutation[2]
-            hypo['WhadDecay2']   = permutation[3]
-            hypo['chi2']         = calculate_chi2(hypo['toplep'],hypo['tophad'],hypo['Whad'],hypo['blep_disc'],hypo['bhad_disc'],"normal")
-            hypotheses.append(hypo)
-    return hypotheses
-
 # Read variables and sequences
 sequence       = []
 
@@ -290,61 +170,6 @@ def getM3l( event, sample ):
 
 sequence.append( getM3l )
 
-## Top Reco sequence ###########################################################
-def TopReco(event, sample):
-    hypotheses=getTopHypos(event, 6)
-    chi2min = 10000
-    foundhypo = False
-    for hypo in hypotheses:
-        if hypo['chi2']<chi2min:
-            chi2min = hypo['chi2']
-            hypo_selected = hypo
-            foundhypo = True
-    if foundhypo:
-        if hypo_selected['toplep'].M() > hypo_selected['tophad'].M():
-            mtop_hi = hypo_selected['toplep'].M()
-            mtop_lo = hypo_selected['tophad'].M()
-        else:
-            mtop_hi = hypo_selected['tophad'].M()
-            mtop_lo = hypo_selected['toplep'].M()
-
-    # Also get Z
-    Z = ROOT.TLorentzVector()
-    Z.SetPtEtaPhiM(event.Z1_pt, event.Z1_eta, event.Z1_phi, event.Z1_mass)
-
-    LeptonNoZ = ROOT.TLorentzVector()
-    LeptonNoZ.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
-
-    # observables for mtop1 and mtop2 closest to mtop
-    event.mtop_average = (hypo_selected['toplep'].M()+hypo_selected['tophad'].M())/2 if foundhypo else -1
-    event.mtoplep = hypo_selected['toplep'].M() if foundhypo else -1
-    event.mtophad = hypo_selected['tophad'].M() if foundhypo else -1
-    event.mtop_hi = mtop_hi if foundhypo else -1
-    event.mtop_lo = mtop_lo if foundhypo else -1
-    event.mtop_diff = (mtop_hi-mtop_lo)/(mtop_hi+mtop_lo) if foundhypo else -1
-    event.pt_diff = abs(hypo_selected['toplep'].Pt()-hypo_selected['tophad'].Pt()) if foundhypo else -1
-    event.mW_lep = hypo_selected['Wlep'].M() if foundhypo else -1
-    event.mW_had = hypo_selected['Whad'].M() if foundhypo else -1
-    event.ptW_lep = hypo_selected['Wlep'].Pt() if foundhypo else -1
-    event.ptW_had = hypo_selected['Whad'].Pt() if foundhypo else -1
-    event.chi2 = hypo_selected['chi2'] if foundhypo else -1
-    event.pgof = exp(-0.5*hypo_selected['chi2']) if foundhypo else -1
-    event.hypofound = 1 if foundhypo else 0
-    event.dR_tops = hypo_selected['toplep'].DeltaR(hypo_selected['tophad']) if foundhypo else -1
-    event.dR_Ws = hypo_selected['Wlep'].DeltaR(hypo_selected['Whad']) if foundhypo else -1
-    event.dR_bottoms = hypo_selected['bhad'].DeltaR(hypo_selected['blep']) if foundhypo else -1
-    event.dR_toplep_Z = hypo_selected['toplep'].DeltaR(Z) if foundhypo else -1
-    event.dR_tophad_Z = hypo_selected['tophad'].DeltaR(Z) if foundhypo else -1
-    event.dR_toplep_LepNoZ = hypo_selected['toplep'].DeltaR(LeptonNoZ) if foundhypo else -1
-    event.dR_tophad_LepNoZ = hypo_selected['tophad'].DeltaR(LeptonNoZ) if foundhypo else -1
-    event.dR_Wlep_LepNoZ = hypo_selected['Wlep'].DeltaR(LeptonNoZ) if foundhypo else -1
-    event.dR_Whad_LepNoZ = hypo_selected['Whad'].DeltaR(LeptonNoZ) if foundhypo else -1
-    event.dR_blep_LepNoZ = hypo_selected['blep'].DeltaR(LeptonNoZ) if foundhypo else -1
-    event.dR_bhad_LepNoZ = hypo_selected['bhad'].DeltaR(LeptonNoZ) if foundhypo else -1
-    event.blep_disc = hypo_selected['blep_disc'] if foundhypo else -1
-    event.bhad_disc = hypo_selected['bhad_disc'] if foundhypo else -1
-sequence.append(TopReco)
-
 ## BIT predict #################################################################
 def BITpredict(event,sample):
     feature_list = []
@@ -358,15 +183,21 @@ def BITpredict(event,sample):
     feature_list.append(event.lep_pt[event.Z1_l2_index])
     feature_list.append(event.lep_phi[event.Z1_l2_index])
     feature_list.append(event.lep_eta[event.Z1_l2_index])
-    event.BIT = bit.predict(np.array(feature_list))
+    feature_list.append(event.nBTag)
+    feature_list.append(event.nJetGood)
+    event.BIT_cHq1Re11_0 = bit_cHq1Re11_0.predict(np.array(feature_list))
+    event.BIT_cHq1Re11_2 = bit_cHq1Re11_2.predict(np.array(feature_list))
+    event.BIT_cHq1Re33_0 = bit_cHq1Re33_0.predict(np.array(feature_list))
     # print event.BIT
 sequence.append(BITpredict)
 
+################################################################################
 
 read_variables = [
-    "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I",
+    "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I", "minDLmass/F",
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l1_mvaTOP/F", "l1_mvaTOPWP/I", "l1_index/I",
     "l2_pt/F", "l2_eta/F" , "l2_phi/F", "l2_mvaTOP/F", "l2_mvaTOPWP/I", "l2_index/I",
+    "l3_pt/F", "l3_eta/F" , "l3_phi/F", "l3_mvaTOP/F", "l3_mvaTOPWP/I", "l3_index/I",
     "JetGood[pt/F,eta/F,phi/F,area/F,btagDeepB/F,btagDeepFlavB/F,index/I]",
     "Jet[pt/F,eta/F,phi/F,mass/F]",
     "lep[pt/F,eta/F,phi/F,pdgId/I,muIndex/I,eleIndex/I]",
@@ -522,219 +353,131 @@ plots.append(Plot(
 ))
 
 plots.append(Plot(
-    name = 'BIT_1', texX = 'BIT score', texY = 'Number of Events',
-    attribute = lambda event, sample: event.BIT,
+    name = "n_Jet",
+    texX = 'Number of jets', texY = 'Number of Events',
+    attribute = lambda event, sample: event.nJetGood,
+    binning=[11,-0.5,10.5],
+    addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+    name = "n_btag",
+    texX = 'Number of jets', texY = 'Number of Events',
+    attribute = lambda event, sample: event.nBTag,
+    binning=[11,-0.5,10.5],
+    addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+    name = 'BIT_cHq1Re11_0_A', texX = 'BIT score', texY = 'Number of Events',
+    attribute = lambda event, sample: event.BIT_cHq1Re11_0,
     binning=[50,-1,1],
     addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-    name = 'BIT_2', texX = 'BIT score', texY = 'Number of Events',
-    attribute = lambda event, sample: event.BIT,
+    name = 'BIT_cHq1Re11_0_B', texX = 'BIT score', texY = 'Number of Events',
+    attribute = lambda event, sample: event.BIT_cHq1Re11_0,
     binning=[50,-0.5,0.5],
     addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-    name = 'BIT_3', texX = 'BIT score', texY = 'Number of Events',
-    attribute = lambda event, sample: event.BIT,
+    name = 'BIT_cHq1Re11_0_C', texX = 'BIT score', texY = 'Number of Events',
+    attribute = lambda event, sample: event.BIT_cHq1Re11_0,
     binning=[50,-0.1,0.1],
     addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-    name = 'BIT_4', texX = 'BIT score', texY = 'Number of Events',
-    attribute = lambda event, sample: event.BIT,
-    binning=[50,-0.01,0.01],
-    addOverFlowBin='upper',
-))
-
-#### Top reco plots ########################################################
-plots.append(Plot(
-    name = 'm_top_average',
-    texX = '(m_{t1}+m_{t2})/2', texY = 'Number of Events',
-    attribute = lambda event, sample: event.mtop_average,
-    binning=[40, 0.0, 400],
-))
-
-plots.append(Plot(
-    name = 'm_top_lep',
-    texX = 'm_{tlep}', texY = 'Number of Events',
-    attribute = lambda event, sample: event.mtoplep,
-    binning=[40, 0.0, 400],
-))
-
-plots.append(Plot(
-    name = 'm_top_had',
-    texX = 'm_{thad}', texY = 'Number of Events',
-    attribute = lambda event, sample: event.mtophad,
-    binning=[40, 0.0, 400],
-))
-
-plots.append(Plot(
-    name = 'm_top_hi',
-    texX = 'max(m_{t1},m_{t2})', texY = 'Number of Events',
-    attribute = lambda event, sample: event.mtop_hi,
-    binning=[40, 0.0, 400],
-))
-
-plots.append(Plot(
-    name = 'm_top_lo',
-    texX = 'min(m_{t1},m_{t2})', texY = 'Number of Events',
-    attribute = lambda event, sample: event.mtop_lo,
-    binning=[40, 0.0, 400],
-))
-
-plots.append(Plot(
-    name = 'm_top_diff',
-    texX = '|m_{t1}-m_{t2}|/|m_{t1}+m_{t2}|', texY = 'Number of Events',
-    attribute = lambda event, sample: event.mtop_diff,
-    binning=[50, 0.0, 1.0],
+    name = 'BIT_cHq1Re11_2_A', texX = 'BIT score', texY = 'Number of Events',
+    attribute = lambda event, sample: event.BIT_cHq1Re11_2,
+    binning=[50,-1,1],
     addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-    name = 'pt_top_diff',
-    texX = '|p_{T}^{t1}-p_{T}^{t2}|', texY = 'Number of Events',
-    attribute = lambda event, sample: event.pt_diff,
-    binning=[40, 0.0, 400],
+    name = 'BIT_cHq1Re11_2_A2', texX = 'BIT score', texY = 'Number of Events',
+    attribute = lambda event, sample: event.BIT_cHq1Re11_2,
+    binning=[10,-1,1],
     addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-    name = 'mW_lep',
-    texX = 'm_{Wlep}', texY = 'Number of Events',
-    attribute = lambda event, sample: event.mW_lep,
-    binning=[40, 0.0, 200],
+    name = 'BIT_cHq1Re11_2_B', texX = 'BIT score', texY = 'Number of Events',
+    attribute = lambda event, sample: event.BIT_cHq1Re11_2,
+    binning=[50,-0.5,0.5],
     addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-    name = 'mW_had',
-    texX = 'm_{Whad}', texY = 'Number of Events',
-    attribute = lambda event, sample: event.mW_had,
-    binning=[40, 0.0, 200],
+    name = 'BIT_cHq1Re11_2_C', texX = 'BIT score', texY = 'Number of Events',
+    attribute = lambda event, sample: event.BIT_cHq1Re11_2,
+    binning=[50,-0.1,0.1],
     addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-    name = 'ptW_lep',
-    texX = 'p_{T}^{Wlep}', texY = 'Number of Events',
-    attribute = lambda event, sample: event.ptW_lep,
-    binning=[40, 0.0, 400],
+    name = 'BIT_cHq1Re33_0_A', texX = 'BIT score', texY = 'Number of Events',
+    attribute = lambda event, sample: event.BIT_cHq1Re33_0,
+    binning=[50,-1,1],
     addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-    name = 'ptW_had',
-    texX = 'p_{T}^{Whad}', texY = 'Number of Events',
-    attribute = lambda event, sample: event.ptW_had,
-    binning=[40, 0.0, 400],
+    name = 'BIT_cHq1Re33_0_B', texX = 'BIT score', texY = 'Number of Events',
+    attribute = lambda event, sample: event.BIT_cHq1Re33_0,
+    binning=[50,-0.5,0.5],
     addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
-    name = 'chi2',
-    texX = '#chi^{2}', texY = 'Number of Events',
-    attribute = lambda event, sample: event.chi2,
-    binning=[40, 0.0, 80.],
+    name = 'BIT_cHq1Re33_0_C', texX = 'BIT score', texY = 'Number of Events',
+    attribute = lambda event, sample: event.BIT_cHq1Re33_0,
+    binning=[50,-0.1,0.1],
     addOverFlowBin='upper',
 ))
 
-plots.append(Plot(
-    name = 'p_gof',
-    texX = 'P_{gof}', texY = 'Number of Events',
-    attribute = lambda event, sample: event.pgof,
-    binning=[50, 0., 1.],
-))
-
-plots.append(Plot(
-    name = 'dR_tops',
-    texX = '#Delta R(top_{lep},top_{had})', texY = 'Number of Events',
-    attribute = lambda event, sample: event.dR_tops,
-    binning=[35, 0.0, 7],
-    addOverFlowBin = 'upper',
-))
-
-plots.append(Plot(
-name = 'dR_Ws',
-texX = '#Delta R(W_{lep},W_{had})', texY = 'Number of Events',
-attribute = lambda event, sample: event.dR_Ws,
-binning=[35, 0.0, 7],
-addOverFlowBin = 'upper',
-))
-
-plots.append(Plot(
-    name = 'dR_bottoms',
-    texX = '#Delta R(b_{lep},b_{had})', texY = 'Number of Events',
-    attribute = lambda event, sample: event.dR_bottoms,
-    binning=[35, 0.0, 7],
-    addOverFlowBin = 'upper',
-))
-
-plots.append(Plot(
-    name = 'dR_toplep_Z',
-    texX = '#Delta R(top_{lep},Z)', texY = 'Number of Events',
-    attribute = lambda event, sample: event.dR_toplep_Z,
-    binning=[35, 0.0, 7],
-    addOverFlowBin = 'upper',
-))
-
-plots.append(Plot(
-    name = 'dR_tophad_Z',
-    texX = '#Delta R(top_{had},Z)', texY = 'Number of Events',
-    attribute = lambda event, sample: event.dR_tophad_Z,
-    binning=[35, 0.0, 7],
-    addOverFlowBin = 'upper',
-))
-
-plots.append(Plot(
-    name = 'dR_toplep_LepNoZ',
-    texX = '#Delta R(top_{lep},lep (not Z))', texY = 'Number of Events',
-    attribute = lambda event, sample: event.dR_toplep_LepNoZ,
-    binning=[35, 0.0, 7],
-    addOverFlowBin = 'upper',
-))
-
-plots.append(Plot(
-    name = 'dR_tophad_LepNoZ',
-    texX = '#Delta R(top_{had},lep (no Z))', texY = 'Number of Events',
-    attribute = lambda event, sample: event.dR_tophad_LepNoZ,
-    binning=[35, 0.0, 7],
-    addOverFlowBin = 'upper',
-))
-
-plots.append(Plot(
-    name = 'dR_Wlep_LepNoZ',
-    texX = '#Delta R(W_{lep},lep (not Z))', texY = 'Number of Events',
-    attribute = lambda event, sample: event.dR_Wlep_LepNoZ,
-    binning=[35, 0.0, 7],
-    addOverFlowBin = 'upper',
-))
-
-plots.append(Plot(
-    name = 'dR_Whad_LepNoZ',
-    texX = '#Delta R(W_{had},lep (no Z))', texY = 'Number of Events',
-    attribute = lambda event, sample: event.dR_Whad_LepNoZ,
-    binning=[35, 0.0, 7],
-    addOverFlowBin = 'upper',
-))
-
-plots.append(Plot(
-    name = 'dR_blep_LepNoZ',
-    texX = '#Delta R(b_{lep},lep (not Z))', texY = 'Number of Events',
-    attribute = lambda event, sample: event.dR_blep_LepNoZ,
-    binning=[35, 0.0, 7],
-    addOverFlowBin = 'upper',
-))
-
-plots.append(Plot(
-    name = 'dR_bhad_LepNoZ',
-    texX = '#Delta R(b_{had},lep (no Z))', texY = 'Number of Events',
-    attribute = lambda event, sample: event.dR_bhad_LepNoZ,
-    binning=[35, 0.0, 7],
-    addOverFlowBin = 'upper',
-))
+for i in range(len(bins_BIT)-1):
+    lo = bins_BIT[i]
+    hi = bins_BIT[i+1]
+    print lo,hi
+    score_string = "("+str(lo)+"< score < "+str(hi)+")"
+    plots.append(Plot(
+        name = "Z1_pt_bin"+str(i),
+        texX = 'p_{T}(Z_{1}) '+score_string+' [GeV]', texY = 'Number of Events / 20 GeV',
+        attribute = lambda event, sample: event.Z1_pt if event.BIT_cHq1Re11_2>bins_BIT[i] and event.BIT_cHq1Re11_2<bins_BIT[i+1] else -1,
+        binning=[30,0,600],
+        addOverFlowBin='upper',
+    ))
+    plots.append(Plot(
+        name = "Z1_eta_bin"+str(i),
+        texX = '#eta(Z_{1}) '+score_string, texY = 'Number of Events',
+        attribute = lambda event, sample: event.Z1_eta if event.BIT_cHq1Re11_2>lo and event.BIT_cHq1Re11_2<hi else -10,
+        binning=[20,-3,3],
+        addOverFlowBin='upper',
+    ))
+    plots.append(Plot(
+        name = "l1_Z_pt_bin"+str(i),
+        texX = 'p_{T}(l_{1}^Z) '+score_string+' [GeV]', texY = 'Number of Events / 20 GeV',
+        attribute = lambda event, sample: event.lep_pt[event.Z1_l1_index] if event.BIT_cHq1Re11_2>lo and event.BIT_cHq1Re11_2<hi else -1,
+        binning=[20,0,400],
+        addOverFlowBin='upper',
+    ))
+    plots.append(Plot(
+        name = "n_Jet_bin"+str(i),
+        texX = 'Number of jets '+score_string, texY = 'Number of Events',
+        attribute = lambda event, sample: event.nJetGood if event.BIT_cHq1Re11_2>lo and event.BIT_cHq1Re11_2<hi else -1,
+        binning=[11,-0.5,10.5],
+        addOverFlowBin='upper',
+    ))
+    plots.append(Plot(
+        name = "n_btag_bin"+str(i),
+        texX = 'Number of jets '+score_string, texY = 'Number of Events',
+        attribute = lambda event, sample: event.nBTag if event.BIT_cHq1Re11_2>lo and event.BIT_cHq1Re11_2<hi else -1,
+        binning=[11,-0.5,10.5],
+        addOverFlowBin='upper',
+    ))
 
 plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 
@@ -746,5 +489,28 @@ for plot in plots:
 
 drawPlots(plots)
 
+# getCoeffList
+# selString_ptZ = cutInterpreter.cutString(args.selection)+"&&Z1_pt>=500"
+#
+# coeffList_ptZ = w.getCoeffListFromDraw(sample, selectionString=selString_ptZ, weightString = "weight*137" )
+# values = [-4, -3, -2, -1, 0, 1, 2, 3, 4]
+# h_cHq1Re11_ptZ = ROOT.TH1F("yields_cHq1Re11_ptZ", "cHq1Re11", len(values), values[0]-0.5, values[-1]+0.5)
+# h_cHq1Re33_ptZ = ROOT.TH1F("yields_cHq1Re33_ptZ", "cHq1Re33", len(values), values[0]-0.5, values[-1]+0.5)
+#
+# for i in range(len(values)):
+#     h_cHq1Re11_ptZ.SetBinContent(i+1, w.get_weight_yield(coeffList_ptZ, cHq1Re11=values[i]))
+#     h_cHq1Re33_ptZ.SetBinContent(i+1, w.get_weight_yield(coeffList_ptZ, cHq1Re33=values[i]))
+#
+# dir = os.path.join(plot_directory, 'eft',  args.plot_directory, sample.name, "lin", args.selection)
+#
+# c3 = ROOT.TCanvas()
+# h_cHq1Re11_ptZ.Draw("HIST")
+# h_cHq1Re11_ptZ.Fit('pol2')
+# c3.Print(dir+"/yields_cHq1Re11_ptZ500.pdf")
+#
+# c4 = ROOT.TCanvas()
+# h_cHq1Re33_ptZ.Draw("HIST")
+# h_cHq1Re33_ptZ.Fit('pol2')
+# c4.Print(dir+"/yields_cHq1Re33_ptZ500.pdf")
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )

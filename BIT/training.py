@@ -45,7 +45,7 @@ argParser.add_argument('--plot_directory', action='store', default='BIT_training
 
 args = argParser.parse_args()
 
-training_features = []
+features = []
 weights = []
 diff_weights = []
 # Logger
@@ -156,7 +156,7 @@ def WriteTrainingData(event,sample):
     feature_list.append(event.lep_eta[event.Z1_l2_index])
     feature_list.append(event.nBTag)
     feature_list.append(event.nJetGood)
-    training_features.append(feature_list)
+    features.append(feature_list)
 
     weight = w.get_weight_func(cHq1Re33=0)
     weight_diff_cHq1Re11 = w.get_diff_weight_func('cHq1Re33', cHq1Re33=0)
@@ -298,14 +298,22 @@ max_depth     = 11
 min_size      = 50
 
 # split into training and validation
-validation_fraction = 0.3
-Nevents = len(weights)
-middle_index = Nevents//(1/validation_fraction) # divide and round down
+# validation_fraction = 0.3
+# Nevents = len(weights)
+# middle_index = Nevents//(1/validation_fraction) # divide and round down
+#
+# training_features = features[middle_index:]
+# training_weights = weights[middle_index:]
+# training_diff_weights = diff_weights[middle_index:]
+#
+# validation_weights = weights[:middle_index]
+# validation_diff_weights = diff_weights[:middle_index]
+# validation_features = features[middle_index:]
 
-training_weights = weights[middle_index:]
-training_diff_weights = diff_weights[middle_index:]
-validation_weights = weights[:middle_index]
-validation_diff_weights = diff_weights[:middle_index]
+# for now use all data for training
+training_features = features
+training_weights = weights
+training_diff_weights = diff_weights
 
 bit = BoostedInformationTree(
         training_features = np.array(training_features),

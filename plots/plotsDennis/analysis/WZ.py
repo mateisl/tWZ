@@ -46,7 +46,7 @@ argParser.add_argument('--small',                             action='store_true
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
 argParser.add_argument('--plot_directory', action='store', default='WZ_1')
 argParser.add_argument('--era',            action='store', type=str, default="Run2018")
-argParser.add_argument('--selection',      action='store', default='trilepVL-minDLmass12-onZ1-met60')
+argParser.add_argument('--selection',      action='store', default='trilepT-minDLmass12-onZ1-met60')
 args = argParser.parse_args()
 
 ################################################################################
@@ -77,6 +77,7 @@ elif args.era == "Run2017":
     mc = [Fall17.TWZ_NLO_DR, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
 elif args.era == "Run2018":
     mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
+    # mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.DY]
     if args.SMEFTsim:
         mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, SMEFTsim_fast.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
@@ -92,6 +93,8 @@ except Exception as e:
 
 lumi_scale                 = data_sample.lumi/1000
 data_sample.scale          = 1.
+
+# Set up MC sample
 for sample in mc:
     sample.scale           = 1 # Scale MCs individually with lumi
 
@@ -176,6 +179,29 @@ def getDeepJetTags(event, sample):
 
 sequence.append(getDeepJetTags)
 
+def getFailLepton(event, sample):
+    event.nonZ1_l1_muID = float('nan')
+    event.nonZ1_l1_muIDM = float('nan')
+    event.nonZ1_l1_muIDT = float('nan')
+    event.nonZ1_l1_isGlobal = float('nan')
+    event.nonZ1_l1_isTracker = float('nan')
+    event.nonZ1_l1_isPFcand = float('nan')
+    event.nonZ1_l1_flavor = float('nan')
+
+    lepindex = event.nonZ1_l1_index
+    muindex = event.lep_muIndex[lepindex]
+    elindex = event.lep_eleIndex[lepindex]
+    if muindex != -1:
+        event.nonZ1_l1_muIDM = 1 if event.Muon_mediumId[muindex] else 0
+        event.nonZ1_l1_muIDT = 1 if event.Muon_tightId[muindex] else 0
+        event.nonZ1_l1_isGlobal = 1 if event.Muon_isGlobal[muindex] else 0
+        event.nonZ1_l1_isTracker = 1 if event.Muon_isTracker[muindex] else 0
+        event.nonZ1_l1_isPFcand = 1 if event.Muon_isPFcand[muindex] else 0
+        if sample.name != "data":
+            event.nonZ1_l1_flavor = event.Muon_genPartFlav[muindex]
+
+sequence.append(getFailLepton)
+
 ################################################################################
 # Read variables
 
@@ -189,13 +215,14 @@ read_variables = [
     "lep[pt/F,eta/F,phi/F,pdgId/I,muIndex/I,eleIndex/I]",
     "Z1_l1_index/I", "Z1_l2_index/I", "nonZ1_l1_index/I", "nonZ1_l2_index/I",
     "Z1_phi/F", "Z1_pt/F", "Z1_mass/F", "Z1_cosThetaStar/F", "Z1_eta/F", "Z1_lldPhi/F", "Z1_lldR/F",
-    "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I]",
+    "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I,mediumId/O,tightId/O,isPFcand/B,isTracker/B,isGlobal/B]",
     "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
 ]
 
 read_variables_MC = [
     'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F',
     "genZ1_pt/F", "genZ1_eta/F", "genZ1_phi/F",
+    "Muon[genPartFlav/I]"
 ]
 
 ################################################################################
@@ -203,14 +230,16 @@ read_variables_MC = [
 
 ################################################################################
 # define 3l selections
-mu_string  = lepString('mu','VL')
+mu_string  = lepString('mu','VL') + "&&lep_mediumId"
 ele_string = lepString('ele','VL')
 def getLeptonSelection( mode ):
-    if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=="mumue":  return "Sum$({mu_string})==2&&Sum$({ele_string})==1".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=="muee":   return "Sum$({mu_string})==1&&Sum$({ele_string})==2".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=="eee":    return "Sum$({mu_string})==0&&Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=='all':    return "Sum$({mu_string})+Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
+    leptonstring = ""
+    if   mode=="mumumu": leptonstring = "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=="mumue":  leptonstring = "Sum$({mu_string})==2&&Sum$({ele_string})==1".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=="muee":   leptonstring = "Sum$({mu_string})==1&&Sum$({ele_string})==2".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=="eee":    leptonstring = "Sum$({mu_string})==0&&Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=='all':    leptonstring = "Sum$({mu_string})+Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
+    return leptonstring
 
 ################################################################################
 # Getter functor for lepton quantities
@@ -293,6 +322,48 @@ for i_mode, mode in enumerate(allModes):
       texX = 'N_{jets}', texY = 'Number of Events',
       attribute = TreeVariable.fromString( "nJetGood/I" ), #nJetSelected
       binning=[8,-0.5,7.5],
+    ))
+
+    plots.append(Plot(
+      name = 'lnonZ1_muIDM',
+      texX = 'Non Z Muons medium Id', texY = 'Number of Events',
+      attribute = lambda event, sample: event.nonZ1_l1_muIDM,
+      binning=[2,-0.5,1.5],
+    ))
+
+    plots.append(Plot(
+      name = 'lnonZ1_muIDT',
+      texX = 'Non Z Muons tight Id', texY = 'Number of Events',
+      attribute = lambda event, sample: event.nonZ1_l1_muIDT,
+      binning=[2,-0.5,1.5],
+    ))
+
+    plots.append(Plot(
+      name = 'lnonZ1_isGlobal',
+      texX = 'Non Z Muons isGlobal', texY = 'Number of Events',
+      attribute = lambda event, sample: event.nonZ1_l1_isGlobal,
+      binning=[2,-0.5,1.5],
+    ))
+
+    plots.append(Plot(
+      name = 'lnonZ1_isTracker',
+      texX = 'Non Z Muons isTracker', texY = 'Number of Events',
+      attribute = lambda event, sample: event.nonZ1_l1_isTracker,
+      binning=[2,-0.5,1.5],
+    ))
+
+    plots.append(Plot(
+      name = 'lnonZ1_isPFcand',
+      texX = 'Non Z Muons isPFcand', texY = 'Number of Events',
+      attribute = lambda event, sample: event.nonZ1_l1_isPFcand,
+      binning=[2,-0.5,1.5],
+    ))
+
+    plots.append(Plot(
+      name = 'lnonZ1_MuonFlavor',
+      texX = 'Non Z Muons GenFlavor', texY = 'Number of Events',
+      attribute = lambda event, sample: event.nonZ1_l1_flavor,
+      binning=[17,-1.5,15.5],
     ))
 
     plots.append(Plot(

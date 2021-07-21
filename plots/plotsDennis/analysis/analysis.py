@@ -536,7 +536,7 @@ sequence.append( keras_predict )
 
 ################################################################################
 # define 3l selections
-mu_string  = lepString('mu','VL')
+mu_string  = lepString('mu','VL') + "&&lep_mediumId"
 ele_string = lepString('ele','VL')
 def getLeptonSelection( mode ):
     if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)

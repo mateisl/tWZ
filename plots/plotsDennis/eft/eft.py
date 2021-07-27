@@ -65,18 +65,18 @@ w.set_order(2)
 #cHq1Re11 cHq1Re22 cHq1Re33 cHq3Re11 cHq3Re22 cHq3Re33 cHuRe11 cHuRe22 cHuRe33 cHdRe11 cHdRe22 cHdRe33 cHudRe11 cHudRe22 cHudRe33
 
 WCs = [
-#    ('cHq3Re11', 1.0, ROOT.kCyan),
-#    ('cHq3Re22', 1.0, ROOT.kMagenta),
-#    ('cHq3Re33', 1.0, ROOT.kBlue),
+   # ('cHq3Re11', 1.0, ROOT.kCyan),
+   # ('cHq3Re22', 1.0, ROOT.kMagenta),
+   # ('cHq3Re33', 1.0, ROOT.kBlue),
     ('cHq1Re11', 2.0, ROOT.kRed),
     ('cHq1Re22', 2.0, ROOT.kGreen),
     ('cHq1Re33', 2.0, ROOT.kOrange),
-    ('cHuRe11',  2.0, ROOT.kCyan),
-    ('cHuRe22',  2.0, ROOT.kMagenta),
-    ('cHuRe33',  2.0, ROOT.kBlue),
-    ('cHdRe11',  2.0, ROOT.kViolet-9),
-    ('cHdRe22',  2.0, ROOT.kGray),
-    ('cHdRe33',  2.0, ROOT.kAzure+10),
+    # ('cHuRe11',  2.0, ROOT.kCyan),
+    # ('cHuRe22',  2.0, ROOT.kMagenta),
+    # ('cHuRe33',  2.0, ROOT.kBlue),
+    # ('cHdRe11',  2.0, ROOT.kViolet-9),
+    # ('cHdRe22',  2.0, ROOT.kGray),
+    # ('cHdRe33',  2.0, ROOT.kAzure+10),
 ]
 
 params =  [ ]
@@ -211,14 +211,21 @@ read_variables = [
 read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F']
 
 # define 3l selections
-mu_string  = lepString('mu','VL')
+mu_string  = lepString('mu','VL') + "&&lep_mediumId"
 ele_string = lepString('ele','VL')
 def getLeptonSelection( mode ):
-    if   mode=="mumumu": return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=="mumue":  return "Sum$({mu_string})==2&&Sum$({ele_string})==1".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=="muee":   return "Sum$({mu_string})==1&&Sum$({ele_string})==2".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=="eee":    return "Sum$({mu_string})==0&&Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=='all':    return "Sum$({mu_string})+Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
+    if   mode=="mumumu":   return "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=="mumue":    return "Sum$({mu_string})==2&&Sum$({ele_string})==1".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=="muee":     return "Sum$({mu_string})==1&&Sum$({ele_string})==2".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=="eee":      return "Sum$({mu_string})==0&&Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=="mumumumu": return "Sum$({mu_string})==4&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=="mumuee":   return "Sum$({mu_string})==2&&Sum$({ele_string})==2".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=="eeee":     return "Sum$({mu_string})==0&&Sum$({ele_string})==4".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=='all':
+        if args.sample == "ZZ":
+            return "Sum$({mu_string})+Sum$({ele_string})==4".format(mu_string=mu_string,ele_string=ele_string)
+        else:
+            return "Sum$({mu_string})+Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
 
 # Getter functor for lepton quantities
 def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
@@ -438,46 +445,79 @@ plots.append(Plot(
     addOverFlowBin='upper',
 ))
 
-for i in range(len(bins_BIT)-1):
-    lo = bins_BIT[i]
-    hi = bins_BIT[i+1]
-    print lo,hi
-    score_string = "("+str(lo)+"< score < "+str(hi)+")"
-    plots.append(Plot(
-        name = "Z1_pt_bin"+str(i),
-        texX = 'p_{T}(Z_{1}) '+score_string+' [GeV]', texY = 'Number of Events / 20 GeV',
-        attribute = lambda event, sample: event.Z1_pt if event.BIT_cHq1Re11_2>bins_BIT[i] and event.BIT_cHq1Re11_2<bins_BIT[i+1] else -1,
-        binning=[30,0,600],
-        addOverFlowBin='upper',
-    ))
-    plots.append(Plot(
-        name = "Z1_eta_bin"+str(i),
-        texX = '#eta(Z_{1}) '+score_string, texY = 'Number of Events',
-        attribute = lambda event, sample: event.Z1_eta if event.BIT_cHq1Re11_2>lo and event.BIT_cHq1Re11_2<hi else -10,
-        binning=[20,-3,3],
-        addOverFlowBin='upper',
-    ))
-    plots.append(Plot(
-        name = "l1_Z_pt_bin"+str(i),
-        texX = 'p_{T}(l_{1}^Z) '+score_string+' [GeV]', texY = 'Number of Events / 20 GeV',
-        attribute = lambda event, sample: event.lep_pt[event.Z1_l1_index] if event.BIT_cHq1Re11_2>lo and event.BIT_cHq1Re11_2<hi else -1,
-        binning=[20,0,400],
-        addOverFlowBin='upper',
-    ))
-    plots.append(Plot(
-        name = "n_Jet_bin"+str(i),
-        texX = 'Number of jets '+score_string, texY = 'Number of Events',
-        attribute = lambda event, sample: event.nJetGood if event.BIT_cHq1Re11_2>lo and event.BIT_cHq1Re11_2<hi else -1,
-        binning=[11,-0.5,10.5],
-        addOverFlowBin='upper',
-    ))
-    plots.append(Plot(
-        name = "n_btag_bin"+str(i),
-        texX = 'Number of jets '+score_string, texY = 'Number of Events',
-        attribute = lambda event, sample: event.nBTag if event.BIT_cHq1Re11_2>lo and event.BIT_cHq1Re11_2<hi else -1,
-        binning=[11,-0.5,10.5],
-        addOverFlowBin='upper',
-    ))
+### binned in BIT score
+# Z pt
+plots.append(Plot(
+    name = "Z1_pt_bin_1",
+    texX = 'p_{T}(Z_{1}) (-1.0 < score < 0.2) [GeV]', texY = 'Number of Events / 20 GeV',
+    attribute = lambda event, sample: event.Z1_pt if event.BIT_cHq1Re11_2 < 0.2 else float('nan'),
+    binning=[30,0,600],
+    addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+    name = "Z1_pt_bin_2",
+    texX = 'p_{T}(Z_{1}) (0.2 < score < 0.6) [GeV]', texY = 'Number of Events / 20 GeV',
+    attribute = lambda event, sample: event.Z1_pt if event.BIT_cHq1Re11_2 > 0.2 and event.BIT_cHq1Re11_2 < 0.6 else float('nan'),
+    binning=[30,0,600],
+    addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+    name = "Z1_pt_bin_3",
+    texX = 'p_{T}(Z_{1}) (0.6 < score < 1.0) [GeV]', texY = 'Number of Events / 20 GeV',
+    attribute = lambda event, sample: event.Z1_pt if event.BIT_cHq1Re11_2 > 0.6 else float('nan'),
+    binning=[30,0,600],
+    addOverFlowBin='upper',
+))
+
+# Z eta
+plots.append(Plot(
+    name = "Z1_eta_bin_1",
+    texX = '#eta(Z_{1}) (-1.0 < score < 0.2) [GeV]', texY = 'Number of Events',
+    attribute = lambda event, sample: event.Z1_eta if event.BIT_cHq1Re11_2 < 0.2 else float('nan'),
+    binning=[20, -3, 3],
+    addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+    name = "Z1_eta_bin_2",
+    texX = '#eta(Z_{1}) (0.2 < score < 0.6) [GeV]', texY = 'Number of Events',
+    attribute = lambda event, sample: event.Z1_eta if event.BIT_cHq1Re11_2 > 0.2 and event.BIT_cHq1Re11_2 < 0.6 else float('nan'),
+    binning=[20, -3, 3],
+    addOverFlowBin='upper',
+))
+
+plots.append(Plot(
+    name = "Z1_eta_bin_3",
+    texX = '#eta(Z_{1}) (0.6 < score < 1.0) [GeV]', texY = 'Number of Events',
+    attribute = lambda event, sample: event.Z1_eta if event.BIT_cHq1Re11_2 > 0.6 else float('nan'),
+    binning=[20, -3, 3],
+    addOverFlowBin='upper',
+))
+
+
+    # plots.append(Plot(
+    #     name = "l1_Z_pt_bin"+str(i),
+    #     texX = 'p_{T}(l_{1}^Z) '+score_string+' [GeV]', texY = 'Number of Events / 20 GeV',
+    #     attribute = lambda event, sample: event.lep_pt[event.Z1_l1_index] if event.BIT_cHq1Re11_2>lo and event.BIT_cHq1Re11_2<hi else -1,
+    #     binning=[20,0,400],
+    #     addOverFlowBin='upper',
+    # ))
+    # plots.append(Plot(
+    #     name = "n_Jet_bin"+str(i),
+    #     texX = 'Number of jets '+score_string, texY = 'Number of Events',
+    #     attribute = lambda event, sample: event.nJetGood if event.BIT_cHq1Re11_2>lo and event.BIT_cHq1Re11_2<hi else -1,
+    #     binning=[11,-0.5,10.5],
+    #     addOverFlowBin='upper',
+    # ))
+    # plots.append(Plot(
+    #     name = "n_btag_bin"+str(i),
+    #     texX = 'Number of jets '+score_string, texY = 'Number of Events',
+    #     attribute = lambda event, sample: event.nBTag if event.BIT_cHq1Re11_2>lo and event.BIT_cHq1Re11_2<hi else -1,
+    #     binning=[11,-0.5,10.5],
+    #     addOverFlowBin='upper',
+    # ))
 
 plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 

@@ -30,6 +30,7 @@ from Analysis.Tools.helpers              import deltaPhi, deltaR
 from Analysis.Tools.puProfileCache       import *
 from Analysis.Tools.puReweighting        import getReweightingFunction
 from Analysis.Tools.leptonJetArbitration     import cleanJetsAndLeptons
+from Analysis.Tools.WeightInfo           import WeightInfo
 
 import Analysis.Tools.syncer
 import numpy as np
@@ -43,8 +44,8 @@ argParser.add_argument('--noData',         action='store_true', default=False, h
 argParser.add_argument('--small',                             action='store_true', help='Run only on a small subset of the data?', )
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
-argParser.add_argument('--plot_directory', action='store', default='tWZ_v1')
-argParser.add_argument('--era',            action='store', type=str, default="Run2016")
+argParser.add_argument('--plot_directory', action='store', default='tWZ_EFT_v1')
+argParser.add_argument('--era',            action='store', type=str, default="Run2018")
 argParser.add_argument('--selection',      action='store', default='trilepT-minDLmass12-onZ1-njet4p-deepjet1')
 args = argParser.parse_args()
 
@@ -67,6 +68,7 @@ else:
 ################################################################################
 # Define the MC samples
 from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
+import tWZ.samples.nanoTuples_Autumn18_nanoAODv6_private_SMEFTsim_fast_postProcessed as SMEFTsim_fast
 
 if args.era == "Run2016":
     mc = [Summer16.TWZ_NLO_DR, Summer16.TTZ, Summer16.TTX_rare, Summer16.TZQ, Summer16.WZ, Summer16.triBoson, Summer16.ZZ, Summer16.nonprompt_3l]
@@ -74,14 +76,60 @@ elif args.era == "Run2017":
     mc = [Fall17.TWZ_NLO_DR, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
 elif args.era == "Run2018":
     mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
+    sample_eft = SMEFTsim_fast.ttZ01j
 elif args.era == "RunII":
     mc = [TWZ_NLO_DR, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
 ################################################################################
-# Define the MC SMEFT samples
-import tWZ.samples.nanoTuples_Autumn18_nanoAODv6_private_SMEFTsim_fast_postProcessed as SMEFTsim_fast
-mc_smeft = [SMEFTsim_fast.ttZ01j, SMEFTsim_fast.WZ, SMEFTsim_fast.ZZ]
+# EFT reweight
 
+# WeightInfo
+w = WeightInfo(sample_eft.reweight_pkl)
+w.set_order(2)
+
+# define which Wilson coefficients to plot
+#cHq1Re11 cHq1Re22 cHq1Re33 cHq3Re11 cHq3Re22 cHq3Re33 cHuRe11 cHuRe22 cHuRe33 cHdRe11 cHdRe22 cHdRe33 cHudRe11 cHudRe22 cHudRe33
+
+WCs = [
+   # ('cHq3Re11', 1.0, ROOT.kCyan),
+   # ('cHq3Re22', 1.0, ROOT.kMagenta),
+   # ('cHq3Re33', 1.0, ROOT.kBlue),
+    ('cHq1Re11', 2.0, ROOT.kRed),
+    ('cHq1Re22', 2.0, ROOT.kGreen),
+    ('cHq1Re33', 2.0, ROOT.kOrange),
+    # ('cHuRe11',  2.0, ROOT.kCyan),
+    # ('cHuRe22',  2.0, ROOT.kMagenta),
+    # ('cHuRe33',  2.0, ROOT.kBlue),
+    # ('cHdRe11',  2.0, ROOT.kViolet-9),
+    # ('cHdRe22',  2.0, ROOT.kGray),
+    # ('cHdRe33',  2.0, ROOT.kAzure+10),
+]
+
+params =  [ ]
+
+for i_wc, (WC, WCval, color) in enumerate(WCs):
+    params.append ({'legendText':'%s=%3.2f'%(WC, WCval), 'color':color,  'WC':{WC:WCval} })
+
+for i_param, param in enumerate(params):
+    param['sample']   = sample_eft
+    sample_eft.weight = lambda event, sample: event.weight*lumi_year[event.year]/1000
+    param['style']    = styles.lineStyle( param['color'] )
+
+# Creating a list of weights
+weight = []
+# Add MC weights
+weight_mc = []
+for sample in mc:
+    weight_ = lambda event, sample: 1. # Add event.weight and lumi weight to sample.weight later
+    weight_mc.append(weight_)
+weight.append(weight_mc)
+# Add data weight
+if not args.noData: weight.append([lambda event, sample: event.weight])
+# Add EFT weight
+weight_eft = []
+for param in params:
+    eft_weight = w.get_weight_func(**param['WC'])
+    weight.append([eft_weight])
 
 ################################################################################
 # Define the data sample
@@ -96,13 +144,18 @@ data_sample.scale          = 1.
 for sample in mc:
     sample.scale           = 1 # Scale MCs individually with lumi
 
+for param in params:
+    param['sample'].scale = 1
+
 if args.small:
     for sample in mc + [data_sample]:
         sample.normalization = 1.
         sample.reduceFiles( to = 1 )
-        #sample.reduceFiles( to=1)
         sample.scale /= sample.normalization
-
+    for param in params:
+        param['sample'].normalization = 1.
+        param['sample'].reduceFiles( to = 1 )
+        param['sample'].scale /= sample.normalization
 ################################################################################
 # Text on the plots
 tex = ROOT.TLatex()
@@ -503,6 +556,10 @@ read_variables_MC = [
     "genZ1_pt/F", "genZ1_eta/F", "genZ1_phi/F",
 ]
 
+read_variables_eft = [
+    "np/I", VectorTreeVariable.fromString("p[C/F]",nMax=200)
+]
+
 ################################################################################
 # MVA
 import tWZ.MVA.configs as configs
@@ -591,24 +648,26 @@ for i_mode, mode in enumerate(allModes):
         data_sample.style          = styles.errorStyle(ROOT.kBlack)
         lumi_scale                 = data_sample.lumi/1000
 
-    weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
-
     for sample in mc: sample.style = styles.fillStyle(sample.color)
 
     for sample in mc:
       sample.read_variables = read_variables_MC
       sample.setSelectionString([getLeptonSelection(mode)])
-      sample.weight = lambda event, sample: event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
+      sample.weight = lambda event, sample: event.weight*lumi_year[event.year]/1000*event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
 
-    #yt_TWZ_filter.scale = lumi_scale * 1.07314
+    for param in params:
+      param['sample'].read_variables = read_variables_MC + read_variables_eft
+      param['sample'].setSelectionString([getLeptonSelection(mode)])
+      # param['sample'].weight = lambda event, sample: event.weight*lumi_year[event.year]/1000*event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger   #*event.reweightLeptonSF
 
     if not args.noData:
-      stack = Stack(mc, data_sample)
+      stack = Stack(mc, data_sample, *[ [ param['sample'] ] for param in params ])
+      noneftidxs = [0,1]
     else:
-      stack = Stack(mc)
-
+      stack = Stack(mc, *[ [ param['sample'] ] for param in params ])
+      noneftidxs = [0]
     # Use some defaults
-    Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString = cutInterpreter.cutString(args.selection))
+    Plot.setDefaults(stack = stack, weight = weight, selectionString = cutInterpreter.cutString(args.selection))
 
     ################################################################################
     # Now define the plots
@@ -1250,6 +1309,18 @@ for i_mode, mode in enumerate(allModes):
     yields[mode]["MC"] = sum(yields[mode][s.name] for s in mc)
     dataMCScale        = yields[mode]["data"]/yields[mode]["MC"] if yields[mode]["MC"] != 0 else float('nan')
 
+
+    for plot in plots:
+        for idx, histo_list in enumerate(plot.histos):
+            if idx in noneftidxs:
+                continue
+            # Get number of EFT sample (idx 0=MCstack, 1=data, 2=EFT0, 3=EFT1,...)
+            # So, identify how many stacks are not EFT
+            n_noneft = len(noneftidxs)
+            histo_list[0].legendText = params[idx-n_noneft]['legendText']
+            histo_list[0].style = params[idx-n_noneft]['style']
+
+    # Now plot
     drawPlots(plots, mode, dataMCScale)
 
     allPlots[mode] = plots

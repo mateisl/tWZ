@@ -95,20 +95,37 @@ w.set_order(2)
 # define which Wilson coefficients to plot
 #cHq1Re11 cHq1Re22 cHq1Re33 cHq3Re11 cHq3Re22 cHq3Re33 cHuRe11 cHuRe22 cHuRe33 cHdRe11 cHdRe22 cHdRe33 cHudRe11 cHudRe22 cHudRe33
 
-WCs = [
-   # ('cHq3Re11', 1.0, ROOT.kCyan),
-   # ('cHq3Re22', 1.0, ROOT.kMagenta),
-   # ('cHq3Re33', 1.0, ROOT.kBlue),
-    ('cHq1Re11', 2.0, ROOT.kRed),
-    ('cHq1Re22', 2.0, ROOT.kGreen+2),
-    ('cHq1Re33', 2.0, ROOT.kOrange-3),
-    # ('cHuRe11',  2.0, ROOT.kCyan),
-    # ('cHuRe22',  2.0, ROOT.kMagenta),
-    # ('cHuRe33',  2.0, ROOT.kBlue),
-    # ('cHdRe11',  2.0, ROOT.kViolet-9),
-    # ('cHdRe22',  2.0, ROOT.kGray),
-    # ('cHdRe33',  2.0, ROOT.kAzure+10),
+# WCs = [
+#    # ('cHq3Re11', 1.0, ROOT.kCyan),
+#    # ('cHq3Re22', 1.0, ROOT.kMagenta),
+#    # ('cHq3Re33', 1.0, ROOT.kBlue),
+#    ('cHq1Re11', -2.0, ROOT.kRed),
+#     ('cHq1Re11', 2.0, ROOT.kRed),
+#     ('cHq1Re22', -2.0, ROOT.kGreen+2),
+#     ('cHq1Re22', 2.0, ROOT.kGreen+2),
+#     ('cHq1Re33', -2.0, ROOT.kOrange-3),
+#     ('cHq1Re33', 2.0, ROOT.kOrange-3),
+#     # ('cHuRe11',  2.0, ROOT.kCyan),
+#     # ('cHuRe22',  2.0, ROOT.kMagenta),
+#     # ('cHuRe33',  2.0, ROOT.kBlue),
+#     # ('cHdRe11',  2.0, ROOT.kViolet-9),
+#     # ('cHdRe22',  2.0, ROOT.kGray),
+#     # ('cHdRe33',  2.0, ROOT.kAzure+10),
+# ]
+
+minval = -10.0
+maxval = 10.0
+Npoints = 51
+WCs = []
+WC_setup = [
+    ('cHq1Re11', ROOT.kRed),
+    ('cHq1Re22', ROOT.kGreen+2),
+    ('cHq1Re33', ROOT.kOrange-3),
 ]
+for i_wc, (WCname, color) in enumerate(WC_setup):
+    for i in range(Npoints):
+        value = minval + ((maxval-minval)/(Npoints-1))*i
+        WCs.append( (WCname, value, color) )
 
 params =  [ ]
 
@@ -186,28 +203,27 @@ def drawObjects( plotData, dataMCScale, lumi_scale ):
     return [tex.DrawLatex(*l) for l in lines]
 
 def drawPlots(plots, mode, dataMCScale):
-  for log in [False, True]:
-    plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, mode + ("_log" if log else ""), args.selection)
-    for plot in plots:
-      if not max(l.GetMaximum() for l in sum(plot.histos,[])): continue # Empty plot
-      if not args.noData:
-        if mode == "all": plot.histos[1][0].legendText = "Data"
-        if mode == "SF":  plot.histos[1][0].legendText = "Data (SF)"
+    for log in [False, True]:
+        plot_directory_ = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, mode + ("_log" if log else ""), args.selection)
+        for plot in plots:
+            if not max(l.GetMaximum() for l in sum(plot.histos,[])): continue # Empty plot
+            if not args.noData:
+                if mode == "all": plot.histos[1][0].legendText = "Data"
+                if mode == "SF":  plot.histos[1][0].legendText = "Data (SF)"
 
-      _drawObjects = []
-
-      if isinstance( plot, Plot):
-          plotting.draw(plot,
-            plot_directory = plot_directory_,
-            ratio = {'yRange':(0.1,1.9)},
-            # ratio = {'yRange':(0.1,1.9)} if not args.noData else None,
-            logX = False, logY = log, sorting = True,
-            yRange = (0.03, "auto") if log else (0.001, "auto"),
-            scaling = {0:1} if args.dataMCScaling else {},
-            legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
-            drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
-            copyIndexPHP = True, extensions = ["png"],
-          )
+            _drawObjects = []
+            n_stacks=len(plot.histos)
+            if isinstance( plot, Plot):
+                plotting.draw(plot,
+                  plot_directory = plot_directory_,
+                  ratio = {'histos': [[i+1,0] for i in range(n_stacks-1)], 'yRange':(0.1,1.9)},
+                  logX = False, logY = log, sorting = True,
+                  yRange = (0.03, "auto") if log else (0.001, "auto"),
+                  scaling = {0:1} if args.dataMCScaling else {},
+                  legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
+                  drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
+                  copyIndexPHP = True, extensions = ["png"],
+                )
 
 
 ################################################################################
@@ -543,6 +559,29 @@ for mode in ["comb1","all"]:
 
     if mode == "all":
         drawPlots(allPlots['mumumumu'], mode, dataMCScale)
+        # Write Result Hist in root file
+        plot_dir = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, mode, args.selection)
+        outfile = ROOT.TFile(plot_dir+'/Results.root', 'recreate')
+        outfile.cd()
+        for plot in plots:
+            if plot.name == "Z1_pt":
+                for idx, histo_list in enumerate(plot.histos):
+                    for j, h in enumerate(histo_list):
+                        histname = h.GetName()
+                        if "TWZ_NLO_DR" in histname: process = "tWZ"
+                        elif "TTZ" in histname: process = "ttZ"
+                        elif "TTX_rare" in histname: process = "ttX"
+                        elif "TZQ" in histname: process = "tZq"
+                        elif "WZ" in histname: process = "WZ"
+                        elif "ZZ" in histname: process = "ZZ"
+                        elif "triBoson" in histname: process = "triBoson"
+                        elif "nonprompt" in histname: process = "nonprompt"
+                        elif "data" in histname: process = "data"
+                        # Also add a string for the eft signal samples
+                        n_noneft = len(noneftidxs)
+                        if idx not in noneftidxs: h.Write("Z1_pt__"+process+"__"+params[idx-n_noneft]['legendText'])
+                        else: h.Write("Z1_pt__"+process)
+        outfile.Close()
 
 
 

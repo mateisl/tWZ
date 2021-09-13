@@ -45,9 +45,9 @@ argParser.add_argument('--SMEFTsim',     action='store_true', default=False, hel
 argParser.add_argument('--small',                             action='store_true', help='Run only on a small subset of the data?', )
 #argParser.add_argument('--sorting',                           action='store', default=None, choices=[None, "forDYMB"],  help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?', )
-argParser.add_argument('--plot_directory', action='store', default='WZ_EFT_v1')
+argParser.add_argument('--plot_directory', action='store', default='ZZ_EFT_simple_v1')
 argParser.add_argument('--era',            action='store', type=str, default="Run2018")
-argParser.add_argument('--selection',      action='store', default='trilepT-minDLmass12-onZ1-met60')
+argParser.add_argument('--selection',      action='store', default='trilepVL-minDLmass12-onZ1-onZ2-nLeptons4')
 argParser.add_argument('--sys',            action='store', default='central')
 args = argParser.parse_args()
 
@@ -67,6 +67,61 @@ if args.dataMCScaling:
     logger.info( "Data/MC scaling active")
 else:
     logger.info( "Data/MC scaling not active")
+################################################################################
+# Possible SYS variations
+variations = [
+    "Trigger_UP", "Trigger_DOWN",
+    "BTag_b_UP", "BTag_b_DOWN",
+    "BTag_l_UP", "BTag_l_DOWN",
+    "PU_UP", "PU_DOWN",
+    "JES_UP", "JES_DOWN"
+]
+
+jet_variations = {
+    "JES_UP": "jesTotalUp",
+    "JES_DOWN": "jesTotalDown",
+}
+################################################################################
+# Check if we know the variation else don't use data!
+if args.sys is not None and args.sys not in variations:
+    raise RuntimeError( "Variation %s not among the known: %s", args.sys, ",".join( variations ) )
+else:
+    args.noData = True
+
+
+################################################################################
+# Selection modifier
+def jetSelectionModifier( sys, returntype = "func"):
+    #Need to make sure all jet variations of the following observables are in the ntuple
+    variiedJetObservables = ['nJetGood', 'nBTag', 'met_pt']
+    if returntype == "func":
+        def changeCut_( string ):
+            for s in variiedJetObservables:
+                string = string.replace(s, s+'_'+sys)
+            return string
+        return changeCut_
+    elif returntype == "list":
+        return [ v+'_'+sys for v in variiedJetObservables ]
+
+def metSelectionModifier( sys, returntype = 'func'):
+    #Need to make sure all MET variations of the following observables are in the ntuple
+    variiedMetObservables = ['met_pt']
+    if returntype == "func":
+        def changeCut_( string ):
+            for s in variiedMetObservables:
+                string = string.replace(s, s+'_'+sys)
+            return string
+        return changeCut_
+    elif returntype == "list":
+        return [ v+'_'+sys for v in variiedMetObservables ]
+
+################################################################################
+# Add a selection selectionModifier
+
+if args.sys in jet_variations.keys():
+    selectionModifier = jetSelectionModifier(jet_variations[args.sys])
+else:
+    selectionModifier = None
 
 ################################################################################
 # Define the MC samples
@@ -79,13 +134,13 @@ elif args.era == "Run2017":
     mc = [Fall17.TWZ_NLO_DR, Fall17.TTZ, Fall17.TTX_rare, Fall17.TZQ, Fall17.WZ, Fall17.triBoson, Fall17.ZZ, Fall17.nonprompt_3l]
 elif args.era == "Run2018":
     mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
-    sample_eft = SMEFTsim_fast.WZ
+    sample_eft = SMEFTsim_fast.ZZ
     if args.SMEFTsim:
-        mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, SMEFTsim_fast.WZ, Autumn18.triBoson, Autumn18.ZZ, Autumn18.nonprompt_3l]
+        mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTZ, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.WZ, Autumn18.triBoson, SMEFTsim_fast.ZZ, Autumn18.nonprompt_3l]
 elif args.era == "RunII":
     mc = [TWZ_NLO_DR, TTZ, TTX_rare, TZQ, WZ, triBoson, ZZ, nonprompt_3l]
 
-signal_idx = 4 # INDEX OF WZ sample
+signal_idx = 6 # INDEX OF ZZ sample
 ################################################################################
 # EFT reweight
 
@@ -100,12 +155,12 @@ w.set_order(2)
 #    # ('cHq3Re11', 1.0, ROOT.kCyan),
 #    # ('cHq3Re22', 1.0, ROOT.kMagenta),
 #    # ('cHq3Re33', 1.0, ROOT.kBlue),
+#    ('cHq1Re11', -2.0, ROOT.kRed),
 #     ('cHq1Re11', 2.0, ROOT.kRed),
-#     ('cHq1Re11', -2.0, ROOT.kRed),
-#     ('cHq1Re22', 2.0, ROOT.kGreen+2),
 #     ('cHq1Re22', -2.0, ROOT.kGreen+2),
-#     ('cHq1Re33', 2.0, ROOT.kOrange-3),
+#     ('cHq1Re22', 2.0, ROOT.kGreen+2),
 #     ('cHq1Re33', -2.0, ROOT.kOrange-3),
+#     ('cHq1Re33', 2.0, ROOT.kOrange-3),
 #     # ('cHuRe11',  2.0, ROOT.kCyan),
 #     # ('cHuRe22',  2.0, ROOT.kMagenta),
 #     # ('cHuRe33',  2.0, ROOT.kBlue),
@@ -128,7 +183,6 @@ for i_wc, (WCname, color) in enumerate(WC_setup):
         value = minval + ((maxval-minval)/(Npoints-1))*i
         WCs.append( (WCname, value, color) )
 
-
 params =  [ ]
 
 for i_wc, (WC, WCval, color) in enumerate(WCs):
@@ -137,23 +191,24 @@ for i_wc, (WC, WCval, color) in enumerate(WCs):
 
 for i_param, param in enumerate(params):
     param['sample']   = sample_eft
-    # sample_eft.weight = lambda event, sample: event.weight*lumi_year[event.year]/1000
+    sample_eft.weight = lambda event, sample: event.weight*lumi_year[event.year]/1000
     param['style']    = styles.lineStyle( param['color'] )
 
 # Creating a list of weights
-weight = []
+plotweights = []
 # Add MC weights
 weight_mc = []
 for sample in mc:
-    weight_ = lambda event, sample: 1 # Add event.weight and lumi weight to sample.weight later
+    weight_ = lambda event, sample: 1. # Add event.weight and lumi weight to sample.weight later
     weight_mc.append(weight_)
-weight.append(weight_mc)
+plotweights.append(weight_mc)
 # Add data weight
-if not args.noData: weight.append([lambda event, sample: event.weight])
+if not args.noData: plotweights.append([lambda event, sample: event.weight])
 # Add EFT weight
+weight_eft = []
 for param in params:
     eft_weight = w.get_weight_func(**param['WC'])
-    weight.append([eft_weight])
+    plotweights.append([eft_weight])
 
 ################################################################################
 # Define the data sample
@@ -192,8 +247,6 @@ tex.SetTextAlign(11) # align right
 
 ################################################################################
 # Functions needed specifically for this analysis routine
-def charge(pdgId):
-    return -pdgId/abs(pdgId)
 
 def drawObjects( plotData, dataMCScale, lumi_scale ):
     lines = [
@@ -225,59 +278,12 @@ def drawPlots(plots, mode, dataMCScale):
                   drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
                   copyIndexPHP = True, extensions = ["png"],
                 )
-def getDeepJetsWP(disc,year):
-    WP_L = {2016:0.0614, 2017:0.0521, 2018:0.0494}
-    WP_M = {2016:0.3093, 2017:0.3033, 2018:0.2770}
-    WP_T = {2016:0.7221, 2017:0.7489, 2018:0.7264}
-    wp = 0
-    if disc > WP_L[year]: wp = 1
-    if disc > WP_M[year]: wp = 2
-    if disc > WP_T[year]: wp = 3
-    return wp
+
 
 ################################################################################
 # Define sequences
 sequence       = []
 
-def getDeepJetTags(event, sample):
-    nDeepJetLoose = 0
-    nDeepJetMedium = 0
-    nDeepJetTight = 0
-    for i in range(event.nJetGood):
-        idx_jet = event.JetGood_index[i]
-        disc = event.Jet_btagDeepFlavB[idx_jet]
-        wp = getDeepJetsWP(disc,event.year)
-        if wp>=1: nDeepJetLoose+=1
-        if wp>=2: nDeepJetMedium+=1
-        if wp>=3: nDeepJetTight+=1
-    event.nLoose  = nDeepJetLoose
-    event.nMedium = nDeepJetMedium
-    event.nTight  = nDeepJetTight
-
-sequence.append(getDeepJetTags)
-
-def getFailLepton(event, sample):
-    event.nonZ1_l1_muID = float('nan')
-    event.nonZ1_l1_muIDM = float('nan')
-    event.nonZ1_l1_muIDT = float('nan')
-    event.nonZ1_l1_isGlobal = float('nan')
-    event.nonZ1_l1_isTracker = float('nan')
-    event.nonZ1_l1_isPFcand = float('nan')
-    event.nonZ1_l1_flavor = float('nan')
-
-    lepindex = event.nonZ1_l1_index
-    muindex = event.lep_muIndex[lepindex]
-    elindex = event.lep_eleIndex[lepindex]
-    if muindex != -1:
-        event.nonZ1_l1_muIDM = 1 if event.Muon_mediumId[muindex] else 0
-        event.nonZ1_l1_muIDT = 1 if event.Muon_tightId[muindex] else 0
-        event.nonZ1_l1_isGlobal = 1 if event.Muon_isGlobal[muindex] else 0
-        event.nonZ1_l1_isTracker = 1 if event.Muon_isTracker[muindex] else 0
-        event.nonZ1_l1_isPFcand = 1 if event.Muon_isPFcand[muindex] else 0
-        if sample.name != "data":
-            event.nonZ1_l1_flavor = event.Muon_genPartFlav[muindex]
-
-sequence.append(getFailLepton)
 
 ################################################################################
 # Read variables
@@ -297,7 +303,7 @@ read_variables = [
 ]
 
 read_variables_MC = [
-    'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F',
+    "weight/F", 'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F',
     "genZ1_pt/F", "genZ1_eta/F", "genZ1_phi/F",
     "Muon[genPartFlav/I]"
 ]
@@ -305,6 +311,7 @@ read_variables_MC = [
 read_variables_eft = [
     "np/I", VectorTreeVariable.fromString("p[C/F]",nMax=200)
 ]
+
 
 ################################################################################
 # MVA
@@ -314,13 +321,10 @@ read_variables_eft = [
 mu_string  = lepString('mu','VL') + "&&lep_mediumId"
 ele_string = lepString('ele','VL')
 def getLeptonSelection( mode ):
-    leptonstring = ""
-    if   mode=="mumumu": leptonstring = "Sum$({mu_string})==3&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=="mumue":  leptonstring = "Sum$({mu_string})==2&&Sum$({ele_string})==1".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=="muee":   leptonstring = "Sum$({mu_string})==1&&Sum$({ele_string})==2".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=="eee":    leptonstring = "Sum$({mu_string})==0&&Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
-    elif mode=='all':    leptonstring = "Sum$({mu_string})+Sum$({ele_string})==3".format(mu_string=mu_string,ele_string=ele_string)
-    return leptonstring
+    if   mode=="mumumumu": return "Sum$({mu_string})==4&&Sum$({ele_string})==0".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=="mumuee":  return "Sum$({mu_string})==2&&Sum$({ele_string})==2".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=="eeee":   return "Sum$({mu_string})==0&&Sum$({ele_string})==4".format(mu_string=mu_string,ele_string=ele_string)
+    elif mode=='all':    return "Sum$({mu_string})+Sum$({ele_string})==4".format(mu_string=mu_string,ele_string=ele_string)
 
 ################################################################################
 # Getter functor for lepton quantities
@@ -352,7 +356,7 @@ def lep_getter( branch, index, abs_pdg = None, functor = None, debug=False):
 # Set up channels and values for plotting
 yields     = {}
 allPlots   = {}
-allModes   = ['mumumu','mumue','muee', 'eee']
+allModes   = ['mumumumu','mumuee','eeee']
 for i_mode, mode in enumerate(allModes):
     yields[mode] = {}
     if not args.noData:
@@ -366,8 +370,12 @@ for i_mode, mode in enumerate(allModes):
 
     for sample in mc: sample.style = styles.fillStyle(sample.color)
 
-
     ###### SYS #################################################################
+    if args.sys in jet_variations:
+        new_variables = ['%s/F'%v for v in jetSelectionModifier(jet_variations[args.sys],'list')]
+        read_variables_MC += new_variables
+        read_variables    += new_variables
+
     weightnames = ['weight', 'reweightBTag_SF', 'reweightPU', 'reweightL1Prefire' , 'reweightTrigger'] # 'reweightLeptonSF'
     sys_weights = {
         "BTag_b_UP"     : ('reweightBTag_SF','reweightBTag_SF_b_Up'),
@@ -386,9 +394,6 @@ for i_mode, mode in enumerate(allModes):
             if weight == oldname:
                 weightnames[i] = newname
                 read_variables_MC += ['%s/F'%(newname)]
-
-    print weightnames
-    print read_variables_MC
 
     getters = map( operator.attrgetter, weightnames)
     def weight_function( event, sample):
@@ -413,14 +418,15 @@ for i_mode, mode in enumerate(allModes):
         param['sample'].weight = weight_function
 
     if not args.noData:
-        stack = Stack(mc, data_sample, *[ [ param['sample'] ] for param in params ])
-        noneftidxs = [0,1]
+      stack = Stack(mc, data_sample, *[ [ param['sample'] ] for param in params ])
+      noneftidxs = [0,1]
     else:
-        stack = Stack(mc, *[ [ param['sample'] ] for param in params ])
-        noneftidxs = [0]
+      stack = Stack(mc, *[ [ param['sample'] ] for param in params ])
+      noneftidxs = [0]
 
     # Use some defaults
-    Plot.setDefaults(stack = stack, weight = weight, selectionString = cutInterpreter.cutString(args.selection))
+    selection_string = selectionModifier(cutInterpreter.cutString(args.selection)) if selectionModifier is not None else cutInterpreter.cutString(args.selection)
+    Plot.setDefaults(stack = stack, weight = plotweights, selectionString = selection_string)
 
     ################################################################################
     # Now define the plots
@@ -434,233 +440,11 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
-      name = 'nVtxs', texX = 'vertex multiplicity', texY = 'Number of Events',
-      attribute = TreeVariable.fromString( "PV_npvsGood/I" ),
-      binning=[50,0,50],
-      addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-      texX = 'N_{jets}', texY = 'Number of Events',
-      attribute = TreeVariable.fromString( "nJetGood/I" ), #nJetSelected
-      binning=[8,-0.5,7.5],
-    ))
-
-    plots.append(Plot(
-      name = 'lnonZ1_muIDM',
-      texX = 'Non Z Muons medium Id', texY = 'Number of Events',
-      attribute = lambda event, sample: event.nonZ1_l1_muIDM,
-      binning=[2,-0.5,1.5],
-    ))
-
-    plots.append(Plot(
-      name = 'lnonZ1_muIDT',
-      texX = 'Non Z Muons tight Id', texY = 'Number of Events',
-      attribute = lambda event, sample: event.nonZ1_l1_muIDT,
-      binning=[2,-0.5,1.5],
-    ))
-
-    plots.append(Plot(
-      name = 'lnonZ1_isGlobal',
-      texX = 'Non Z Muons isGlobal', texY = 'Number of Events',
-      attribute = lambda event, sample: event.nonZ1_l1_isGlobal,
-      binning=[2,-0.5,1.5],
-    ))
-
-    plots.append(Plot(
-      name = 'lnonZ1_isTracker',
-      texX = 'Non Z Muons isTracker', texY = 'Number of Events',
-      attribute = lambda event, sample: event.nonZ1_l1_isTracker,
-      binning=[2,-0.5,1.5],
-    ))
-
-    plots.append(Plot(
-      name = 'lnonZ1_isPFcand',
-      texX = 'Non Z Muons isPFcand', texY = 'Number of Events',
-      attribute = lambda event, sample: event.nonZ1_l1_isPFcand,
-      binning=[2,-0.5,1.5],
-    ))
-
-    plots.append(Plot(
-      name = 'lnonZ1_MuonFlavor',
-      texX = 'Non Z Muons GenFlavor', texY = 'Number of Events',
-      attribute = lambda event, sample: event.nonZ1_l1_flavor,
-      binning=[17,-1.5,15.5],
-    ))
-
-    plots.append(Plot(
-        name = 'Nbtag_DeepJet_L',
-        texX = 'Number of b-tagged jets (loose)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.nLoose,
-        binning=[11,-0.5, 10.5],
-    ))
-
-    plots.append(Plot(
-        name = 'Nbtag_DeepJet_M',
-        texX = 'Number of b-tagged jets (medium)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.nMedium,
-        binning=[11,-0.5, 10.5],
-    ))
-
-    plots.append(Plot(
-        name = 'Nbtag_DeepJet_T',
-        texX = 'Number of b-tagged jets (tight)', texY = 'Number of Events',
-        attribute = lambda event, sample: event.nTight,
-        binning=[11,-0.5, 10.5],
-    ))
-
-    plots.append(Plot(
-        name = 'l1_pt',
-        texX = 'p_{T}(l_{1}) (GeV)', texY = 'Number of Events / 20 GeV',
-        attribute = lambda event, sample:event.l1_pt,
-        binning=[15,0,300],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'l1_eta',
-        texX = '#eta(l_{1})', texY = 'Number of Events',
-        attribute = lambda event, sample: event.l1_eta,
-        binning=[20,-3,3],
-    ))
-
-    plots.append(Plot(
-        name = 'l1_mvaTOP',
-        texX = 'MVA_{TOP}(l_{1})', texY = 'Number of Events',
-        attribute = lambda event, sample: event.l1_mvaTOP,
-        binning=[20,-1,1],
-    ))
-
-    plots.append(Plot(
-        name = 'l1_mvaTOPWP',
-        texX = 'MVA_{TOP}(l_{1}) WP', texY = 'Number of Events',
-        attribute = lambda event, sample: event.l1_mvaTOPWP,
-        binning=[5,0,5],
-    ))
-
-    plots.append(Plot(
-        name = 'l2_pt',
-        texX = 'p_{T}(l_{2}) (GeV)', texY = 'Number of Events / 20 GeV',
-        attribute = lambda event, sample:event.l2_pt,
-        binning=[15,0,300],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'l2_eta',
-        texX = '#eta(l_{2})', texY = 'Number of Events',
-        attribute = lambda event, sample: event.l2_eta,
-        binning=[20,-3,3],
-    ))
-
-    plots.append(Plot(
-        name = 'l2_mvaTOP',
-        texX = 'MVA_{TOP}(l_{2})', texY = 'Number of Events',
-        attribute = lambda event, sample: event.l2_mvaTOP,
-        binning=[20,-1,1],
-    ))
-
-    plots.append(Plot(
-        name = 'l2_mvaTOPWP',
-        texX = 'MVA_{TOP}(l_{1}) WP', texY = 'Number of Events',
-        attribute = lambda event, sample: event.l2_mvaTOPWP,
-        binning=[5,0,5],
-    ))
-
-    plots.append(Plot(
-        name = 'l3_pt',
-        texX = 'p_{T}(l_{3}) (GeV)', texY = 'Number of Events / 20 GeV',
-        attribute = lambda event, sample:event.l3_pt,
-        binning=[15,0,300],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'l3_eta',
-        texX = '#eta(l_{3})', texY = 'Number of Events',
-        attribute = lambda event, sample: event.l3_eta,
-        binning=[20,-3,3],
-    ))
-
-    plots.append(Plot(
-        name = 'l3_mvaTOP',
-        texX = 'MVA_{TOP}(l_{3})', texY = 'Number of Events',
-        attribute = lambda event, sample: event.l3_mvaTOP,
-        binning=[20,-1,1],
-    ))
-
-    plots.append(Plot(
-        name = 'l3_mvaTOPWP',
-        texX = 'MVA_{TOP}(l_{1}) WP', texY = 'Number of Events',
-        attribute = lambda event, sample: event.l3_mvaTOPWP,
-        binning=[5,0,5],
-    ))
-
-    plots.append(Plot(
-        texX = 'E_{T}^{miss} (GeV)', texY = 'Number of Events / 20 GeV',
-        attribute = TreeVariable.fromString( "met_pt/F" ),
-        binning=[400/20,0,400],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
         name = "Z1_pt",
         texX = 'p_{T}(Z_{1}) (GeV)', texY = 'Number of Events / 20 GeV',
         attribute = TreeVariable.fromString( "Z1_pt/F" ),
         binning=[20,0,400],
         addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'Z1_pt_coarse', texX = 'p_{T}(Z_{1}) (GeV)', texY = 'Number of Events / 50 GeV',
-        attribute = TreeVariable.fromString( "Z1_pt/F" ),
-        binning=[16,0,800],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'Z1_pt_superCoarse', texX = 'p_{T}(Z_{1}) (GeV)', texY = 'Number of Events',
-        attribute = TreeVariable.fromString( "Z1_pt/F" ),
-        binning=[3,0,600],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'lnonZ1_pt',
-        texX = 'p_{T}(l_{1,extra}) (GeV)', texY = 'Number of Events / 20 GeV',
-        attribute = lambda event, sample:event.lep_pt[event.nonZ1_l1_index],
-        binning=[15,0,300],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'lnonZ1_pt_coarse',
-        texX = 'p_{T}(l_{1,extra}) (GeV)', texY = 'Number of Events / 60 GeV',
-        attribute = lambda event, sample:event.lep_pt[event.nonZ1_l1_index],
-        binning=[3,0,180],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'lnonZ1_charge',
-        texX = 'Charge(l_{1,extra})', texY = 'Number of Events',
-        attribute = lambda event, sample:-event.lep_pdgId[event.nonZ1_l1_index]/abs(event.lep_pdgId[event.nonZ1_l1_index]),
-        binning=[2,-1,1],
-        addOverFlowBin='upper',
-    ))
-
-    plots.append(Plot(
-        name = 'lnonZ1_eta',
-        texX = '#eta(l_{1,extra})', texY = 'Number of Events',
-        attribute = lambda event, sample: event.lep_eta[event.nonZ1_l1_index],
-        binning=[20,-3,3],
-    ))
-
-    plots.append(Plot(
-        name = 'lnonZ1_pdgId',
-        texX = 'pdg Id(l_{1,extra})', texY = 'Number of Events',
-        attribute = lambda event, sample: event.lep_pdgId[event.nonZ1_l1_index],
-        binning=[41,-20,20],
     ))
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)
@@ -672,16 +456,14 @@ for i_mode, mode in enumerate(allModes):
         for i, l in enumerate(plot.histos):
           for j, h in enumerate(l):
             yields[mode][plot.stack[i][j].name] = h.GetBinContent(h.FindBin(0.5+i_mode))
-            h.GetXaxis().SetBinLabel(1, "#mu#mu#mu")
-            h.GetXaxis().SetBinLabel(2, "#mu#mue")
-            h.GetXaxis().SetBinLabel(3, "#muee")
-            h.GetXaxis().SetBinLabel(4, "eee")
+            h.GetXaxis().SetBinLabel(1, "#mu#mu#mu#mu")
+            h.GetXaxis().SetBinLabel(2, "#mu#muee")
+            h.GetXaxis().SetBinLabel(3, "eeee")
 
     if args.noData: yields[mode]["data"] = 0
 
     yields[mode]["MC"] = sum(yields[mode][s.name] for s in mc)
     dataMCScale        = yields[mode]["data"]/yields[mode]["MC"] if yields[mode]["MC"] != 0 else float('nan')
-
 
     for plot in plots:
         for idx, histo_list in enumerate(plot.histos):
@@ -709,20 +491,18 @@ for i_mode, mode in enumerate(allModes):
 
 ################################################################################
 # Add the different channels into SF and all
-for mode in ["comb1","comb2","all"]:
+for mode in ["comb1","all"]:
     yields[mode] = {}
     for y in yields[allModes[0]]:
-        try:    yields[mode][y] = sum(yields[c][y] for c in ['eee','muee','mumue', 'mumumu'])
+        try:    yields[mode][y] = sum(yields[c][y] for c in ['eeee','mumuee','mumumumu'])
         except: yields[mode][y] = 0
     dataMCScale = yields[mode]["data"]/yields[mode]["MC"] if yields[mode]["MC"] != 0 else float('nan')
 
-    for plot in allPlots['mumumu']:
+    for plot in allPlots['mumumumu']:
         if mode=="comb1":
-            tmp = allPlots['mumue']
-        elif mode=="comb2":
-            tmp = allPlots['muee']
+            tmp = allPlots['mumuee']
         else:
-            tmp = allPlots['eee']
+            tmp = allPlots['eeee']
         for plot2 in (p for p in tmp if p.name == plot.name):
             for i, j in enumerate(list(itertools.chain.from_iterable(plot.histos))):
                 for k, l in enumerate(list(itertools.chain.from_iterable(plot2.histos))):
@@ -730,7 +510,7 @@ for mode in ["comb1","comb2","all"]:
                         j.Add(l)
 
     if mode == "all":
-        drawPlots(allPlots['mumumu'], mode, dataMCScale)
+        drawPlots(allPlots['mumumumu'], mode, dataMCScale)
         # Write Result Hist in root file
         plot_dir = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, mode, args.selection)
         outfilename = plot_dir+'/Results.root'

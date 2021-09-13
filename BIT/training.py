@@ -138,7 +138,6 @@ def drawPlots(plots):
             copyIndexPHP = True, extensions = ["png", "pdf"],
           )
 
-
 # Read variables and sequences
 sequence       = []
 
@@ -158,11 +157,12 @@ def WriteTrainingData(event,sample):
     feature_list.append(event.nJetGood)
     features.append(feature_list)
 
-    weight = w.get_weight_func(cHq1Re33=0)
-    weight_diff_cHq1Re11 = w.get_diff_weight_func('cHq1Re33', cHq1Re33=0)
+    weight = w.get_weight_func(cHq1Re11=0)
+    # weight_diff = w.get_diff_weight_func('cHq1Re11', cHq1Re11=0)
+    weight_diff = w.get_double_diff_weight_func('cHq1Re11', cHq1Re11=0)
 
     weights.append(weight(event,sample))
-    diff_weights.append(weight_diff_cHq1Re11(event,sample))
+    diff_weights.append(weight_diff(event,sample))
 sequence.append(WriteTrainingData)
 
 read_variables = [
@@ -327,6 +327,6 @@ bit = BoostedInformationTree(
         weights_update_method='vectorized')
 
 bit.boost()
-bit.save('BIT_ttZ_cHq1Re33_0.pkl')
+bit.save('BIT_ttZ_cHq1Re11_0_doublediff.pkl')
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )

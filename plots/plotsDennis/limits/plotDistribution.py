@@ -24,10 +24,11 @@ def getTotalUncert(central, syshists):
     Nbins = central.GetSize()-2
     for i in range(Nbins):
         bin=i+1
+        staterr2 = h_total.GetBinError(bin)*h_total.GetBinError(bin)
         sum2 = 0
         for h in syshists:
             sum2 += h.GetBinContent(bin)*h.GetBinContent(bin)
-        h_total.SetBinError(bin, sqrt(sum2))
+        h_total.SetBinError(bin, sqrt(sum2+staterr2))
     return h_total
 
 def getRatio(h1, h2):
@@ -69,7 +70,7 @@ signal_colors = [ROOT.kAzure+7, ROOT.kRed-2, ROOT.kGreen+2, 798, 13, 15]
 
 def plotDistribution(filename, region, histname, xtitle, backgrounds, WCname, SMpoint, EFTpoints, value_to_number, systs):
     file = ROOT.TFile(filename)
-    leg = ROOT.TLegend(.55, .45, .85, .85)
+    leg = ROOT.TLegend(.55, .4, .9, .85)
     leg.SetBorderSize(0)
 
     sum = 0

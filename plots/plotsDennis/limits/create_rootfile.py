@@ -38,7 +38,7 @@ def removeNegative(hist):
 ################################################################################
 ### Setup
 regions = ["WZ", "ZZ", "ttZ"]
-# regions = ["WZ", "ZZ"]
+# regions = ["WZ", "ttZ"]
 print 'Reading regions:', regions
 
 # histname
@@ -119,8 +119,12 @@ for region in regions:
         # Systematics
         for sys in sysnames:
             if 'test' in sys: continue
-            fileUP   = ROOT.TFile(dirs[region]+'/Results_'+sys+'_UP.root')
-            fileDOWN = ROOT.TFile(dirs[region]+'/Results_'+sys+'_DOWN.root')
+            sysdirUP = dirs[region]
+            sysdirUP = sysdirUP.replace('/Run', '_'+sys+'_UP/Run')
+            sysdirDOWN = dirs[region]
+            sysdirDOWN = sysdirDOWN.replace('/Run', '_'+sys+'_DOWN/Run')
+            fileUP   = ROOT.TFile(sysdirUP+'/Results.root')
+            fileDOWN = ROOT.TFile(sysdirDOWN+'/Results.root')
             outfile.cd(region+"__"+histname)
             histUP   = fileUP.Get(histname+"__"+bkg)
             histDOWN = fileDOWN.Get(histname+"__"+bkg)
@@ -145,8 +149,12 @@ for region in regions:
         # Systematics
         for sys in sysnames:
             if 'test' in sys: continue
-            fileUP   = ROOT.TFile(dirs[region]+'/Results_'+sys+'_UP.root')
-            fileDOWN = ROOT.TFile(dirs[region]+'/Results_'+sys+'_DOWN.root')
+            sysdirUP = dirs[region]
+            sysdirUP = sysdirUP.replace('/Run', '_'+sys+'_UP/Run')
+            sysdirDOWN = dirs[region]
+            sysdirDOWN = sysdirDOWN.replace('/Run', '_'+sys+'_DOWN/Run')
+            fileUP   = ROOT.TFile(sysdirUP+'/Results.root')
+            fileDOWN = ROOT.TFile(sysdirDOWN+'/Results.root')
             outfile.cd(region+"__"+histname)
             histUP   = fileUP.Get(histname+"__"+region+"__"+signalname)
             histDOWN = fileDOWN.Get(histname+"__"+region+"__"+signalname)

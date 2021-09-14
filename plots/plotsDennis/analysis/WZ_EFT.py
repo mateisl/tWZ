@@ -738,7 +738,7 @@ for mode in ["comb1","comb2","all"]:
             outfilename = plot_dir+'/Results_'+args.sys+'.root'
         outfile = ROOT.TFile(outfilename, 'recreate')
         outfile.cd()
-        for plot in plots:
+        for plot in allPlots['mumumu']:
             if plot.name == "Z1_pt":
                 for idx, histo_list in enumerate(plot.histos):
                     for j, h in enumerate(histo_list):

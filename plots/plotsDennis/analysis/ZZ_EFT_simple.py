@@ -61,6 +61,8 @@ logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 if args.small:                        args.plot_directory += "_small"
 if args.noData:                       args.plot_directory += "_noData"
 if args.SMEFTsim:                     args.plot_directory += "_SMEFTsim"
+if args.sys is not 'central':         args.plot_directory += "_%s" %(args.sys)
+
 
 logger.info( "Working in era %s", args.era)
 if args.dataMCScaling:
@@ -71,6 +73,7 @@ else:
 # Possible SYS variations
 variations = [
     "Trigger_UP", "Trigger_DOWN",
+    "LepID_UP", "LepID_DOWN",
     "BTag_b_UP", "BTag_b_DOWN",
     "BTag_l_UP", "BTag_l_DOWN",
     "PU_UP", "PU_DOWN",
@@ -83,7 +86,7 @@ jet_variations = {
 }
 ################################################################################
 # Check if we know the variation else don't use data!
-if args.sys is not None and args.sys not in variations:
+if args.sys is not 'central' and args.sys not in variations:
     raise RuntimeError( "Variation %s not among the known: %s", args.sys, ",".join( variations ) )
 else:
     args.noData = True
@@ -172,6 +175,7 @@ w.set_order(2)
 minval = -10.0
 maxval = 10.0
 Npoints = 51
+
 WCs = []
 WC_setup = [
     ('cHq1Re11', ROOT.kRed),
@@ -191,7 +195,7 @@ for i_wc, (WC, WCval, color) in enumerate(WCs):
 
 for i_param, param in enumerate(params):
     param['sample']   = sample_eft
-    sample_eft.weight = lambda event, sample: event.weight*lumi_year[event.year]/1000
+    # sample_eft.weight = lambda event, sample: event.weight*lumi_year[event.year]/1000
     param['style']    = styles.lineStyle( param['color'] )
 
 # Creating a list of weights
@@ -384,6 +388,8 @@ for i_mode, mode in enumerate(allModes):
         "BTag_l_DOWN"   : ('reweightBTag_SF','reweightBTag_SF_l_Down'),
         'Trigger_UP'    : ('reweightTrigger','reweightTriggerUp'),
         'Trigger_DOWN'  : ('reweightTrigger','reweightTriggerDown'),
+        'LepID_UP'      : ('reweightLeptonSF','reweightLeptonSFUp'),
+        'LepID_DOWN'    : ('reweightLeptonSF','reweightLeptonSFDown'),
         'PU_UP'         : ('reweightPU','reweightPUUp'),
         'PU_DOWN'       : ('reweightPU','reweightPUDown'),
     }
@@ -408,7 +414,6 @@ for i_mode, mode in enumerate(allModes):
     for sample in mc:
         sample.read_variables = read_variables_MC
         sample.setSelectionString([getLeptonSelection(mode)])
-        # sample.weight = lambda event, sample: event.weight*lumi_year[event.year]/1000*event.reweightBTag_SF*event.reweightPU*event.reweightL1Prefire*event.reweightTrigger#*event.reweightLeptonSF
         sample.weight = weight_function
 
 
@@ -514,11 +519,9 @@ for mode in ["comb1","all"]:
         # Write Result Hist in root file
         plot_dir = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, mode, args.selection)
         outfilename = plot_dir+'/Results.root'
-        if args.sys != 'central':
-            outfilename = plot_dir+'/Results_'+args.sys+'.root'
         outfile = ROOT.TFile(outfilename, 'recreate')
         outfile.cd()
-        for plot in plots:
+        for plot in allPlots['mumumumu']:
             if plot.name == "Z1_pt":
                 for idx, histo_list in enumerate(plot.histos):
                     for j, h in enumerate(histo_list):

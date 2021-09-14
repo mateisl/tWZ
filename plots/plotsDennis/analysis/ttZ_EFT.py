@@ -1422,7 +1422,7 @@ for mode in ["comb1","comb2","all"]:
         plot_dir = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, mode, args.selection)
         outfile = ROOT.TFile(plot_dir+'/Results.root', 'recreate')
         outfile.cd()
-        for plot in plots:
+        for plot in allPlots['mumumu']:
             if plot.name == "Z1_pt":
                 for idx, histo_list in enumerate(plot.histos):
                     for j, h in enumerate(histo_list):

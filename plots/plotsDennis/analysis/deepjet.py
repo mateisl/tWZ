@@ -428,7 +428,7 @@ for mode in ["comb1","comb2","all"]:
         plot_dir = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era)
         outfile = ROOT.TFile(plot_dir+'/NjetNbjet.root', 'recreate')
         outfile.cd()
-        for plot in plots:
+        for plot in allPlots['mumumu']:
             if "binNr" in plot.name or "check" in plot.name:
                 for i, l in enumerate(plot.histos):
                     for j, h in enumerate(l):

@@ -64,7 +64,7 @@ dir = "/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/da
 prefix = "higgsCombine.part3E_"
 suffix = ".MultiDimFit.mH120.root"
 
-WCnames = ["cHq1Re11", "cHq1Re22", "cHq1Re33"]
+WCnames = ["cHq1Re11", "cHq1Re22", "cHq1Re33", "cHq3Re11", "cHq3Re22", "cHq3Re33"]
 
 channels = {
 "1": "ZZ",
@@ -81,8 +81,17 @@ for WCname in WCnames:
         i_SMpoint = 25
         qval_SM = -1
         qvals = []
+        minval = -10.0
+        maxval = 10.0
+        WCvals = []
         for i in range(Npoints):
+            value = minval + ((maxval-minval)/(Npoints-1))*i
             file = ROOT.TFile(dir+prefix+str(i)+"_"+ch+"_"+WCname+suffix)
+            tree = file.Get("limit")
+            if tree.GetEntry(0)<=0:
+                print 'EMPTY TREE, leave q unchanged...'
+                qvals.append(q)
+                WCvals.append(value)
             for event in file.limit:
                 # print "---------------"
                 # if i==i_SMpoint: print "SM point"
@@ -91,6 +100,7 @@ for WCname in WCnames:
                 # Option 1
                 q = 2*(event.nll+event.nll0)
                 qvals.append(q)
+                WCvals.append(value)
                 if i==i_SMpoint:
                     qval_SM = q
                 # Option 2
@@ -103,13 +113,6 @@ for WCname in WCnames:
         qdiff = []
         for q in qvals:
             qdiff.append(q-qval_SM)
-
-        minval = -10.0
-        maxval = 10.0
-        WCvals = []
-        for i in range(Npoints):
-            value = minval + ((maxval-minval)/(Npoints-1))*i
-            WCvals.append(value)
 
         ############################################################################
         # Start plotting
@@ -223,6 +226,7 @@ for WCname in WCnames:
         ROOT.gStyle.SetPadTickY(1)
 
         likelihoods["combined"].GetXaxis().SetLimits(-10, 10)
+        if WCname=="cHq3Re11": likelihoods["combined"].GetXaxis().SetLimits(-1, 1)
         likelihoods["combined"].GetHistogram().SetMinimum(0.)
         likelihoods["combined"].GetHistogram().SetMaximum(20)
         likelihoods["combined"].SetLineColor(ROOT.kBlack)

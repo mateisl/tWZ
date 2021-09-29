@@ -68,8 +68,10 @@ colors = {
 
 signal_colors = [ROOT.kAzure+7, ROOT.kRed-2, ROOT.kGreen+2, 798, 13, 15]
 
-def plotDistribution(filename, region, histname, xtitle, backgrounds, WCname, SMpoint, EFTpoints, value_to_number, systs):
-    file = ROOT.TFile(filename)
+def plotDistribution(prefix, region, histname, xtitle, backgrounds, signals, WCname, SMpoint, EFTpoints, value_to_number, systs):
+    dir = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/limits/"
+    filename_SM = "CombineInput_cHq1Re11_"+str(value_to_number[WCname][SMpoint])+".root"
+    file = ROOT.TFile(dir+filename_SM)
     leg = ROOT.TLegend(.55, .4, .9, .85)
     leg.SetBorderSize(0)
 
@@ -95,15 +97,19 @@ def plotDistribution(filename, region, histname, xtitle, backgrounds, WCname, SM
         h_totalbkg.Add(hist)
     # Legend has to be filled in reverse order
     for hist, integral, bkgname in reversed(bkg_list):
-        leg.AddEntry(hist, bkgname, "f")
+        legname = bkgname
+        if   bkgname == "ttZ": legname = "t#bar{t}Z"
+        elif bkgname == "ttX": legname = "t#bar{t}X"
+        leg.AddEntry(hist, legname, "f")
 
     # Get SM signal
-    h_SMsignal = file.Get(region+"__"+histname+"/EFT_"+WCname+"_"+str(value_to_number[WCname][SMpoint]))
-    h_SMsignal.Add(h_totalbkg)
+    h_SMsignal = h_totalbkg.Clone() # Start with bkg and stack signal on top
+    for signal in signals:
+        hist = file.Get(region+"__"+histname+"/"+signal)
+        h_SMsignal.Add(hist)
     h_SMsignal.SetLineWidth(2)
     h_SMsignal.SetLineColor(ROOT.kBlack)
     h_SMsignal.SetFillColor(0)
-    leg.AddEntry(h_SMsignal, 'SM point', "l")
 
     # Copy h_SMsignal for nominal prediction
     h_totalMC = h_SMsignal.Clone()
@@ -111,14 +117,28 @@ def plotDistribution(filename, region, histname, xtitle, backgrounds, WCname, SM
     # Get Systematics
     h_sys_uncerts = [] # these will contian only the error ( (|central-up|+|central-down|) / 2)
     for sys in systs:
-        # first get signal
-        histup = file.Get(region+"__"+histname+"/EFT_"+WCname+"_"+str(value_to_number[WCname][SMpoint])+"__"+sys+"Up")
-        histdown = file.Get(region+"__"+histname+"/EFT_"+WCname+"_"+str(value_to_number[WCname][SMpoint])+"__"+sys+"Down")
+        # first get signals
+        isFirst = True
+        for signal in signals:
+            hup = file.Get(region+"__"+histname+"/"+signal+"__"+sys+"Up")
+            hdown = file.Get(region+"__"+histname+"/"+signal+"__"+sys+"Down")
+            if isFirst:
+                histup = hup.Clone()
+                histdown = hdown.Clone()
+                isFirst = False
+            else:
+                histup.Add(hup)
+                histdown.Add(hdown)
         for bkg in backgrounds:
             hup = file.Get(region+"__"+histname+"/"+bkg+"__"+sys+"Up")
             hdown = file.Get(region+"__"+histname+"/"+bkg+"__"+sys+"Down")
-            histup.Add(hup)
-            histdown.Add(hdown)
+            if isFirst:
+                histup = hup.Clone()
+                histdown = hdown.Clone()
+                isFirst = False
+            else:
+                histup.Add(hup)
+                histdown.Add(hdown)
         h_sys_uncerts.append( getSysUncert(histup, histdown, h_totalMC) )
     h_sys_total = getTotalUncert(h_totalMC, h_sys_uncerts) # this contains total uncertainty (pure uncertainty value)
     h_sys_total.SetFillStyle(3245)
@@ -126,28 +146,37 @@ def plotDistribution(filename, region, histname, xtitle, backgrounds, WCname, SM
     h_sys_total.SetLineWidth(0)
 
     leg.AddEntry(h_sys_total, "Total uncertainty","f")
-
-
+    if len(signals): leg.AddEntry(h_SMsignal, 'SM point', "l")
 
     # Get EFT Signals
     h_EFTsignals = []
-    for i in range(len(EFTpoints)):
-        hist = file.Get(region+"__"+histname+"/EFT_"+WCname+"_"+str(value_to_number[WCname][EFTpoints[i]]))
-        hist.Add(h_totalbkg)
-        hist.SetLineWidth(2)
-        hist.SetLineColor(signal_colors[i])
-        hist.SetFillColor(0)
-        h_EFTsignals.append(hist)
-        leg.AddEntry(hist, WCname+" = "+str(EFTpoints[i]),"l")
+    filesEFT = []
+    for i, EFTpoint in enumerate(EFTpoints):
+        filename_EFT = "CombineInput_"+WCname+"_"+str(value_to_number[WCname][EFTpoint])+".root"
+        filesEFT.append(ROOT.TFile(dir+filename_EFT))
+        h_EFTsignals.append(h_totalbkg.Clone())
+    for i, EFTpoint in enumerate(EFTpoints):
+        for signal in signals:
+            histeft = filesEFT[i].Get(region+"__"+histname+"/"+signal)
+            h_EFTsignals[i].Add(histeft)
+        h_EFTsignals[i].SetLineWidth(2)
+        h_EFTsignals[i].SetLineColor(signal_colors[i])
+        h_EFTsignals[i].SetFillColor(0)
+        leg.AddEntry(h_EFTsignals[i], WCname+" = "+str(EFTpoint),"l")
 
     # Draw plot
+    drawRatio = len(signals) > 0
+
     ROOT.gStyle.SetLegendBorderSize(0)
     ROOT.gStyle.SetPadTickX(1)
     ROOT.gStyle.SetPadTickY(1)
     ROOT.gStyle.SetOptStat(0)
     c = ROOT.TCanvas("c", "c", 600, 600)
-    pad1 = ROOT.TPad("pad1", "pad1", 0, 0.31, 1, 1.0)
-    pad1.SetBottomMargin(0.02)
+    pady1 = 0.31 if drawRatio else 0.0
+    pad1 = ROOT.TPad("pad1", "pad1", 0, pady1, 1, 1.0)
+    if drawRatio:    pad1.SetBottomMargin(0.02)
+    else:            pad1.SetBottomMargin(0.12)
+
     pad1.SetLeftMargin(0.19)
     pad1.Draw()
     pad1.cd()
@@ -161,16 +190,19 @@ def plotDistribution(filename, region, histname, xtitle, backgrounds, WCname, SM
     h_SMsignal.GetYaxis().SetRangeUser(ymin, ymax)
     h_SMsignal.GetYaxis().SetNdivisions(505)
 
+
     h_SMsignal.GetYaxis().SetTitle('Events/'+str(int(binwidth))+' GeV')
+    h_SMsignal.GetYaxis().SetTitleOffset(1.4)
     h_SMsignal.SetTitle('')
+    h_SMsignal.SetMarkerStyle(0)
+
     h_SMsignal.Draw("HIST")
 
-    h_sys_total.Draw("E2 SAME")
     for h in h_EFTsignals:
         h.Draw("HIST SAME")
     h_stack.Draw("HIST SAME")
-
-
+    h_sys_total.SetMarkerStyle(0)
+    h_sys_total.Draw("E2 SAME")
 
     leg.Draw()
 
@@ -178,64 +210,77 @@ def plotDistribution(filename, region, histname, xtitle, backgrounds, WCname, SM
     titlefont = 43
 
     # This is for correct axis titles
-    h_SMsignal.GetXaxis().SetLabelSize(0.)
-    h_SMsignal.GetYaxis().SetLabelSize(0.)
-    axis = ROOT.TGaxis( xmin, ymin, xmin, ymax, ymin, ymax, 505,"")
-    axis.SetLabelOffset(0.01)
-    axis.SetLabelFont(titlefont)
-    axis.SetLabelSize(21)
-    axis.SetNdivisions(505)
-
-    axis.Draw()
+    if drawRatio:
+        axis = ROOT.TGaxis( xmin, ymin, xmin, ymax, ymin, ymax, 505,"")
+        h_SMsignal.GetXaxis().SetLabelSize(0.)
+        h_SMsignal.GetYaxis().SetLabelSize(0.)
+        axis.SetLabelOffset(0.01)
+        axis.SetLabelFont(titlefont)
+        axis.SetLabelSize(21)
+        axis.SetNdivisions(505)
+        axis.Draw()
+    else:
+        h_SMsignal.GetXaxis().SetTitle(xtitle)
+        h_SMsignal.GetXaxis().SetNdivisions(505)
+        h_SMsignal.GetXaxis().SetTickLength(0.07)
+        h_SMsignal.GetXaxis().SetTitleSize(25)
+        h_SMsignal.GetXaxis().SetTitleFont(titlefont)
+        h_SMsignal.GetXaxis().SetTitleOffset(1.2)
+        h_SMsignal.GetXaxis().SetLabelFont(titlefont)
+        h_SMsignal.GetXaxis().SetLabelSize(21)
     ROOT.gPad.RedrawAxis()
 
+    if drawRatio:
+        # Second pad with ratio plots
+        c.cd();
+        pad2 = ROOT.TPad("pad2", "pad2", 0, 0.05, 1, 0.3)
+        pad2.SetLeftMargin(0.19)
+        pad2.SetTopMargin(0)
+        pad2.SetBottomMargin(0.38);
+        pad2.Draw()
+        pad2.cd()
 
-    # Second pad with ratio plots
-    c.cd();
-    pad2 = ROOT.TPad("pad2", "pad2", 0, 0.05, 1, 0.3)
-    pad2.SetLeftMargin(0.19)
-    pad2.SetTopMargin(0)
-    pad2.SetBottomMargin(0.38);
-    pad2.Draw()
-    pad2.cd()
-
-    EFTratios = []
-    isfirst = True
-    for i in range(len(h_EFTsignals)):
-        ratio = getRatio(h_EFTsignals[i], h_SMsignal)
-        ratio.SetLineWidth(2)
-        ratio.SetLineColor(signal_colors[i])
-        ratio.SetTitle('')
-        ratio.GetYaxis().SetRangeUser(0.5, 1.5)
-        ratio.GetYaxis().SetNdivisions(505)
-        ratio.GetYaxis().SetTitle('#frac{Data}{SM}')
-        ratio.GetXaxis().SetTitle(xtitle)
-        ratio.GetXaxis().SetTickLength(0.07)
-        ratio.GetXaxis().SetTitleSize(25)
-        ratio.GetXaxis().SetTitleFont(titlefont)
-        ratio.GetXaxis().SetTitleOffset(4.0)
-        ratio.GetXaxis().SetLabelFont(titlefont)
-        ratio.GetXaxis().SetLabelSize(21)
-        ratio.GetXaxis().SetLabelOffset(0.035)
-        ratio.GetYaxis().CenterTitle()
-        ratio.GetYaxis().SetTitleSize(22)
-        ratio.GetYaxis().SetTitleFont(titlefont)
-        ratio.GetYaxis().SetTitleOffset(2.2)
-        ratio.GetYaxis().SetLabelFont(titlefont)
-        ratio.GetYaxis().SetLabelSize(19)
-        ratio.GetYaxis().SetLabelOffset(0.009)
-        if isfirst: ratio.Draw("HIST")
-        else :      ratio.Draw("HIST SAME")
-        EFTratios.append(ratio)
-        isfirst=False
-    ratio_uncert = getRatio(h_sys_total,h_SMsignal)
-    ratio_uncert.Draw("E2 SAME")
-    for r in EFTratios: r.Draw("HIST SAME") #draw all rations again
-    line = ROOT.TLine(xmin, 1, xmax, 1)
-    line.SetLineWidth(2)
-    line.SetLineColor(13)
-    line.Draw()
-    for ratio in EFTratios:
-        ratio.Draw("HIST SAME")
-    ROOT.gPad.RedrawAxis()
-    c.Print(os.path.join(plot_directory, region+"__"+histname+"__"+WCname+".pdf"))
+        EFTratios = []
+        isfirst = True
+        for i in range(len(h_EFTsignals)):
+            ratio = getRatio(h_EFTsignals[i], h_SMsignal)
+            ratio.SetLineWidth(2)
+            ratio.SetLineColor(signal_colors[i])
+            ratio.SetTitle('')
+            ratio.GetYaxis().SetRangeUser(0.5, 1.5)
+            ratio.GetYaxis().SetNdivisions(505)
+            ratio.GetYaxis().SetTitle('#frac{Data}{SM}')
+            ratio.GetXaxis().SetTitle(xtitle)
+            ratio.GetXaxis().SetTickLength(0.07)
+            ratio.GetXaxis().SetTitleSize(25)
+            ratio.GetXaxis().SetTitleFont(titlefont)
+            ratio.GetXaxis().SetTitleOffset(4.0)
+            ratio.GetXaxis().SetLabelFont(titlefont)
+            ratio.GetXaxis().SetLabelSize(21)
+            ratio.GetXaxis().SetLabelOffset(0.035)
+            ratio.GetYaxis().CenterTitle()
+            ratio.GetYaxis().SetTitleSize(22)
+            ratio.GetYaxis().SetTitleFont(titlefont)
+            ratio.GetYaxis().SetTitleOffset(2.2)
+            ratio.GetYaxis().SetLabelFont(titlefont)
+            ratio.GetYaxis().SetLabelSize(19)
+            ratio.GetYaxis().SetLabelOffset(0.009)
+            if isfirst: ratio.Draw("HIST")
+            else :      ratio.Draw("HIST SAME")
+            EFTratios.append(ratio)
+            isfirst=False
+        ratio_uncert = getRatio(h_sys_total,h_SMsignal)
+        ratio_uncert.Draw("E2 SAME")
+        for r in EFTratios: r.Draw("HIST SAME") #draw all rations again
+        line = ROOT.TLine(xmin, 1, xmax, 1)
+        line.SetLineWidth(2)
+        line.SetLineColor(13)
+        line.Draw()
+        for ratio in EFTratios:
+            ratio.Draw("HIST SAME")
+        ROOT.gPad.RedrawAxis()
+    plotname = os.path.join(plot_directory, region+"__"+histname+"__"+WCname+".pdf")
+    if prefix: plotname = os.path.join(plot_directory, prefix+"__"+region+"__"+histname+".pdf")
+    c.Print(plotname)
+    file.Close()
+    for f in filesEFT: f.Close()

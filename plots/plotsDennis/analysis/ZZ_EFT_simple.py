@@ -227,7 +227,7 @@ data_sample.scale          = 1.
 
 # Set up MC sample
 for sample in mc:
-    sample.scale           = 1 # Scale MCs individually with lumi
+    sample.scale           = 1
 
 for param in params:
     param['sample'].scale = 1
@@ -236,7 +236,6 @@ if args.small:
     for sample in mc + [data_sample]:
         sample.normalization = 1.
         sample.reduceFiles( to = 1 )
-        #sample.reduceFiles( to=1)
         sample.scale /= sample.normalization
     for param in params:
         param['sample'].normalization = 1.
@@ -370,8 +369,6 @@ for i_mode, mode in enumerate(allModes):
         data_sample.style          = styles.errorStyle(ROOT.kBlack)
         lumi_scale                 = data_sample.lumi/1000
 
-    # weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
-
     for sample in mc: sample.style = styles.fillStyle(sample.color)
 
     ###### SYS #################################################################
@@ -448,8 +445,7 @@ for i_mode, mode in enumerate(allModes):
         name = "Z1_pt",
         texX = 'p_{T}(Z_{1}) (GeV)', texY = 'Number of Events / 20 GeV',
         attribute = TreeVariable.fromString( "Z1_pt/F" ),
-        binning=[20,0,400],
-        addOverFlowBin='upper',
+        binning=[5, 0, 800],
     ))
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)

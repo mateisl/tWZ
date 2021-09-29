@@ -4,7 +4,7 @@ echo 'Running over' ${npoints}+1 'points'
 
 cd /users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data
 
-for WCname in cHq1Re11 cHq1Re22 cHq1Re33
+for WCname in cHq1Re11 cHq1Re22 cHq1Re33 cHq3Re11 cHq3Re22 cHq3Re33
 do
   # First combine regions to a final card and name region 'combined'
   for i in {0..${npoints}}

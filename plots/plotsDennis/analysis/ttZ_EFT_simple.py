@@ -458,8 +458,7 @@ for i_mode, mode in enumerate(allModes):
         name = "Z1_pt",
         texX = 'p_{T}(Z_{1}) (GeV)', texY = 'Number of Events / 20 GeV',
         attribute = TreeVariable.fromString( "Z1_pt/F" ),
-        binning=[20,0,400],
-        addOverFlowBin='upper',
+        binning=[5, 0, 800],
     ))
 
     plots.append(Plot(

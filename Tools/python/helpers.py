@@ -217,8 +217,8 @@ def natural_sort(list, key=lambda s:s):
     return lc
 
 def getTheta(lep1, lep2, H):
-	beam = TLorentzVector()
-	tmp_lep1, tmp_lep2, tmp_H = TLorentzVector(), TLorentzVector(), TLorentzVector()
+	beam = ROOT.TLorentzVector()
+	tmp_lep1, tmp_lep2, tmp_H = ROOT.TLorentzVector(), ROOT.TLorentzVector(), ROOT.TLorentzVector()
 
 	tmp_lep1.SetPtEtaPhiM(lep1.Pt(),lep1.Eta(),lep1.Phi(),lep1.M())
 	tmp_lep2.SetPtEtaPhiM(lep2.Pt(),lep2.Eta(),lep2.Phi(),lep2.M())
@@ -229,7 +229,7 @@ def getTheta(lep1, lep2, H):
 
 	beam.SetPxPyPzE(0,0,6500,6500)
 
-	V_mom, bVH = TLorentzVector(), TVector3()
+	V_mom, bVH = ROOT.TLorentzVector(), ROOT.TVector3()
 	V_mom = tmp_lep1+tmp_lep2
 	bVH = (tmp_lep1+tmp_lep2+tmp_H).BoostVector()
 
@@ -247,14 +247,14 @@ def getTheta(lep1, lep2, H):
 	return Theta
 
 def gettheta(lep1, lep2, H):
-	tmp_lep1, tmp_lep2, tmp_H = TLorentzVector(), TLorentzVector(), TLorentzVector()
+	tmp_lep1, tmp_lep2, tmp_H = ROOT.TLorentzVector(), ROOT.TLorentzVector(), ROOT.TLorentzVector()
 	tmp_lep1.SetPtEtaPhiM(lep1.Pt(),lep1.Eta(),lep1.Phi(),lep1.M())
 	tmp_lep2.SetPtEtaPhiM(lep2.Pt(),lep2.Eta(),lep2.Phi(),lep2.M())
 	tmp_H.SetPtEtaPhiM(H.Pt(),H.Eta(),H.Phi(),H.M())
 	if(lep1.Eta()<-10 or lep2.Eta()<-10 or tmp_H.Eta()<-10):
 		return -100
 
-	V_mom, bVH, bV = TLorentzVector(), TVector3(), TVector3()
+	V_mom, bVH, bV = ROOT.TLorentzVector(), ROOT.TVector3(), ROOT.TVector3()
 
 	bVH = (tmp_lep1 + tmp_lep2 + tmp_H).BoostVector()
 	V_mom = (tmp_lep1 + tmp_lep2)
@@ -274,8 +274,8 @@ def gettheta(lep1, lep2, H):
 	return theta
 
 def getphi(lep1, lep2, H):
-	beam = TLorentzVector()
-	tmp_lep1, tmp_lep2, tmp_H = TLorentzVector(), TLorentzVector(), TLorentzVector()
+	beam = ROOT.TLorentzVector()
+	tmp_lep1, tmp_lep2, tmp_H = ROOT.TLorentzVector(), ROOT.TLorentzVector(), ROOT.TLorentzVector()
 	tmp_lep1.SetPtEtaPhiM(lep1.Pt(),lep1.Eta(),lep1.Phi(),lep1.M())
 	tmp_lep2.SetPtEtaPhiM(lep2.Pt(),lep2.Eta(),lep2.Phi(),lep2.M())
 	tmp_H.SetPtEtaPhiM(H.Pt(),H.Eta(),H.Phi(),H.M())
@@ -285,7 +285,7 @@ def getphi(lep1, lep2, H):
 
 	beam.SetPxPyPzE(0,0,6500,6500)
 
-	V_mom, bVH, n_scatter, n_decay = TLorentzVector(), TVector3(), TVector3(), TVector3()
+	V_mom, bVH, n_scatter, n_decay = ROOT.TLorentzVector(), ROOT.TVector3(), ROOT.TVector3(), ROOT.TVector3()
 	bVH = (tmp_lep1+tmp_lep2+tmp_H).BoostVector()
 	V_mom = tmp_lep1+tmp_lep2
 
@@ -306,11 +306,11 @@ def getphi(lep1, lep2, H):
 
 	return phi
 
-def getCosThetaStar(l, Z):
+def cosThetaStarNew(l, Z):
     lepton = ROOT.TLorentzVector()
-    lepton.SetPtEtaPhi(l.Pt(), l.Eta(), l.Phi(), l.M())
+    lepton.SetPtEtaPhiM(l.Pt(), l.Eta(), l.Phi(), l.M())
     Zboson = ROOT.TLorentzVector()
-    Zboson.SetPtEtaPhi(Z.Pt(), Z.Eta(), Z.Phi(), Z.M())
+    Zboson.SetPtEtaPhiM(Z.Pt(), Z.Eta(), Z.Phi(), Z.M())
 
     boostvector = Zboson.BoostVector()
     lepton_newSys = ROOT.TLorentzVector()

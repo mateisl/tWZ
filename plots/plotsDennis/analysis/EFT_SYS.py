@@ -23,7 +23,7 @@ from tWZ.Tools.user                      import plot_directory
 from tWZ.Tools.cutInterpreter            import cutInterpreter
 from tWZ.Tools.objectSelection           import cbEleIdFlagGetter, vidNestedWPBitMapNamingList
 from tWZ.Tools.objectSelection           import lepString
-from tWZ.Tools.helpers                   import getCollection, getCosThetaStar, getTheta, gettheta, getphi
+from tWZ.Tools.helpers                   import getCollection, cosThetaStarNew, getTheta, gettheta, getphi
 
 # Analysis
 from Analysis.Tools.helpers              import deltaPhi, deltaR
@@ -340,6 +340,49 @@ def getClosestBJetindex( event, object, minBtagValue ):
                 closestjet = jet
     return closestjet
 
+def getWlep( event ):
+    Wlep = ROOT.TLorentzVector()
+    lepton  = ROOT.TLorentzVector()
+    met     = ROOT.TLorentzVector()
+    lepton.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
+    met.SetPtEtaPhiM(event.met_pt, 0, event.met_phi, 0)
+
+    lepton_pT = ROOT.TVector3(lepton.Px(), lepton.Py(), 0)
+    neutrino_pT = ROOT.TVector3(met.Px(), met.Py(), 0)
+
+    mass_w = 80.399
+    mu = mass_w * mass_w / 2 + lepton_pT * neutrino_pT
+    A = - (lepton_pT * lepton_pT)
+    B = mu * lepton.Pz()
+    C = mu * mu - lepton.E() * lepton.E() * (neutrino_pT * neutrino_pT)
+    discriminant = B * B - A * C
+    neutrinos = []
+    if discriminant <= 0:
+        # Take only real part of the solution for pz:
+        neutrino = ROOT.TLorentzVector()
+        neutrino.SetPxPyPzE(met.Px(),met.Py(),-B / A,0)
+        neutrino.SetE(neutrino.P())
+        neutrinos.append(neutrino)
+    else:
+        discriminant = sqrt(discriminant)
+        neutrino1 = ROOT.TLorentzVector()
+        neutrino1.SetPxPyPzE(met.Px(),met.Py(),(-B - discriminant) / A,0)
+        neutrino1.SetE(neutrino1.P())
+        neutrino2 = ROOT.TLorentzVector()
+        neutrino2.SetPxPyPzE(met.Px(),met.Py(),(-B + discriminant) / A,0)
+        neutrino2.SetE(neutrino2.P())
+        if neutrino1.E() > neutrino2.E():
+            neutrinos.append(neutrino1)
+            neutrinos.append(neutrino2)
+        else:
+            neutrinos.append(neutrino2)
+            neutrinos.append(neutrino1)
+
+    Wleps = []
+    for neu in neutrinos:
+        Wlep = lepton + neu
+        Wleps.append([Wlep, lepton, neu])
+    return Wleps
 ################################################################################
 # Define sequences
 sequence       = []
@@ -383,7 +426,7 @@ def getCosThetaStar(sample, event):
         lepton.SetPtEtaPhiM(event.lep_pt[idx_l1], event.lep_eta[idx_l1], event.lep_phi[idx_l1], lepmass)
 
 
-    event.cosThetaStar = getCosThetaStar(lepton, Z)
+    event.cosThetaStar = cosThetaStarNew(lepton, Z)
     # boostvector = Z.BoostVector()
     # lepton_newSys = ROOT.TLorentzVector()
     # lepton_newSys = lepton
@@ -391,6 +434,41 @@ def getCosThetaStar(sample, event):
     # event.cosThetaStar = lepton_newSys.CosTheta()
 sequence.append( getCosThetaStar )
 
+def getDiBosonAngles(sample, event):
+    lep1,lep2,boson = ROOT.TLorentzVector(),ROOT.TLorentzVector(),ROOT.TLorentzVector()
+    # Get lep1 and lep2 from Z boson
+    idx_l1 = event.Z1_l1_index
+    idx_l2 = event.Z1_l2_index
+    if abs(event.lep_pdgId[idx_l1]) == 11:
+        lepmass = 0.0005
+    elif abs(event.lep_pdgId[idx_l1]) == 13:
+        lepmass = 0.1
+    elif abs(event.lep_pdgId[idx_l1]) == 15:
+        lepmass = 1.777
+    else:
+        print "Z does not decay into leptons"
+        lepmass = 0
+    lep1.SetPtEtaPhiM(event.lep_pt[idx_l1], event.lep_eta[idx_l1], event.lep_phi[idx_l1], lepmass)
+    lep2.SetPtEtaPhiM(event.lep_pt[idx_l2], event.lep_eta[idx_l2], event.lep_phi[idx_l2], lepmass)
+
+    # For 2nd boson distinguish between cases
+    if "nLeptons4" in args.selection:
+        boson.SetPtEtaPhiM(event.Z2_pt, event.Z2_eta, event.Z2_phi, event.Z2_mass)
+    elif "deepjet0" in args.selection:
+        Wleps = getWlep(event)
+        if len(Wleps) == 1:
+            boson = Wleps[0][0]
+        elif len(Wleps) == 2:
+            boson = Wleps[0][0] if Wleps[0][0].Pt()>Wleps[1][0].Pt() else Wleps[1][0]
+        else:
+            print "[ERROR] getWlep should not return more than 2 options"
+    else:
+        boson.SetPtEtaPhiM(0,0,0,0)
+
+    event.Theta = getTheta(lep1, lep2, boson)
+    event.theta = gettheta(lep1, lep2, boson)
+    event.phi = getphi(lep1, lep2, boson)
+sequence.append( getDiBosonAngles )
 ################################################################################
 # Read variables
 
@@ -407,6 +485,9 @@ read_variables = [
     "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I,mediumId/O,tightId/O,isPFcand/B,isTracker/B,isGlobal/B]",
     "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
 ]
+
+if "nLeptons4" in args.selection:
+    read_variables.append("Z2_phi/F", "Z2_pt/F", "Z2_mass/F", "Z2_eta/F")
 
 read_variables_MC = [
     "weight/F", 'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F',
@@ -581,7 +662,6 @@ for i_mode, mode in enumerate(allModes):
             binning=[20, -1, 1],
         ))
 
-
         plots.append(Plot(
             name = "CosThetaStar_old",
             texX = 'cos #theta^{*}', texY = 'Number of Events',
@@ -589,6 +669,26 @@ for i_mode, mode in enumerate(allModes):
             binning=[20, -1, 1],
         ))
 
+        plots.append(Plot(
+            name = "theta",
+            texX = '#theta', texY = 'Number of Events',
+            attribute = lambda event, sample: event.theta,
+            binning=[20, 0, pi],
+        ))
+
+        plots.append(Plot(
+            name = "Theta",
+            texX = '#Theta', texY = 'Number of Events',
+            attribute = lambda event, sample: event.Theta,
+            binning=[20, 0, pi],
+        ))
+
+        plots.append(Plot(
+            name = "phi",
+            texX = '#phi', texY = 'Number of Events',
+            attribute = lambda event, sample: event.phi,
+            binning=[20, -pi, pi],
+        ))
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 

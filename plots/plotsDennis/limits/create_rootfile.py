@@ -76,39 +76,47 @@ signals = ["ttZ", "WZ", "ZZ"]
 # Define Signal points
 signalnames = []
 WCs = ["cHq1Re11", "cHq1Re22", "cHq1Re33", "cHq3Re11", "cHq3Re22", "cHq3Re33"]
-minval = -10.0
-maxval = 10.0
 Npoints = 51
 SMpointName = ""
 goodnames = {}
 value_to_number = {}
-for WCname in WCs:
-    vtn = {}
-    for i in range(Npoints):
-        value = round(minval + ((maxval-minval)/(Npoints-1))*i,2)
-        signalname='%s=%3.2f'%(WCname, value)
-        if abs(value) < 0.001:
-            print 'Found SM point'
-            SMpointName = signalname
-        signalnames.append(signalname)
-        goodnames[signalname]="%s_%s"%(WCname,i)
-        vtn[value] = i
-    value_to_number[WCname] = vtn
-
-if args.twoD:
-    signalnames = []
-    goodnames = {}
-    minval = -4.0
-    maxval = 4.0
-    Npoints = 11
-    for i in range(Npoints):
-        value1 = minval + ((maxval-minval)/(Npoints-1))*i
-        for j in range(Npoints):
-            value2 = minval + ((maxval-minval)/(Npoints-1))*j
-            signalname='%i,%i'%(i, j)
+if not args.twoD:
+    for WCname in WCs:
+        minval = -10.0
+        maxval = 10.0
+        if "cHq3" in WCname:
+            minval = -0.2
+            maxval = 0.2
+        vtn = {}
+        for i in range(Npoints):
+            value = round(minval + ((maxval-minval)/(Npoints-1))*i,4)
+            signalname='%s=%3.4f'%(WCname, value)
+            if abs(value) < 0.001:
+                print 'Found SM point'
+                SMpointName = signalname
             signalnames.append(signalname)
-            number = j+Npoints*i
-            goodnames[signalname]="%i"%(number)
+            goodnames[signalname]="%s_%s"%(WCname,i)
+            vtn[value] = i
+        value_to_number[WCname] = vtn
+elif args.twoD:
+    minval1  = -4.0
+    maxval1  = 4.0
+    minval2  = -0.2
+    maxval2  = 0.2
+    Npoints1 = 21
+    Npoints2 = 21
+    WC1 = 'cHq1Re11'
+    WC2 = 'cHq3Re11'
+    for i in range(Npoints1):
+        value1 = minval1 + ((maxval1-minval1)/(Npoints1-1))*i
+        for j in range(Npoints2):
+            value2 = minval2 + ((maxval2-minval2)/(Npoints2-1))*j
+            signalname='%s=%3.4f, %s=%3.4f'%(WC1,value1,WC2,value2)
+            if abs(value1)<0.001 and abs(value2)<0.001:
+                print 'Found SM point'
+                SMpointName = signalname
+            signalnames.append(signalname)
+            goodnames[signalname]="%s_%i_%s_%i"%(WC1,i,WC2,j)
 
 # Define Systematics
 sysnames = [
@@ -122,16 +130,21 @@ sysnames = [
 
 ################################################################################
 ### Read Histograms and write to outfile
+if args.twoD: inname = 'Results_twoD.root'
+else:         inname = 'Results.root'
+
 if not args.plotOnly:
     for signalpoint in signalnames:
         print '--------------------------------------------------------'
         print 'Working on', signalpoint
         outname = '/mnt/hephy/cms/dennis.schwarz/www/tWZ/limits/CombineInput_'+goodnames[signalpoint]+'.root'
+        if args.twoD:
+            outname = '/mnt/hephy/cms/dennis.schwarz/www/tWZ/limits/CombineInput_2D_'+goodnames[signalpoint]+'.root'
         outfile = ROOT.TFile(outname, 'recreate')
         outfile.cd()
         for region in regions:
             print 'Filling region', region
-            file = ROOT.TFile(dirs[region]+'/Results.root')
+            file = ROOT.TFile(dirs[region]+inname)
             outfile.mkdir(region+"__"+histname)
             outfile.cd(region+"__"+histname)
             for process in processes:
@@ -150,8 +163,8 @@ if not args.plotOnly:
                     sysdirUP = sysdirUP.replace('/Run', '_'+sys+'_UP/Run')
                     sysdirDOWN = dirs[region]
                     sysdirDOWN = sysdirDOWN.replace('/Run', '_'+sys+'_DOWN/Run')
-                    fileUP   = ROOT.TFile(sysdirUP+'/Results.root')
-                    fileDOWN = ROOT.TFile(sysdirDOWN+'/Results.root')
+                    fileUP   = ROOT.TFile(sysdirUP+inname)
+                    fileDOWN = ROOT.TFile(sysdirDOWN+inname)
                     outfile.cd(region+"__"+histname)
                     histUP   = fileUP.Get(name)
                     histDOWN = fileDOWN.Get(name)
@@ -184,7 +197,7 @@ if not args.plotOnly:
         print 'Written to ', outname
 
 
-if not args.noPlots:
+if not args.noPlots and not args.twoD:
     signals_at_SM = signals
     for s in signals_at_SM:
         s = s+"__"+SMpointName
@@ -192,7 +205,7 @@ if not args.noPlots:
         for WCname in WCs:
             SMpoint = 0
             EFTpoints = [-2, 2]
-            if 'cHq3' in WCname: EFTpoints = [-0.4, 0.4]
+            if 'cHq3' in WCname: EFTpoints = [-0.200, 0.200]
             plotDistribution(None, region, 'Z1_pt', 'Z #it{p}_{T}', backgrounds, signals, WCname, SMpoint, EFTpoints, value_to_number, sysnames)
 
         plotDistribution("SM", region, 'Z1_pt', 'Z #it{p}_{T}', backgrounds+signals_at_SM, [], WCname, SMpoint, [], value_to_number, sysnames)

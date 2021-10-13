@@ -287,6 +287,14 @@ def drawPlots(plots, mode, dataMCScale):
 # Define sequences
 sequence       = []
 
+def getZorigin(event, sample):
+    pdgIds = []
+    for i in range(event.nGenPart):
+        if event.GenPart_pdgId[i] == 23:
+            i_mother = event.GenPart_genPartIdxMother[i]
+            pdgIds.append(event.GenPart_pdgId[i_mother])
+    event.MotherIds = pdgIds
+sequence.append(getZorigin)
 
 ################################################################################
 # Read variables
@@ -308,7 +316,10 @@ read_variables = [
 read_variables_MC = [
     "weight/F", 'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F',
     "genZ1_pt/F", "genZ1_eta/F", "genZ1_phi/F",
-    "Muon[genPartFlav/I]"
+    "genZ2_pt/F", "genZ2_eta/F", "genZ2_phi/F",
+    "Muon[genPartFlav/I]",
+    VectorTreeVariable.fromString( "GenPart[pt/F,mass/F,phi/F,eta/F,pdgId/I,genPartIdxMother/I,status/I,statusFlags/I]", nMax=1000),
+    'nGenPart/I',
 ]
 
 read_variables_eft = [

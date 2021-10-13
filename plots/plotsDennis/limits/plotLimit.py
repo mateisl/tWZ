@@ -83,6 +83,9 @@ for WCname in WCnames:
         qvals = []
         minval = -10.0
         maxval = 10.0
+        if "cHq3" in WCname:
+            minval = -0.2
+            maxval = 0.2
         WCvals = []
         for i in range(Npoints):
             value = minval + ((maxval-minval)/(Npoints-1))*i
@@ -124,7 +127,7 @@ for WCname in WCnames:
         ROOT.gStyle.SetPadTickY(1)
 
         ymax = 10
-        xlo, xhi = xboundaries=findXBoundaries(graph, minval, maxval, ymax)
+        xlo, xhi = findXBoundaries(graph, minval, maxval, ymax)
         graph.GetXaxis().SetLimits(xlo, xhi)
         graph.GetHistogram().SetMinimum(0.)
         graph.GetHistogram().SetMaximum(ymax)
@@ -226,7 +229,7 @@ for WCname in WCnames:
         ROOT.gStyle.SetPadTickY(1)
 
         likelihoods["combined"].GetXaxis().SetLimits(-10, 10)
-        if WCname=="cHq3Re11": likelihoods["combined"].GetXaxis().SetLimits(-1, 1)
+        if WCname=="cHq3Re11": likelihoods["combined"].GetXaxis().SetLimits(-0.2, 0.2)
         likelihoods["combined"].GetHistogram().SetMinimum(0.)
         likelihoods["combined"].GetHistogram().SetMaximum(20)
         likelihoods["combined"].SetLineColor(ROOT.kBlack)

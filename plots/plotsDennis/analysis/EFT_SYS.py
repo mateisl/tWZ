@@ -149,6 +149,7 @@ elif args.era == "Run2018":
     mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.triBoson, Autumn18.nonprompt_3l]
     samples_eft = [SMEFTsim_fast.ZZ, SMEFTsim_fast.WZ, SMEFTsim_fast.ttZ01j]
     if args.nicePlots:
+        # mc = [SMEFTsim_fast.WZ]
         mc = [Autumn18.TWZ_NLO_DR, Autumn18.TTX_rare, Autumn18.TZQ, Autumn18.triBoson, Autumn18.nonprompt_3l, SMEFTsim_fast.ZZ, SMEFTsim_fast.WZ, SMEFTsim_fast.ttZ01j]
         signal_idx = [5, 6, 7] # INDEX OF signal sample
 elif args.era == "RunII":
@@ -185,8 +186,6 @@ for sample in samples_eft:
 #     # ('cHdRe33',  2.0, ROOT.kAzure+10),
 # ]
 
-minval = -10.0
-maxval = 10.0
 Npoints = 51
 
 if args.nicePlots:
@@ -203,26 +202,36 @@ WC_setup = [
 ]
 for i_wc, (WCname, color) in enumerate(WC_setup):
     for i in range(Npoints):
+        minval = -10.
+        maxval = 10.
+        if 'cHq3' in WCname:
+            minval = -0.2
+            maxval = 0.2
         value = minval + ((maxval-minval)/(Npoints-1))*i
         WCs.append( (WCname, value, color) )
 
 params =  []
 for i_sample, sample in enumerate(samples_eft):
     for i_wc, (WC, WCval, color) in enumerate(WCs):
-        params.append({'legendText':'%s=%3.2f'%(WC, WCval), 'color':color,  'WC':{WC:WCval} , 'sample': sample, 'i_sample': i_sample})
+        params.append({'legendText':'%s=%3.4f'%(WC, WCval), 'color':color,  'WC':{WC:WCval} , 'sample': sample, 'i_sample': i_sample})
 
 #### 2D scan
 if args.twoD:
-    minval = -4.0
-    maxval = 4.0
-    Npoints = 11
+    minval1  = -4.0
+    maxval1  = 4.0
+    minval2  = -0.2
+    maxval2  = 0.2
+    Npoints1 = 21
+    Npoints2 = 21
+    WC1 = 'cHq1Re11'
+    WC2 = 'cHq3Re11'
     params = []
-    for i in range(Npoints):
-        value1 = minval + ((maxval-minval)/(Npoints-1))*i
-        for j in range(Npoints):
-            value2 = minval + ((maxval-minval)/(Npoints-1))*j
+    for i in range(Npoints1):
+        value1 = minval1 + ((maxval1-minval1)/(Npoints1-1))*i
+        for j in range(Npoints2):
+            value2 = minval2 + ((maxval2-minval2)/(Npoints2-1))*j
             for i_sample, sample in enumerate(samples_eft):
-                params.append({'legendText':'%i,%i'%(i, j), 'color':ROOT.kRed,  'WC':{'cHq1Re11':value1, 'cHq3Re11':value2} , 'sample': sample, 'i_sample': i_sample})
+                params.append({'legendText':'%s=%3.4f, %s=%3.4f'%(WC1,value1,WC2,value2), 'color':ROOT.kRed,  'WC':{WC1:value1, WC2:value2} , 'sample': sample, 'i_sample': i_sample})
 
 ####
 
@@ -313,7 +322,7 @@ def drawPlots(plots, mode, dataMCScale):
                   scaling = {0:1} if args.dataMCScaling else {},
                   legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
                   drawObjects = drawObjects( not args.noData, dataMCScale , lumi_scale ) + _drawObjects,
-                  copyIndexPHP = True, extensions = ["png"],
+                  copyIndexPHP = True, extensions = ["png", "pdf", "root"],
                 )
 
 def getDeepJetsWP(disc,year):
@@ -425,13 +434,7 @@ def getCosThetaStar(sample, event):
     if charge_l1 < 0 and charge_l2 > 0:
         lepton.SetPtEtaPhiM(event.lep_pt[idx_l1], event.lep_eta[idx_l1], event.lep_phi[idx_l1], lepmass)
 
-
     event.cosThetaStar = cosThetaStarNew(lepton, Z)
-    # boostvector = Z.BoostVector()
-    # lepton_newSys = ROOT.TLorentzVector()
-    # lepton_newSys = lepton
-    # lepton_newSys.Boost(-boostvector)
-    # event.cosThetaStar = lepton_newSys.CosTheta()
 sequence.append( getCosThetaStar )
 
 def getDiBosonAngles(sample, event):
@@ -469,6 +472,76 @@ def getDiBosonAngles(sample, event):
     event.theta = gettheta(lep1, lep2, boson)
     event.phi = getphi(lep1, lep2, boson)
 sequence.append( getDiBosonAngles )
+
+def getZorigin(event, sample):
+    pdgIds = []
+    mothersFound = []
+    productionModeWZ = 0
+    if sample.name != "data":
+        for i in range(event.nGenPart):
+            if i == 2 and abs(event.GenPart_pdgId[i])==24:
+                productionModeWZ=1
+            if event.GenPart_pdgId[i] == 23:
+                i_mother = event.GenPart_genPartIdxMother[i]
+                Id_mother = event.GenPart_pdgId[i_mother]
+                # If mother is still a Z, go further back until pdgId != 23
+                if Id_mother == 23:
+                    foundMother = False
+                    while not foundMother:
+                        i_tmp = i_mother
+                        i_mother = event.GenPart_genPartIdxMother[i_tmp]
+                        Id_mother = event.GenPart_pdgId[i_mother]
+                        if Id_mother != 23:
+                            foundMother = True
+                if i_mother not in mothersFound:
+                    pdgIds.append(Id_mother)
+                    mothersFound.append(i_mother)
+    event.MotherIds = pdgIds
+    event.Nmothers = len(pdgIds)
+    event.productionModeWZ = productionModeWZ
+    MotherList = []
+    # 0 = other
+    # 1,2,3 = 1st, 2nd, 3rd Generation Quarks
+    # 4 = W/Z/Higgs, 5 = Gluon, 6 = Lepton
+    for id in pdgIds:
+        if abs(id)==1 or abs(id)==2: # 1st gen
+            MotherList.append(1)
+        elif abs(id)==3 or abs(id)==4: # 2nd gen
+            MotherList.append(2)
+        elif abs(id)==5 or abs(id)==6: #3rd gen
+            MotherList.append(3)
+        elif abs(id)>=11 and abs(id)<=16: # lepton
+            MotherList.append(6)
+        elif abs(id)==9 or abs(id)==21: # gluon
+            MotherList.append(5)
+        elif abs(id)>=22 and abs(id)<=25: # W/Z/H
+            MotherList.append(4)
+        else:
+            MotherList.append(0)
+    event.MotherIdList = MotherList
+
+    production = -1
+    if sample.name != "data":
+        ID1 = abs(event.GenPart_pdgId[0])
+        ID2 = abs(event.GenPart_pdgId[1])
+        if   ID1 in [1,2] and ID2 in [1,2]: production = 1
+        elif ID1 in [3,4] and ID2 in [3,4]: production = 2
+        elif ID1 in [5,6] and ID2 in [5,6]: production = 3
+        elif (ID1==21 and ID2 in [1,2]) or (ID2==21 and ID1 in [1,2]): production = 4
+        elif (ID1==21 and ID2 in [3,4]) or (ID2==21 and ID1 in [3,4]): production = 5
+        elif (ID1==21 and ID2 in [5,6]) or (ID2==21 and ID1 in [5,6]): production = 6
+        elif ID1==21 and ID2==21: production = 7
+        else: production = 0
+    event.productionMode = production
+sequence.append(getZorigin)
+
+def getM3l( event, sample ):
+    l = []
+    for i in range(3):
+        l.append(ROOT.TLorentzVector())
+        l[i].SetPtEtaPhiM(event.lep_pt[i], event.lep_eta[i], event.lep_phi[i],0)
+    event.m3l = (l[0] + l[1] + l[2]).M()
+sequence.append( getM3l )
 ################################################################################
 # Read variables
 
@@ -487,12 +560,17 @@ read_variables = [
 ]
 
 if "nLeptons4" in args.selection:
-    read_variables.append("Z2_phi/F", "Z2_pt/F", "Z2_mass/F", "Z2_eta/F")
+    read_variables.append("Z2_phi/F")
+    read_variables.append("Z2_pt/F")
+    read_variables.append("Z2_eta/F")
+    read_variables.append("Z2_mass/F")
 
 read_variables_MC = [
     "weight/F", 'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F',
     "genZ1_pt/F", "genZ1_eta/F", "genZ1_phi/F",
-    "Muon[genPartFlav/I]"
+    "Muon[genPartFlav/I]",
+    VectorTreeVariable.fromString( "GenPart[pt/F,mass/F,phi/F,eta/F,pdgId/I,genPartIdxMother/I,status/I,statusFlags/I]", nMax=1000),
+    'nGenPart/I',
 ]
 
 read_variables_eft = [
@@ -656,15 +734,29 @@ for i_mode, mode in enumerate(allModes):
         ))
 
         plots.append(Plot(
+            name = "N_jets",
+            texX = 'Number of jets', texY = 'Number of Events',
+            attribute = lambda event, sample: event.nJetGood,
+            binning=[16, -0.5, 15.5],
+        ))
+
+        plots.append(Plot(
+            name = "M3l",
+            texX = 'M(3l) (GeV)', texY = 'Number of Events',
+            attribute = lambda event, sample:event.m3l,
+            binning=[25,0,500],
+        ))
+
+        plots.append(Plot(
             name = "CosThetaStar",
-            texX = 'cos #theta^{*}', texY = 'Number of Events',
+            texX = 'cos #theta*', texY = 'Number of Events',
             attribute = lambda event, sample: event.cosThetaStar,
             binning=[20, -1, 1],
         ))
 
         plots.append(Plot(
             name = "CosThetaStar_old",
-            texX = 'cos #theta^{*}', texY = 'Number of Events',
+            texX = 'cos #theta*', texY = 'Number of Events',
             attribute = lambda event, sample: event.Z1_cosThetaStar,
             binning=[20, -1, 1],
         ))
@@ -690,25 +782,86 @@ for i_mode, mode in enumerate(allModes):
             binning=[20, -pi, pi],
         ))
 
+        plots.append(Plot(
+            name = "Z_mother",
+            texX = 'pdgId of Z mother', texY = 'Number of Events',
+            attribute = lambda event, sample: event.MotherIds,
+            binning=[51,-25,25],
+        ))
+
+        plots.append(Plot(
+            name = "Z_mother_grouped",
+            texX = 'Z mother Group', texY = 'Number of Events',
+            attribute = lambda event, sample: event.MotherIdList,
+            binning=[7,-0.5,6.5],
+        ))
+
+        plots.append(Plot(
+            name = "N_Z_mother",
+            texX = 'Number of Z mothers', texY = 'Number of Events',
+            attribute = lambda event, sample: event.Nmothers,
+            binning=[6, -0.5, 5.5],
+        ))
+
+        plots.append(Plot(
+            name = "ProductionMode",
+            texX = 'production mode', texY = 'Number of Events',
+            attribute = lambda event, sample: event.productionMode,
+            binning=[8, -0.5, 7.5],
+        ))
+
+        plots.append(Plot(
+            name = "ProductionModeWZ",
+            texX = 'production mode of WZ', texY = 'Number of Events',
+            attribute = lambda event, sample: event.productionModeWZ,
+            binning=[2, -0.5, 1.5],
+        ))
+
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 
 
     ################################################################################
     # Get normalization yields from yield histogram
     for plot in plots:
-      if plot.name == "yield":
-        for i, l in enumerate(plot.histos):
-          for j, h in enumerate(l):
-            yields[mode][plot.stack[i][j].name] = h.GetBinContent(h.FindBin(0.5+i_mode))
-            if 'nLeptons4' in args.selection:
-                h.GetXaxis().SetBinLabel(1, "#mu#mu#mu#mu")
-                h.GetXaxis().SetBinLabel(2, "#mu#muee")
-                h.GetXaxis().SetBinLabel(3, "eeee")
-            else:
-                h.GetXaxis().SetBinLabel(1, "#mu#mu#mu")
-                h.GetXaxis().SetBinLabel(2, "#mu#mue")
-                h.GetXaxis().SetBinLabel(3, "#muee")
-                h.GetXaxis().SetBinLabel(4, "eee")
+        if plot.name == "Z_mother_grouped":
+            for i, l in enumerate(plot.histos):
+                for j, h in enumerate(l):
+                    h.GetXaxis().SetBinLabel(1, "other")
+                    h.GetXaxis().SetBinLabel(2, "1st")
+                    h.GetXaxis().SetBinLabel(3, "2nd")
+                    h.GetXaxis().SetBinLabel(4, "3rd")
+                    h.GetXaxis().SetBinLabel(5, "W/Z/H")
+                    h.GetXaxis().SetBinLabel(6, "gluon")
+                    h.GetXaxis().SetBinLabel(7, "lepton")
+        if plot.name == "ProductionMode":
+            for i, l in enumerate(plot.histos):
+                for j, h in enumerate(l):
+                    h.GetXaxis().SetBinLabel(1, "other")
+                    h.GetXaxis().SetBinLabel(2, "1st")
+                    h.GetXaxis().SetBinLabel(3, "2nd")
+                    h.GetXaxis().SetBinLabel(4, "3rd")
+                    h.GetXaxis().SetBinLabel(5, "1st+g")
+                    h.GetXaxis().SetBinLabel(6, "2nd+g")
+                    h.GetXaxis().SetBinLabel(7, "3rd+g")
+                    h.GetXaxis().SetBinLabel(8, "g+g")
+        if plot.name == "ProductionModeWZ":
+            for i, l in enumerate(plot.histos):
+                for j, h in enumerate(l):
+                    h.GetXaxis().SetBinLabel(1, "t channel")
+                    h.GetXaxis().SetBinLabel(2, "s channel")
+        if plot.name == "yield":
+            for i, l in enumerate(plot.histos):
+                for j, h in enumerate(l):
+                    yields[mode][plot.stack[i][j].name] = h.GetBinContent(h.FindBin(0.5+i_mode))
+                    if 'nLeptons4' in args.selection:
+                        h.GetXaxis().SetBinLabel(1, "#mu#mu#mu#mu")
+                        h.GetXaxis().SetBinLabel(2, "#mu#muee")
+                        h.GetXaxis().SetBinLabel(3, "eeee")
+                    else:
+                        h.GetXaxis().SetBinLabel(1, "#mu#mu#mu")
+                        h.GetXaxis().SetBinLabel(2, "#mu#mue")
+                        h.GetXaxis().SetBinLabel(3, "#muee")
+                        h.GetXaxis().SetBinLabel(4, "eee")
 
     if args.noData: yields[mode]["data"] = 0
 

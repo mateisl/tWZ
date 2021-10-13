@@ -1,6 +1,6 @@
 #Standard imports
 import  ROOT
-from    math    import pi, sqrt, cos, sin, sinh, log, cosh
+from    math    import pi, sqrt, cos, sin, sinh, log, cosh, acos
 from    array   import array
 import  itertools
 

@@ -55,4 +55,5 @@ if os.environ["USER"] in ["dennis.schwarz"]:
     analysis_results                = "/mnt/hephy/cms/dennis.schwarz/tWZ/results/v1"
     mva_directory                   = "/mnt/hephy/cms/dennis.schwarz/tWZ/MVA"
     cern_proxy_certificate          = "/users/dennis.schwarz/.private/.proxy"
-
+    combineReleaseLocation          = "/users/dennis.schwarz/CMSSW_10_6_0/src"
+    limit_directory                 = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/limits"

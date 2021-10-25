@@ -68,9 +68,9 @@ WCs = [
    # ('cHq3Re11', 1.0, ROOT.kCyan),
    # ('cHq3Re22', 1.0, ROOT.kMagenta),
    # ('cHq3Re33', 1.0, ROOT.kBlue),
-    ('cHq1Re11', 2.0, ROOT.kRed),
-    ('cHq1Re22', 2.0, ROOT.kGreen),
-    ('cHq1Re33', 2.0, ROOT.kOrange),
+    ('cHq1Re11', 0.0, ROOT.kRed),
+    # ('cHq1Re22', 2.0, ROOT.kGreen),
+    # ('cHq1Re33', 2.0, ROOT.kOrange),
     # ('cHuRe11',  2.0, ROOT.kCyan),
     # ('cHuRe22',  2.0, ROOT.kMagenta),
     # ('cHuRe33',  2.0, ROOT.kBlue),
@@ -110,7 +110,7 @@ from  BoostedInformationTree import BoostedInformationTree
 bit_cHq1Re11_0 = BoostedInformationTree.load('/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/BIT/BIT_ttZ_cHq1Re11_0.pkl')
 bit_cHq1Re11_2 = BoostedInformationTree.load('/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/BIT/BIT_ttZ_cHq1Re11_2.pkl')
 bit_cHq1Re33_0 = BoostedInformationTree.load('/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/BIT/BIT_ttZ_cHq1Re33_0.pkl')
-
+bit_cHq1Re11_0_doublediff = BoostedInformationTree.load('/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/BIT/BIT_ttZ_cHq1Re11_0_doublediff.pkl')
 bins_BIT = [-1., 0.0, 0.2, 0.4, 0.8, 1.] # for plots
 
 def charge(pdgId):
@@ -188,6 +188,7 @@ def BITpredict(event,sample):
     event.BIT_cHq1Re11_0 = bit_cHq1Re11_0.predict(np.array(feature_list))
     event.BIT_cHq1Re11_2 = bit_cHq1Re11_2.predict(np.array(feature_list))
     event.BIT_cHq1Re33_0 = bit_cHq1Re33_0.predict(np.array(feature_list))
+    event.BIT_cHq1Re11_0_doublediff = bit_cHq1Re11_0_doublediff.predict(np.array(feature_list))
     # print event.BIT
 sequence.append(BITpredict)
 
@@ -378,14 +379,14 @@ plots.append(Plot(
 plots.append(Plot(
     name = 'BIT_cHq1Re11_0_A', texX = 'BIT score', texY = 'Number of Events',
     attribute = lambda event, sample: event.BIT_cHq1Re11_0,
-    binning=[50,-1,1],
+    binning=[50,-5,5],
     addOverFlowBin='upper',
 ))
 
 plots.append(Plot(
     name = 'BIT_cHq1Re11_0_B', texX = 'BIT score', texY = 'Number of Events',
     attribute = lambda event, sample: event.BIT_cHq1Re11_0,
-    binning=[50,-0.5,0.5],
+    binning=[50,-1.0,1.0],
     addOverFlowBin='upper',
 ))
 
@@ -395,6 +396,16 @@ plots.append(Plot(
     binning=[50,-0.1,0.1],
     addOverFlowBin='upper',
 ))
+
+plots.append(Plot(
+    name = 'BIT_cHq1Re11_0_doublediff', texX = 'BIT score', texY = 'Number of Events',
+    attribute = lambda event, sample: event.BIT_cHq1Re11_0_doublediff,
+    binning=[50,-10,100],
+    addOverFlowBin='upper',
+))
+
+
+
 
 plots.append(Plot(
     name = 'BIT_cHq1Re11_2_A', texX = 'BIT score', texY = 'Number of Events',
@@ -530,24 +541,24 @@ for plot in plots:
 drawPlots(plots)
 
 # getCoeffList
-# selString_ptZ = cutInterpreter.cutString(args.selection)+"&&Z1_pt>=500"
-#
-# coeffList_ptZ = w.getCoeffListFromDraw(sample, selectionString=selString_ptZ, weightString = "weight*137" )
-# values = [-4, -3, -2, -1, 0, 1, 2, 3, 4]
-# h_cHq1Re11_ptZ = ROOT.TH1F("yields_cHq1Re11_ptZ", "cHq1Re11", len(values), values[0]-0.5, values[-1]+0.5)
+selString_ptZ = cutInterpreter.cutString(args.selection)+"&&Z1_pt>=500"
+
+coeffList_ptZ = w.getCoeffListFromDraw(sample, selectionString=selString_ptZ, weightString = "weight*137" )
+values = [-4, -3, -2, -1, 1, 2, 3, 4]
+h_cHq1Re11_ptZ = ROOT.TH1F("yields_cHq1Re11_ptZ", "cHq1Re11", len(values), values[0]-0.5, values[-1]+0.5)
 # h_cHq1Re33_ptZ = ROOT.TH1F("yields_cHq1Re33_ptZ", "cHq1Re33", len(values), values[0]-0.5, values[-1]+0.5)
-#
-# for i in range(len(values)):
-#     h_cHq1Re11_ptZ.SetBinContent(i+1, w.get_weight_yield(coeffList_ptZ, cHq1Re11=values[i]))
-#     h_cHq1Re33_ptZ.SetBinContent(i+1, w.get_weight_yield(coeffList_ptZ, cHq1Re33=values[i]))
-#
-# dir = os.path.join(plot_directory, 'eft',  args.plot_directory, sample.name, "lin", args.selection)
-#
-# c3 = ROOT.TCanvas()
-# h_cHq1Re11_ptZ.Draw("HIST")
-# h_cHq1Re11_ptZ.Fit('pol2')
-# c3.Print(dir+"/yields_cHq1Re11_ptZ500.pdf")
-#
+
+for i in range(len(values)):
+    h_cHq1Re11_ptZ.SetBinContent(i+1, w.get_weight_yield(coeffList_ptZ, cHq1Re11=values[i]))
+    # h_cHq1Re33_ptZ.SetBinContent(i+1, w.get_weight_yield(coeffList_ptZ, cHq1Re33=values[i]))
+
+dir = os.path.join(plot_directory, 'eft',  args.plot_directory, sample.name, "lin", args.selection)
+
+c3 = ROOT.TCanvas()
+h_cHq1Re11_ptZ.Draw("HIST")
+h_cHq1Re11_ptZ.Fit('pol2')
+c3.Print(dir+"/yields_cHq1Re11_ptZ500.pdf")
+
 # c4 = ROOT.TCanvas()
 # h_cHq1Re33_ptZ.Draw("HIST")
 # h_cHq1Re33_ptZ.Fit('pol2')

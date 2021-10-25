@@ -1354,7 +1354,7 @@ for mode in ["comb1","comb2","all"]:
         plot_dir = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, mode, args.selection)
         outfile = ROOT.TFile(plot_dir+'/MVA_score.root', 'recreate')
         outfile.cd()
-        for plot in plots:
+        for plot in allPlots['mumumu']:
             if "MVA_tWZ" in plot.name and not "_ZOOM" in plot.name:
                 model = "MVA_tWZ_3l"
                 if "topReco" in plot.name: model = "MVA_tWZ_3l_topReco"

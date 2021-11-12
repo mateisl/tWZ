@@ -1,6 +1,6 @@
 from    tWZ.Tools.helpers import mZ, getVarValue, getObjDict, deltaR
 
-# standard imports 
+# standard imports
 from    math import *
 import  numbers
 import  textwrap     # for CutBased Ele ID
@@ -19,10 +19,10 @@ def isBJet(j, tagger = 'DeepCSV', year = 2016):
     if tagger == 'CSVv2':
         if year == 2016:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco
-            return j['btagCSVV2'] > 0.8484 
+            return j['btagCSVV2'] > 0.8484
         elif year == 2017 or year == 2018:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
-            return j['btagCSVV2'] > 0.8838 
+            return j['btagCSVV2'] > 0.8838
         else:
             raise (NotImplementedError, "Don't know what cut to use for year %s"%year)
     elif tagger == 'DeepCSV':
@@ -37,9 +37,9 @@ def isBJet(j, tagger = 'DeepCSV', year = 2016):
             return j['btagDeepB'] > 0.4184
         else:
             raise (NotImplementedError, "Don't know what cut to use for year %s"%year)
-    elif tagger == 'DeepFlavor' or tagger == 'DeepJet': 
+    elif tagger == 'DeepFlavor' or tagger == 'DeepJet':
         if year == 2016:
-            # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy 
+            # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
             return j['btagDeepFlavB'] > 0.3093
         elif year == 2017:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
@@ -56,7 +56,7 @@ def getGenLeps(c):
 def getGenParts(c):
     return [getObjDict(c, 'GenPart_', ['eta','pt','phi','charge', 'pdgId', 'motherId', 'grandmotherId'], i) for i in range(int(getVarValue(c, 'nGenPart')))]
 
-genVars = ['eta','pt','phi','mass','charge', 'status', 'pdgId', 'genPartIdxMother', 'statusFlags','index'] 
+genVars = ['eta','pt','phi','mass','charge', 'status', 'pdgId', 'genPartIdxMother', 'statusFlags','index']
 def getGenPartsAll(c, genVars=genVars):
     return [getObjDict(c, 'GenPart_', genVars, i) for i in range(int(getVarValue(c, 'nGenPart')))]
 
@@ -119,7 +119,7 @@ def lepString( eleMu = None, WP = 'VL', idx = None):
 
 def mvaTopWP(mvaTopThr, pdgId):
     mvaTOPs = mvaTOP['mu'] if abs(pdgId)==13 else mvaTOP['ele']
-    return sum( [ int( mvaTopThr > th ) for th in mvaTOPs.values() ] ) 
+    return sum( [ int( mvaTopThr > th ) for th in mvaTOPs.values() ] )
 
 ## MUONS ##
 def muonSelector( lepton_selection, year, ptCut = 10):
@@ -152,7 +152,7 @@ def muonSelector( lepton_selection, year, ptCut = 10):
                 and l["sip3d"]          < 4.0 \
                 and abs(l["dxy"])       < 0.05 \
                 and abs(l["dz"])        < 0.1 \
-                and l["mediumId"] 
+                and l["mediumId"]
     elif lepton_selection == 'FOmvaTOPT':
         def func(l):
             #x = min( [1, max([])
@@ -165,7 +165,7 @@ def muonSelector( lepton_selection, year, ptCut = 10):
                 and l['pfRelIso04_all'] < 0.40 \
                 and ( l['mvaId']          >= 2 or l['mvaTOP'] >0.9)\
                 and ( (l['jetIdx']<0) or (l['mvaTOP'] >0.9) or (l['mvaTOP'] <= 0.9 and (l["deepJet"] < muon_deepjet_FO_threshold[year] and l["jetRelIso"]>muon_jetRelIso_FO_threshold[year])) )
- 
+
     elif lepton_selection == 'mvaTOPVL':
         def func(l):
             return \
@@ -193,8 +193,9 @@ def muonSelector( lepton_selection, year, ptCut = 10):
                 and abs(l["dz"])        < 0.1 \
                 and l["sip3d"]          < 8.0 \
                 and l['pfRelIso04_all'] < 0.40 \
-                and l['mvaId']          >= 2 \
-                and (l['mvaTOP'] > 0.9)  
+                and l['mediumId'] \
+                and (l['mvaTOP'] > 0.9) \
+                and l['isGlobal'] or l['isTracker']
     elif lepton_selection == 'hybridIso':
         def func(l):
             if l["pt"] <= 25 and l["pt"] >3.5:
@@ -203,15 +204,15 @@ def muonSelector( lepton_selection, year, ptCut = 10):
                     and (l['pfRelIso03_all']*l['pt']) < 5.0 \
                     and abs(l["dxy"])       < 0.02 \
                     and abs(l["dz"])        < 0.1 \
-                    and l["looseId"] 
+                    and l["looseId"]
             elif l["pt"] > 25:
                 return \
                     abs(l["eta"])       < 2.4 \
                     and l['pfRelIso03_all'] < 0.2 \
                     and abs(l["dxy"])       < 0.02 \
                     and abs(l["dz"])        < 0.1 \
-                    and l["looseId"] 
-                    
+                    and l["looseId"]
+
     elif lepton_selection == 'looseHybridIso':
         def func(l):
             if l["pt"] <= 25 and l["pt"] >3.5:
@@ -220,14 +221,14 @@ def muonSelector( lepton_selection, year, ptCut = 10):
                     and (l['pfRelIso03_all']*l['pt']) < 20.0 \
                     and abs(l["dxy"])       < 0.1 \
                     and abs(l["dz"])        < 0.5 \
-                    and l["looseId"] 
+                    and l["looseId"]
             elif l["pt"] > 25:
                 return \
                     abs(l["eta"])       < 2.4 \
                     and l['pfRelIso03_all'] < 0.8 \
                     and abs(l["dxy"])       < 0.1 \
                     and abs(l["dz"])        < 0.5 \
-                    and l["looseId"] 
+                    and l["looseId"]
     return func
 
 #def muonSelectorString(relIso03 = 0.2, ptCut = 20, absEtaCut = 2.4, dxy = 0.05, dz = 0.1, index = "Sum"):
@@ -274,13 +275,13 @@ def cbEleSelector( quality, removeCuts = [] ):
     if type( removeCuts ) == str:
         removeCuts = [removeCuts]
 
-    # construct a list of thresholds the electron has to satisfy 
+    # construct a list of thresholds the electron has to satisfy
     thresholds = []
     for cut in removeCuts:
         if cut not in vidNestedWPBitMapNamingList:
             raise Exception( "Don't know about ele cut %r" % cut )
     for cut in vidNestedWPBitMapNamingList:
-        if cut not in removeCuts: 
+        if cut not in removeCuts:
             thresholds.append( vidNestedWPBitMap[quality] )
         else:
             thresholds.append( 0 )
@@ -372,7 +373,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and l["convVeto"] \
                 and abs(l["dxy"])       < 0.05 \
                 and abs(l["dz"])        < 0.1
-                #and ord(l["lostHits"])  == 0 
+                #and ord(l["lostHits"])  == 0
                 #and l["sip3d"]          < 4.0
     elif lepton_selection == 'tightMiniIso02':
         cbEleSelector_ = cbEleSelector( 'tight', removeCuts = ['GsfEleRelPFIsoScaledCut'] )
@@ -383,7 +384,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and cbEleSelector_(l['vidNestedWPBitmap']) \
                 and l["miniPFRelIso_all"] < 0.2 \
                 and l["sip3d"]          < 4.0 \
-                and ord(l["lostHits"])  == 0 
+                and ord(l["lostHits"])  == 0
     elif lepton_selection == 'CBtightNoIso':
         cbEleSelector_ = cbEleSelector( 'tight', removeCuts = ['GsfEleRelPFIsoScaledCut'] )
         def func(l):
@@ -392,13 +393,13 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and abs(l["eta"])       < 2.4 \
                 and l["sip3d"]          < 4.0 \
                 and ord(l["lostHits"])  == 0 \
-                and cbEleSelector_(l['vidNestedWPBitmap']) 
+                and cbEleSelector_(l['vidNestedWPBitmap'])
     elif lepton_selection == 'WP80':
         def func(l):
             return \
                 l["pt"]                 >= ptCut \
                 and abs(l["eta"])       < 2.4 \
-                and l['mvaFall17V2Iso_WP80'] 
+                and l['mvaFall17V2Iso_WP80']
                 #and l['pfRelIso03_all'] < 0.20 \
                 #and l["convVeto"] \
                 #and ord(l["lostHits"])  == 0 \
@@ -425,12 +426,12 @@ def eleSelector( lepton_selection, year, ptCut = 10):
             elif year == 2017:
                 electron_deepjet_threshold = 0.1
             elif year == 2018:
-                ptj = l['pt']*(1+l['jetRelIso']) 
+                ptj = l['pt']*(1+l['jetRelIso'])
                 if ptj<30:
                     electron_deepjet_threshold = 0.15
                 else:
-                    electron_deepjet_threshold = 0.15 - (0.15-0.07)*(ptj-30)/30 if ptj<60 else 0.07  
- 
+                    electron_deepjet_threshold = 0.15 - (0.15-0.07)*(ptj-30)/30 if ptj<60 else 0.07
+
             return \
                 l["pt"]                 >= ptCut \
                 and abs(l["eta"])       < 2.5 \
@@ -477,7 +478,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                 and l['hoe']            < 0.1 \
                 and l['eInvMinusPInv']  > -0.04 \
                 and l["convVeto"] \
-                and ( (l["sieie"] <=  0.011 and abs(l["eta"]+l["deltaEtaSC"])<=1.4442) or (l["sieie"] <=  0.03 and abs(l["eta"]+l["deltaEtaSC"])>1.566)) 
+                and ( (l["sieie"] <=  0.011 and abs(l["eta"]+l["deltaEtaSC"])<=1.4442) or (l["sieie"] <=  0.03 and abs(l["eta"]+l["deltaEtaSC"])>1.566))
     elif lepton_selection == 'hybridIso':
         def func(l):
             if l["pt"] <= 25 and l["pt"] >5:
@@ -487,7 +488,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                     and electronVIDSelector( l, idVal= 1 , removedCuts=['pt'] ) \
                     and (l['pfRelIso03_all']*l['pt']) < 5.0 \
                     and abs(l["dxy"])       < 0.02 \
-                    and abs(l["dz"])        < 0.1 
+                    and abs(l["dz"])        < 0.1
             elif l["pt"] > 25:
                 return \
                     abs(l["eta"]) < 2.5 \
@@ -495,7 +496,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                     and electronVIDSelector( l, idVal= 1 , removedCuts=['pt'] ) \
                     and l['pfRelIso03_all'] < 0.2 \
                     and abs(l["dxy"])       < 0.02 \
-                    and abs(l["dz"])        < 0.1 
+                    and abs(l["dz"])        < 0.1
     elif lepton_selection == 'looseHybridIso':
         def func(l):
             if l["pt"] <= 25 and l["pt"] >5:
@@ -505,7 +506,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                     and electronVIDSelector( l, idVal= 1 , removedCuts=['pt', 'pfRelIso03_all'] ) \
                     and (l['pfRelIso03_all']*l['pt']) < 20.0 \
                     and abs(l["dxy"])       < 0.1 \
-                    and abs(l["dz"])        < 0.5 
+                    and abs(l["dz"])        < 0.5
             elif l["pt"] > 25:
                 return \
                     abs(l["eta"]) < 2.5 \
@@ -513,7 +514,7 @@ def eleSelector( lepton_selection, year, ptCut = 10):
                     and electronVIDSelector( l, idVal= 1 , removedCuts=['pt', 'pfRelIso03_all'] ) \
                     and l['pfRelIso03_all'] < 0.8 \
                     and abs(l["dxy"])       < 0.1 \
-                    and abs(l["dz"])        < 0.5 
+                    and abs(l["dz"])        < 0.5
     return func
 
 
@@ -577,12 +578,12 @@ idCutBased={'loose':0 ,'medium':1, 'tight':2}
 photonVars=['eta','pt','phi','mass','cutBased']
 photonVarsMC = photonVars + ['mcPt']
 
-def getPhotons(c, collVars=None, idLevel='loose', year=2016):
+def getPhotons(c, collVars=None, year=2016):
     if collVars is None:
         collVars = ['eta','pt','phi','mass','cutBased'] if (not (year == 2017 or year == 2018)) else ['eta','pt','phi','mass','cutBasedBitmap']
     return [getObjDict(c, 'Photon_', collVars, i) for i in range(int(getVarValue(c, 'nPhoton')))]
 
-def getGoodPhotons(c, ptCut=50, idLevel="loose", isData=True, collVars=None, year=2016):
+def getGoodPhotons(c, ptCut=20, idLevel="loose", isData=True, collVars=None, year=2016):
     idVar = "cutBased" if (not (year == 2017 or year == 2018)) else "cutBasedBitmap"
     #if collVars is None: collVars = photonVars if isData else photonVarsMC
     collVars = ['eta','pt','phi','mass','cutBased'] if (not (year == 2017 or year == 2018)) else ['eta','pt','phi','mass','cutBasedBitmap']

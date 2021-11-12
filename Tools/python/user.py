@@ -23,7 +23,8 @@ if os.environ["USER"] in ["robert.schoefbeck"]:
     cern_proxy_certificate          = "/users/robert.schoefbeck/.private/.proxy"
 
 if os.environ["USER"] in ["rosmarie.schoefbeck"]:
-    postprocessing_output_directory = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/nanoTuples"
+    #postprocessing_output_directory = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/nanoTuples"
+    postprocessing_output_directory = "/scratch-cbe/users/rosmarie.schoefbeck/tWZ/nanoTuples"
     postprocessing_tmp_directory    = "/scratch/hephy/cms/rosmarie.schoefbeck/tWZ/tmp/"
     plot_directory                  = "/mnt/hephy/cms/rosmarie.schoefbeck/www/tWZ/plots"
     cache_dir                       = "/mnt/hephy/cms/rosmarie.schoefbeck/tWZ/caches"
@@ -44,3 +45,15 @@ if os.environ['USER'] in ['janik.andrejkovic']:
     mva_directory                   = "/mnt/hephy/cms/janik.andrejkovic/tWZ/MVA"
     cern_proxy_certificate          = "/users/janik.andrejkovic/.private/.proxy"
     HistogramsForFakeStudies        = "/users/janik.andrejkovic/public/test/CMSSW_10_2_18/src/tWZ/fake/helperHistograms"
+
+if os.environ["USER"] in ["dennis.schwarz"]:
+    postprocessing_output_directory = "/scratch-cbe/users/dennis.schwarz/tWZ/nanoTuples"
+    postprocessing_tmp_directory    = "/scratch/hephy/cms/dennis.schwarz/tWZ/tmp/"
+    plot_directory                  = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots"
+    cache_dir                       = "/mnt/hephy/cms/dennis.schwarz/tWZ/caches"
+    # Analysis result files
+    analysis_results                = "/mnt/hephy/cms/dennis.schwarz/tWZ/results/v1"
+    mva_directory                   = "/mnt/hephy/cms/dennis.schwarz/tWZ/MVA"
+    cern_proxy_certificate          = "/users/dennis.schwarz/.private/.proxy"
+    combineReleaseLocation          = "/users/dennis.schwarz/CMSSW_10_6_0/src"
+    limit_directory                 = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/limits"

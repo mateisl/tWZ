@@ -17,13 +17,27 @@ special_cuts = {
     "trilepL" :        "l1_pt>40&&l2_pt>20&&l3_pt>10&&l1_mvaTOPWP>=2&&l2_mvaTOPWP>=2&&l3_mvaTOPWP>=2",
     "trilepM" :        "l1_pt>40&&l2_pt>20&&l3_pt>10&&l1_mvaTOPWP>=3&&l2_mvaTOPWP>=3&&l3_mvaTOPWP>=3",
     "trilepT" :        "l1_pt>40&&l2_pt>20&&l3_pt>10&&l1_mvaTOPWP>=4&&l2_mvaTOPWP>=4&&l3_mvaTOPWP>=4",
+    "trilepVetoL":      "l1_pt>40&&l2_pt>20&&l3_pt>10&&l1_mvaTOPWP<2&&l2_mvaTOPWP<2&&l3_mvaTOPWP<2",
+    "trilepVetoM":      "l1_pt>40&&l2_pt>20&&l3_pt>10&&l1_mvaTOPWP<3&&l2_mvaTOPWP<3&&l3_mvaTOPWP<3",
+    "trilepVetoT":      "l1_pt>40&&l2_pt>20&&l3_pt>10&&l1_mvaTOPWP<4&&l2_mvaTOPWP<4&&l3_mvaTOPWP<4",
+    "trilepLnoT":      "l1_pt>40&&l2_pt>20&&l3_pt>10&&l1_mvaTOPWP>=2&&l2_mvaTOPWP>=2&&l3_mvaTOPWP>=2&&l1_mvaTOPWP<4&&l2_mvaTOPWP<4&&l3_mvaTOPWP<4",
+    "trilep4tVL":      "l1_pt>60&&l2_pt>30&&l3_pt>20",
+    "trilep4tL" :      "l1_pt>60&&l2_pt>30&&l3_pt>20&&l1_mvaTOPWP>=2&&l2_mvaTOPWP>=2&&l3_mvaTOPWP>=2",
+    "trilep4tM" :      "l1_pt>60&&l2_pt>30&&l3_pt>20&&l1_mvaTOPWP>=3&&l2_mvaTOPWP>=3&&l3_mvaTOPWP>=3",
+    "trilep4tT" :      "l1_pt>60&&l2_pt>30&&l3_pt>20&&l1_mvaTOPWP>=4&&l2_mvaTOPWP>=4&&l3_mvaTOPWP>=4",
+    "dilepVL":        "l1_pt>40&&l2_pt>20",
+    "dilepL" :        "l1_pt>40&&l2_pt>20&&l1_mvaTOPWP>=2&&l2_mvaTOPWP>=2",
+    "dilepM" :        "l1_pt>40&&l2_pt>20&&l1_mvaTOPWP>=3&&l2_mvaTOPWP>=3",
+    "dilepT" :        "l1_pt>40&&l2_pt>20&&l1_mvaTOPWP>=4&&l2_mvaTOPWP>=4",
     "trilepMini0p12" : "Sum$(lep_pt>40&&lep_miniPFRelIso_all<0.12&&{lep_string})>=1 && Sum$(lep_pt>20&&lep_miniPFRelIso_all<0.12&&{lep_string})>=2&&Sum$(lep_pt>10&&lep_miniPFRelIso_all<0.12&&{lep_string})==3".format(lep_string=lep_string_TTH),
     "onZ1"   : "abs(Z1_mass-91.2)<10",
+    "onZ2"   : "abs(Z2_mass-91.2)<10",
+    "offZ1"    : "(abs(Z1_mass-91.2)>10)",
     "offZ2"  : "(!(abs(Z2_mass-91.2)<20))",
   }
 
-continous_variables = [ ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1mass", "Z1_mass"), ("minDLmass", "minDLmass"), ("mT", "mT")]
-discrete_variables  = [ ("njet", "nJetGood"), ("btag", "nBTag")]
+continous_variables = [ ('ht','Sum$(JetGood_pt*(JetGood_pt>30&&abs(JetGood_eta)<2.4))'), ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1mass", "Z1_mass"), ("minDLmass", "minDLmass"), ("mT", "mT")]
+discrete_variables  = [ ("njet", "nJetGood"), ("btag", "nBTag"), ("nLeptons", "nGoodLeptons"), ("deepjet", "Sum$(JetGood_pt>30&&abs(JetGood_eta)<2.4&&((year==2016)*(JetGood_btagDeepFlavB>0.7221)+(year==2017)*(JetGood_btagDeepFlavB>0.7489)+(year==2018)*(JetGood_btagDeepFlavB>0.7264)))") ]
 
 class cutInterpreter:
     ''' Translate var100to200-var2p etc.
@@ -100,7 +114,7 @@ class cutInterpreter:
         cutString = "&&".join( map( cutInterpreter.translate_cut_to_string, cuts ) )
 
         return cutString
-    
+
     @staticmethod
     def cutList ( cut, select = [""], ignore = []):
         ''' Cutstring syntax: cut1-cut2-cut3
@@ -110,7 +124,7 @@ class cutInterpreter:
         cuts = filter( lambda c: any( sel in c for sel in select ), cuts )
         # ignore
         cuts = filter( lambda c: not any( ign in c for ign in ignore ), cuts )
-        return [ cutInterpreter.translate_cut_to_string(cut) for cut in cuts ] 
+        return [ cutInterpreter.translate_cut_to_string(cut) for cut in cuts ]
         #return  "&&".join( map( cutInterpreter.translate_cut_to_string, cuts ) )
 
 if __name__ == "__main__":

@@ -169,52 +169,40 @@ read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F',
 # define 3l selections
 
 #MVA
-#from Analysis.TMVA.Reader    import Reader
-from tWZ.MVA.MVA_TWZ_3l_LTS  import mva_variables#, mlp1, mlp_tanh
-from tWZ.MVA.MVA_TWZ_3l_LTS  import sequence as mva_sequence
-from tWZ.MVA.MVA_TWZ_3l_LTS  import read_variables as mva_read_variables
-from tWZ.Tools.user          import mva_directory
+import TMB.MVA.configs as configs
+config = configs.ttZ_3l_flavor
+read_variables = config.read_variables
 
-sequence.extend( mva_sequence )
-read_variables.extend( mva_read_variables )
+# Add sequence that computes the MVA inputs
+def make_mva_inputs( event, sample ):
+    for mva_variable, func in config.mva_variables:
+        setattr( event, mva_variable, func(event, sample) )
+sequence.append( make_mva_inputs )
 
-#mva_reader = Reader(
-#    mva_variables     = mva_variables,
-#    weight_directory  = os.path.join( mva_directory, "TWZ_3l" ),
-#    label             = "TWZ_3l")
-#
-#def makeDiscriminator( mva ):
-#    def _getDiscriminator( event, sample ):
-#        kwargs = {name:func(event,None) for name, func in mva_variables.iteritems()}
-#        setattr( event, mva['name'], mva_reader.evaluate(mva['name'], **kwargs))
-#    return _getDiscriminator
-#
-def discriminator_getter(name):
-    def _disc_getter( event, sample ):
-        return getattr( event, name )
-    return _disc_getter
+# load models
+from keras.models import load_model
 
-#mvas = [mlp_tanh]
-#for mva in mvas:
-#    mva_reader.addMethod(method=mva)
-#    sequence.append( makeDiscriminator(mva) )
-
-from ML.models.tWZ.tWZ_multiclass import variables as keras_varnames
-from ML.models.tWZ.tWZ_multiclass import output_specification as keras_output_specification 
-from ML.models.tWZ.tWZ_multiclass import model     as keras_multiclass
+#if args.onlyMVA is not None:
+#    has_lstm = ('LSTM' in args.onlyMVA)
+#    name = args.onlyMVA.split('/')[-4]
+#    models = [ (name, has_lstm, load_model(args.onlyMVA) ), ]
+#else:
+models = [
+    ("ttZ_3l_flavor", False,  load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ttZ_3l_flavor/ttZ_3l_flavor/multiclass_model.h5")),
+]
 
 def keras_predict( event, sample ):
-    #print np.array([[mva_variables[varname](event, sample) for varname in keras_varnames]])
-    event.keras_multiclass_prediction = keras_multiclass.predict( np.array([[mva_variables[varname](event, sample) for varname in keras_varnames]])) 
-    event.keras_multiclass_prediction = event.keras_multiclass_prediction[0]
-    #for i in xrange( len(keras_output_specification) ):
-    #    print "keras_multiclass_"+keras_output_specification[i]
-    #    print  event.keras_multiclass_prediction, i
-    #    print  event.keras_multiclass_prediction[i]
-    for i in xrange( len(keras_output_specification) ):
-        setattr( event, "keras_multiclass_"+keras_output_specification[i], event.keras_multiclass_prediction[i] ) 
-    #print event.keras_multiclass_prediction
+
+    # get model inputs assuming lstm
+    flat_variables, lstm_jets = config.predict_inputs( event, sample, jet_lstm = True)
+    for name, has_lstm, model in models:
+        #print has_lstm, flat_variables, lstm_jets
+        prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets] )
+        for i_val, val in enumerate( prediction[0] ):
+            setattr( event, name+'_'+config.training_samples[i_val].name, val)
+
 sequence.append( keras_predict )
+
 
 mu_string  = lepString('mu','VL')
 ele_string = lepString('ele','VL')
@@ -315,12 +303,15 @@ for i_mode, mode in enumerate(allModes):
       binning=[4, 0, 4],
     ))
 
-    for output in keras_output_specification:
-        plots.append(Plot(
-            texX = 'keras multiclass '+output, texY = 'Number of Events',
-            name = 'keras_multiclass_'+output, attribute = discriminator_getter('keras_multiclass_'+output),
-            binning=[50, 0, 1],
-        ))
+    for name, has_lstm, model in models:
+        #print has_lstm, flat_variables, lstm_jets
+        for i_tr_s, tr_s in enumerate( config.training_samples ):
+            disc_name = name+'_'+config.training_samples[i_tr_s].name
+            plots.append(Plot(
+                texX = disc_name, texY = 'Number of Events',
+                name = disc_name, attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
+                binning=[50, 0, 1],
+            ))
 
     #for mva in mvas:
     #    plots.append(Plot(

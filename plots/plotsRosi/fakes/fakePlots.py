@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-''' Analysis script for standard plots
-'''
-#
 # Standard imports and batch mode
-#
+
 import ROOT, os
 ROOT.gROOT.SetBatch(True)
 from math                                import sqrt, cos, sin, pi, atan2, cosh
@@ -138,10 +135,19 @@ else:
 def nvtx_puRW( event, sample ):
     return reweight_histo.GetBinContent(reweight_histo.FindBin( event.PV_npvsGood ))
 
+#def qcd_RW( event, sample ):
+#    return 0.477880328734*reweight_histo.GetBinContent(reweight_histo.FindBin( event.PV_npvsGood ))
+#def ewk_RW( event, sample ):
+#    return 0.52212263553*reweight_histo.GetBinContent(reweight_histo.FindBin( event.PV_npvsGood ))
+
 #lumi_scale                 = data_sample.lumi/1000
 data_sample.scale   = 1.
-#for sample in mc:
-#    sample.weight   = nvtx_puRW
+for sample in mc:
+    sample.weight   = nvtx_puRW
+mc[0].weight = nvtx_puRW 
+#mc[0].weight = qcd_RW  #qcd
+#for sample in mc[1:]:
+#    sample.weight   =  ewk_RW  #ewk
 
 def drawObjects():
     lines = [
@@ -164,7 +170,7 @@ def drawPlots(plots):
             ratio = {},
             logX = False, logY = log, sorting = True,
             yRange = (0.03, "auto") if log else (0.001, "auto"),
-            scaling = {0:1},
+            #scaling = {0:1},
             legend = ( (0.18,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 2),
             drawObjects = drawObjects() + _drawObjects,
             copyIndexPHP = True, extensions = ["png"],
@@ -185,7 +191,7 @@ sequence       = []
 read_variables += ["n%s_FOmvaTOPT/I"%args.mode, "%s_FOmvaTOPT[pt/F,eta/F,phi/F,mT/F]"%args.mode, "met_pt/F", "nmu_mvaTOPT/I", "nele_mvaTOPT/I"]
 
 def makeLeptons( event, sample ):
-    collVars = ["pt","eta","phi","mT","mvaTOPT"]
+    collVars = ["pt","eta","phi","mT"]
     lep  = getObjDict(event, args.mode+'_FOmvaTOPT_', collVars, 0)
     for var in collVars:
         setattr( event, "lep_"+var, lep[var]  )
@@ -197,7 +203,6 @@ data_sample.texName = "data"
 data_sample.name    = "data"
 data_sample.style   = styles.errorStyle(ROOT.kBlack)
 #lumi_scale          = data_sample.lumi/1000
-
 
 for sample in mc: sample.style = styles.fillStyle(sample.color)
 
@@ -259,13 +264,7 @@ plots.append(Plot(
   binning=[2,0,2],
   addOverFlowBin='upper',
 ))
-#plots.append(Plot(
-#  name = 'LT', texX = 'LT_mu', texY = 'Number of Events',
-#  attribute = lambda event, sample: event.lep_mvaTOPT == 1,
-#  binning=[2,0,2],
-#  addOverFlowBin='upper',
-#))
-#
+
 plots.append(Plot(
   name = 'LT_ele', texX = 'LT_ele', texY = 'Number of Events',
   attribute = lambda event, sample: event.nele_mvaTOPT == 1,
@@ -319,18 +318,34 @@ plotting.fill(plots, read_variables = read_variables, sequence = sequence, max_e
 
 drawPlots(plots)
 
+#subtract EWK to get QCD
+#if plot.name == 'LT_mu' :
+#    data_histo    = plot.histos[1][0]
+#    QCD_histo     = plot.histos[0][0].Clone()
+#    EWK_histos    = [plot.histos[0][pos].Clone()  for pos in range(len(mc)) if pos!=0]
+#    EWK_histo     = EWK_histos[0]
+#    EWK_histo.Add(EWK_histos[1])
+#    
+#    data_histo.GetBinContent(QCD_histo.FindBin( event.nmu_mvaTOPT == 1 )) 
+#    print data_histo.GetBinContent(QCD_histo.FindBin( event.nmu_mvaTOPT == 1 ))
+#    EWK_histo.GetBinContent(EWK_histo.FindBin( event.nmu_mvaTOPT == 1 )) 
+#    QCDT = data_histo - EWK_histo 
+#    data_histo.GetBinContent(QCD_histo.FindBin( event.nmu_mvaTOPT != 1 )) 
+#    EWK_histo.GetBinContent(EWK_histo.FindBin( event.nmu_mvaTOPT != 1 )) 
+#    QCDL = data_histo - EWK_histo 
+
 #def make_TL( histo ):
-#    bin_th = histo.FindBin(5)
-#    T = histo.Integral(1,bin_th-1) 
-#    L = histo.Integral(bin_th,histo.GetNbinsX()) 
+#if plot.name == 'LT_mu' :
+#    T = histo.Integral(1,2) 
+#    L = histo.Integral(0,1) 
 #    if L>0:
-#        return T/L
+#        Ratio = T/L
 #    else:
 #        if T > 0:
 #            return float('nan')
 #        elif T==0:
 #            return 0
-#
+#print Ratio
 #for plot in plots:
 #    if hasattr( plot, "make_tl" ):
 #        print "predicted TL:", make_TL(plot[0][0])

@@ -15,7 +15,6 @@ def getSysUncert(histup, histdown, histcentral):
         down    = histdown.GetBinContent(bin)
         central = histcentral.GetBinContent(bin)
         err = ( abs(central-up)+abs(central-down) )/2
-        # print bin, abs(central-up), abs(central-down)
         h_sys.SetBinContent(bin, err)
     return h_sys
 
@@ -191,7 +190,7 @@ def plotDistribution(prefix, region, histname, xtitle, backgrounds, signals, WCn
     h_SMsignal.GetYaxis().SetNdivisions(505)
 
 
-    h_SMsignal.GetYaxis().SetTitle('Events/'+str(int(binwidth))+' GeV')
+    h_SMsignal.GetYaxis().SetTitle('Events')
     h_SMsignal.GetYaxis().SetTitleOffset(1.4)
     h_SMsignal.SetTitle('')
     h_SMsignal.SetMarkerStyle(0)

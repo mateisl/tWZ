@@ -317,3 +317,24 @@ def cosThetaStarNew(l, Z):
     lepton_newSys = lepton
     lepton_newSys.Boost(-boostvector)
     return lepton_newSys.CosTheta()
+
+def cosThetaStarTop(l, W, t):
+    # Angle between lepton and W, lepton is measured in W rest system, W is measured in top rest system
+    lepton = ROOT.TLorentzVector()
+    lepton.SetPtEtaPhiM(l.Pt(), l.Eta(), l.Phi(), l.M())
+    Wboson = ROOT.TLorentzVector()
+    Wboson.SetPtEtaPhiM(W.Pt(), W.Eta(), W.Phi(), W.M())
+    top = ROOT.TLorentzVector()
+    top.SetPtEtaPhiM(t.Pt(), t.Eta(), t.Phi(), t.M())
+
+    boostvectorW = Wboson.BoostVector()
+    boostvectortop = top.BoostVector()
+
+    lepton_newSys = ROOT.TLorentzVector()
+    lepton_newSys = lepton
+    lepton_newSys.Boost(-boostvectorW)
+    W_newSys = ROOT.TLorentzVector()
+    W_newSys = Wboson
+    W_newSys.Boost(-boostvectortop)
+    costhetastar = cos( lepton_newSys.Angle(W_newSys.Vect()) )
+    return costhetastar

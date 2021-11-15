@@ -27,3 +27,4 @@ ZZ.reweight_pkl = "/eos/vbc/user/robert.schoefbeck/gridpacks/flavor/vec/ZZ-vec_r
 dirs['ttZ01j']             = ["ttZ01j_fast"]
 ttZ01j         = Sample.fromDirectory(name="ttZ01j",      treeName="Events", isData=False, color=color.TTZ, texName="t#bar{t}Z", directory=make_dirs( dirs['ttZ01j']))
 ttZ01j.reweight_pkl = "/eos/vbc/user/robert.schoefbeck/gridpacks/flavor/vec/ttZ01j-vec_reweight_card.pkl" 
+

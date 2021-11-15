@@ -64,18 +64,18 @@ w.set_order(2)
 #cHq1Re11 cHq1Re22 cHq1Re33 cHq3Re11 cHq3Re22 cHq3Re33 cHuRe11 cHuRe22 cHuRe33 cHdRe11 cHdRe22 cHdRe33 cHudRe11 cHudRe22 cHudRe33
 
 WCs = [
-#    ('cHq3Re11', 1.0, ROOT.kCyan),
-#    ('cHq3Re22', 1.0, ROOT.kMagenta),
-#    ('cHq3Re33', 1.0, ROOT.kBlue),
+    ('cHq3Re11', 1.0, ROOT.kCyan),
+    ('cHq3Re22', 1.0, ROOT.kMagenta),
+    ('cHq3Re33', 1.0, ROOT.kBlue),
     ('cHq1Re11', 2.0, ROOT.kRed),
     ('cHq1Re22', 2.0, ROOT.kGreen),
     ('cHq1Re33', 2.0, ROOT.kOrange),
-    ('cHuRe11',  2.0, ROOT.kCyan),
-    ('cHuRe22',  2.0, ROOT.kMagenta),
-    ('cHuRe33',  2.0, ROOT.kBlue),
-    ('cHdRe11',  2.0, ROOT.kViolet-9),
-    ('cHdRe22',  2.0, ROOT.kGray),
-    ('cHdRe33',  2.0, ROOT.kAzure+10),
+#    ('cHuRe11',  2.0, ROOT.kCyan),
+#    ('cHuRe22',  2.0, ROOT.kMagenta),
+#    ('cHuRe33',  2.0, ROOT.kBlue),
+#    ('cHdRe11',  2.0, ROOT.kViolet-9),
+#    ('cHdRe22',  2.0, ROOT.kGray),
+#    ('cHdRe33',  2.0, ROOT.kAzure+10),
 ]
 
 params =  [ ]
@@ -167,7 +167,7 @@ read_variables = [
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l1_mvaTOP/F", "l1_mvaTOPWP/I", "l1_index/I", 
     "l2_pt/F", "l2_eta/F" , "l2_phi/F", "l2_mvaTOP/F", "l2_mvaTOPWP/I", "l2_index/I",
 #    "l3_pt/F", "l3_eta/F" , "l3_phi/F", "l3_mvaTOP/F", "l3_mvaTOPWP/I", "l3_index/I",
-    "JetGood[pt/F,eta/F,phi/F]",
+    "JetGood[pt/F,eta/F,phi/F,btagDeepB/F]",
     "lep[pt/F,eta/F,phi/F,pdgId/I,muIndex/I,eleIndex/I]",
     "Z1_l1_index/I", "Z1_l2_index/I", "nonZ1_l1_index/I", "nonZ1_l2_index/I", 
     "Z1_phi/F", "Z1_pt/F", "Z1_mass/F", "Z1_cosThetaStar/F", "Z1_eta/F", "Z1_lldPhi/F", "Z1_lldR/F",
@@ -192,29 +192,48 @@ read_variables_MC = ['reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F',
 #sequence.append( make_mva_inputs )
 
 # load models
-from keras.models import load_model
-
-#if args.onlyMVA is not None:
-#    has_lstm = ('LSTM' in args.onlyMVA)
-#    name = args.onlyMVA.split('/')[-4]
-#    models = [ (name, has_lstm, load_model(args.onlyMVA) ), ]
-#else:
+#from keras.models import load_model
+#
 models = [
-#    ("ttZ_3l_flavor", False,  load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ttZ_3l_flavor/ttZ_3l_flavor/multiclass_model.h5")),
-#    ("ttZ_3l_flavor_LSTM", True,  load_model("/mnt/hephy/cms/robert.schoefbeck/TMB/models/ttZ_3l_flavor_LSTM/ttZ_3l_flavor/multiclass_model.h5")),
 ]
-
-def keras_predict( event, sample ):
-
-    # get model inputs assuming lstm
-    flat_variables, lstm_jets = config.predict_inputs( event, sample, jet_lstm = True)
-    for name, has_lstm, model in models:
-        #print has_lstm, flat_variables, lstm_jets
-        prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets] )
-        for i_val, val in enumerate( prediction[0] ):
-            setattr( event, name+'_'+config.training_samples[i_val].name, val)
-
+#
+#def keras_predict( event, sample ):
+#
+#    # get model inputs assuming lstm
+#    flat_variables, lstm_jets = config.predict_inputs( event, sample, jet_lstm = True)
+#    for name, has_lstm, model in models:
+#        #print has_lstm, flat_variables, lstm_jets
+#        prediction = model.predict( flat_variables if not has_lstm else [flat_variables, lstm_jets] )
+#        for i_val, val in enumerate( prediction[0] ):
+#            setattr( event, name+'_'+config.training_samples[i_val].name, val)
+#
 #sequence.append( keras_predict )
+
+#BITs
+#import TMB.BIT.configs.ttZ01j_3l_flavor as bit_config
+#bits = bit_config.load("/mnt/hephy/cms/$USER/BIT/models/default/ttZ01j_3l_flavor/")
+
+import TMB.BIT.configs.WZ_3l_flavor as bit_config
+bits = bit_config.load("/mnt/hephy/cms/$USER/BIT/models/default/WZ_3l_flavor/", bit_derivatives=bit_config.bit_derivatives)
+
+def make_bit_inputs( event, sample ):
+    for mva_variable, func in bit_config.mva_variables:
+        setattr( event, mva_variable, func(event, sample) )
+
+sequence.extend( bit_config.sequence )
+sequence.append( make_bit_inputs )
+read_variables += bit_config.read_variables
+
+def bit_predict( event, sample ):
+    # get model inputs assuming lstm
+    flat_variables = bit_config.predict_inputs( event, sample)
+    #print len(flat_variables), flat_variables
+    for derivative in bit_config.bit_derivatives:
+        prediction = bits[derivative].predict( flat_variables )
+        setattr( event, 'bit_'+'_'.join(derivative), prediction)
+        #print( 'bit_'+'_'.join(derivative), prediction)
+
+sequence.append( bit_predict )
 
 mu_string  = lepString('mu','VL')
 ele_string = lepString('ele','VL')
@@ -276,13 +295,24 @@ for name, has_lstm, model in models:
             name = disc_name, attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
             binning=[50, 0, 1],
         ))
-    for i_tr_s, tr_s in enumerate( config.training_samples ):
-        disc_name = name+'_'+config.training_samples[i_tr_s].name
         plots.append(Plot(
             texX = disc_name, texY = 'Number of Events',
             name = 'coarse_'+disc_name, attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
             binning=[10, 0, 1],
         ))
+
+for derivative in bit_config.bit_derivatives:
+    disc_name = 'bit_'+'_'.join(derivative)
+    plots.append(Plot(
+        texX = disc_name, texY = 'Number of Events',
+        name = disc_name, attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
+        binning=[50, 0, 1],
+    ))
+    plots.append(Plot(
+        texX = disc_name, texY = 'Number of Events',
+        name = 'coarse_'+disc_name, attribute = lambda event, sample, disc_name=disc_name: getattr( event, disc_name ),
+        binning=[10, 0, 1],
+    ))
 
 #for mva in mvas:
 #    plots.append(Plot(

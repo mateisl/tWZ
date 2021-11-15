@@ -72,15 +72,15 @@ WCs = [
 #    ('cHq3Re11', 1.0, ROOT.kCyan),
 #    ('cHq3Re22', 1.0, ROOT.kMagenta),
 #    ('cHq3Re33', 1.0, ROOT.kBlue),
-    ('cHq1Re11', 2.0, ROOT.kRed),
-    ('cHq1Re22', 2.0, ROOT.kGreen),
-    ('cHq1Re33', 2.0, ROOT.kOrange),
-    ('cHuRe11',  2.0, ROOT.kCyan),
-    ('cHuRe22',  2.0, ROOT.kMagenta),
-    ('cHuRe33',  2.0, ROOT.kBlue),
-    ('cHdRe11',  2.0, ROOT.kViolet-9),
-    ('cHdRe22',  2.0, ROOT.kGray),
-    ('cHdRe33',  2.0, ROOT.kAzure+10),
+    ('cHq1Re11', 0.0, ROOT.kRed),
+    ('cHq1Re22', 0.0, ROOT.kGreen),
+    ('cHq1Re33', 0.0, ROOT.kOrange),
+    ('cHuRe11',  0.0, ROOT.kCyan),
+    ('cHuRe22',  0.0, ROOT.kMagenta),
+    ('cHuRe33',  0.0, ROOT.kBlue),
+    ('cHdRe11',  0.0, ROOT.kViolet-9),
+    ('cHdRe22',  0.0, ROOT.kGray),
+    ('cHdRe33',  0.0, ROOT.kAzure+10),
 ]
 
 params =  [ ]
@@ -288,7 +288,7 @@ drawPlots(plots)
 
 ####### BIT training
 import sys
-sys.path.append('/users/dennis.schwarz/CMSSW_10_6_0/src/BIT/')
+sys.path.append(os.path.expandvars('$CMSSW_BASE/src/BIT/'))
 from  BoostedInformationTree import BoostedInformationTree
 
 learning_rate = 0.02

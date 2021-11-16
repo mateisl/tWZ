@@ -49,11 +49,11 @@ if os.environ['USER'] in ['janik.andrejkovic']:
 if os.environ["USER"] in ["dennis.schwarz"]:
     postprocessing_output_directory = "/scratch-cbe/users/dennis.schwarz/tWZ/nanoTuples"
     postprocessing_tmp_directory    = "/scratch/hephy/cms/dennis.schwarz/tWZ/tmp/"
-    plot_directory                  = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots"
-    cache_dir                       = "/mnt/hephy/cms/dennis.schwarz/tWZ/caches"
+    plot_directory                  = "/groups/hephy/cms/dennis.schwarz/www/tWZ/plots"
+    cache_dir                       = "/groups/hephy/cms/dennis.schwarz/tWZ/caches"
     # Analysis result files
-    analysis_results                = "/mnt/hephy/cms/dennis.schwarz/tWZ/results/v1"
-    mva_directory                   = "/mnt/hephy/cms/dennis.schwarz/tWZ/MVA"
+    analysis_results                = "/groups/hephy/cms/dennis.schwarz/tWZ/results/v1"
+    mva_directory                   = "/groups/hephy/cms/dennis.schwarz/tWZ/MVA"
     cern_proxy_certificate          = "/users/dennis.schwarz/.private/.proxy"
     combineReleaseLocation          = "/users/dennis.schwarz/CMSSW_10_6_0/src"
-    limit_directory                 = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/limits"
+    limit_directory                 = "/groups/hephy/cms/dennis.schwarz/www/tWZ/limits"

@@ -8,7 +8,8 @@ logger = logging.getLogger(__name__)
 
 from tWZ.samples.color import color
 
-directory_ = "/scratch-cbe/users/robert.schoefbeck/tWZ/nanoTuples/tWZ_nAODv6_private_v6/2018/trilep/" 
+#directory_ = "/scratch-cbe/users/robert.schoefbeck/tWZ/nanoTuples/tWZ_nAODv6_private_v6/2018/trilep/" 
+directory_ = "/groups/hephy/cms/robert.schoefbeck/tWZ/nanoTuples/tWZ_nAODv6_private_v6/2018/trilep/" 
 logger.info("Loading FastSim SMEFTSim MC samples from directory %s", directory_)
 
 def make_dirs( dirs ):

@@ -59,6 +59,35 @@ import RootTools.core.logger as logger_rt
 logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
+################################################################################
+# Possible SYS variations
+variations = [
+    "Trigger_UP", "Trigger_DOWN",
+    "LepID_UP", "LepID_DOWN",
+    "BTag_b_UP", "BTag_b_DOWN",
+    "BTag_l_UP", "BTag_l_DOWN",
+    "PU_UP", "PU_DOWN",
+    "JES_UP", "JES_DOWN"
+]
+
+jet_variations = {
+    "JES_UP": "jesTotalUp",
+    "JES_DOWN": "jesTotalDown",
+}
+################################################################################
+# Check if we know the variation else don't use data!
+if args.sys not in variations:
+    if args.sys == "central":
+        logger.info( "Running central samples (no sys variation)")
+    else:
+        raise RuntimeError( "Variation %s not among the known: %s", args.sys, ",".join( variations ) )
+else:
+    logger.info( "Running sys variation %s, noData is set to 'True'", args.sys)
+    args.noData = True
+
+
+################################################################################
+# Some info messages
 if args.small:                        args.plot_directory += "_small"
 if args.noData:                       args.plot_directory += "_noData"
 if args.sys is not 'central':         args.plot_directory += "_%s" %(args.sys)
@@ -79,28 +108,11 @@ if args.twoD:
     logger.info( "Create EFT points in 2D")
 else:
     logger.info( "Create EFT points in 1D")
-################################################################################
-# Possible SYS variations
-variations = [
-    "Trigger_UP", "Trigger_DOWN",
-    "LepID_UP", "LepID_DOWN",
-    "BTag_b_UP", "BTag_b_DOWN",
-    "BTag_l_UP", "BTag_l_DOWN",
-    "PU_UP", "PU_DOWN",
-    "JES_UP", "JES_DOWN"
-]
 
-jet_variations = {
-    "JES_UP": "jesTotalUp",
-    "JES_DOWN": "jesTotalDown",
-}
-################################################################################
-# Check if we know the variation else don't use data!
-if args.sys is not 'central' and args.sys not in variations:
-    raise RuntimeError( "Variation %s not among the known: %s", args.sys, ",".join( variations ) )
+if args.noData:
+    logger.info( "Running without data")
 else:
-    args.noData = True
-
+    logger.info( "Data included in analysis cycle")
 
 ################################################################################
 # Selection modifier
@@ -204,7 +216,7 @@ for i_wc, (WCname, color) in enumerate(WC_setup):
     for i in range(Npoints):
         minval = -10.
         maxval = 10.
-        if 'cHq3' in WCname:
+        if 'cHq3Re11' in WCname:
             minval = -0.2
             maxval = 0.2
         value = minval + ((maxval-minval)/(Npoints-1))*i
@@ -720,12 +732,26 @@ for i_mode, mode in enumerate(allModes):
 
     plots.append(Plot(
         name = "Z1_pt",
-        texX = 'p_{T}(Z_{1}) (GeV)', texY = 'Number of Events / 160 GeV',
+        texX = 'p_{T}(Z_{1}) (GeV)', texY = 'Number of Events / 20 GeV',
         attribute = TreeVariable.fromString( "Z1_pt/F" ),
-        binning=[5, 0, 800],
+        binning=[50, 0, 1000],
     ))
 
     if args.nicePlots:
+        plots.append(Plot(
+            name = "Z1_pt_rebin2",
+            texX = 'p_{T}(Z_{1}) (GeV)', texY = 'Number of Events / 40 GeV',
+            attribute = TreeVariable.fromString( "Z1_pt/F" ),
+            binning=[25, 0, 1000],
+        ))
+
+        plots.append(Plot(
+            name = "Z1_pt_rebin5",
+            texX = 'p_{T}(Z_{1}) (GeV)', texY = 'Number of Events / 100 GeV',
+            attribute = TreeVariable.fromString( "Z1_pt/F" ),
+            binning=[10, 0, 1000],
+        ))
+
         plots.append(Plot(
             name = "M_lb",
             texX = 'm_{lb} (GeV)', texY = 'Number of Events / 20 GeV',
@@ -947,8 +973,10 @@ if not args.nicePlots:
                     elif "data" in histname: process = "data"
                     # Also add a string for the eft signal samples
                     n_noneft = len(noneftidxs)
-                    if idx not in noneftidxs: h.Write("Z1_pt__"+process+"__"+params[idx-n_noneft]['legendText'])
-                    else: h.Write("Z1_pt__"+process)
+                    if idx not in noneftidxs:
+                        h.Write("Z1_pt__"+process+"__"+params[idx-n_noneft]['legendText'])
+                    else:
+                        h.Write("Z1_pt__"+process)
     outfile.Close()
 
 

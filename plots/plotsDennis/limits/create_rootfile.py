@@ -2,6 +2,7 @@
 
 import ROOT
 from math                                import sqrt
+import array
 from plotDistribution import plotDistribution
 import Analysis.Tools.syncer
 
@@ -13,6 +14,8 @@ argParser.add_argument('--noPlots',          action='store_true', default=False,
 argParser.add_argument('--twoD',             action='store_true', default=False, help='No plots?')
 args = argParser.parse_args()
 
+################################################################################
+### Functions
 def setPseudoDataErrors(hist):
     newhist = hist.Clone()
     Nbins = hist.GetSize()-2
@@ -52,6 +55,13 @@ def removeNegative(hist):
         if content < 0:
             hist.SetBinContent(bin, 0.0)
     return hist
+
+def setupHist(hist):
+    bins = [0, 60, 120, 240, 500, 1000]
+    hist = hist.Rebin(len(bins)-1, "h", array.array('d',bins))
+    hist = removeNegative(hist)
+    return hist
+
 ################################################################################
 ### Setup
 regions = ["WZ", "ZZ", "ttZ"]
@@ -84,7 +94,7 @@ if not args.twoD:
     for WCname in WCs:
         minval = -10.0
         maxval = 10.0
-        if "cHq3" in WCname:
+        if "cHq3Re11" in WCname:
             minval = -0.2
             maxval = 0.2
         vtn = {}
@@ -154,8 +164,7 @@ if not args.plotOnly:
                     name = histname+"__"+process+"__"+signalpoint
 
                 hist = file.Get(name)
-                # hist.Rebin(5)
-                hist = removeNegative(hist)
+                # hist = setupHist(hist)
                 hist.Write(process)
                 # Systematics
                 for sys in sysnames:
@@ -168,10 +177,8 @@ if not args.plotOnly:
                     outfile.cd(region+"__"+histname)
                     histUP   = fileUP.Get(name)
                     histDOWN = fileDOWN.Get(name)
-                    # histUP.Rebin(5)
-                    # histDOWN.Rebin(5)
-                    histUP   = removeNegative(histUP)
-                    histDOWN = removeNegative(histDOWN)
+                    # histUP   = setupHist(histUP)
+                    # histDOWN = setupHist(histDOWN)
                     histUP.Write(process+"__"+sys+"Up")
                     histDOWN.Write(process+"__"+sys+"Down")
 
@@ -190,6 +197,7 @@ if not args.plotOnly:
             for signal in signals:
                 hist = file.Get(histname+"__"+signal+"__"+SMpointName)
                 observed.Add(hist)
+            # observed = setupHist(observed)
             observed = setPseudoDataErrors(observed)
             observed.Write("data_obs")
         outfile.cd()
@@ -205,10 +213,9 @@ if not args.noPlots and not args.twoD:
         for WCname in WCs:
             SMpoint = 0
             EFTpoints = [-2, 2]
-            if 'cHq3' in WCname: EFTpoints = [-0.200, 0.200]
+            if 'cHq3Re11' in WCname: EFTpoints = [-0.200, 0.200]
             plotDistribution(None, region, 'Z1_pt', 'Z #it{p}_{T}', backgrounds, signals, WCname, SMpoint, EFTpoints, value_to_number, sysnames)
 
         plotDistribution("SM", region, 'Z1_pt', 'Z #it{p}_{T}', backgrounds+signals_at_SM, [], WCname, SMpoint, [], value_to_number, sysnames)
-
 
     Analysis.Tools.syncer.sync()

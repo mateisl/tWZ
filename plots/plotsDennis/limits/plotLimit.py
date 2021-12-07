@@ -81,9 +81,10 @@ for WCname in WCnames:
         i_SMpoint = 25
         qval_SM = -1
         qvals = []
+        qmin = 1000000000
         minval = -10.0
         maxval = 10.0
-        if "cHq3" in WCname:
+        if "cHq3Re11" in WCname:
             minval = -0.2
             maxval = 0.2
         WCvals = []
@@ -104,6 +105,8 @@ for WCname in WCnames:
                 q = 2*(event.nll+event.nll0)
                 qvals.append(q)
                 WCvals.append(value)
+                if q<qmin:
+                    qmin = q
                 if i==i_SMpoint:
                     qval_SM = q
                 # Option 2
@@ -115,7 +118,7 @@ for WCname in WCnames:
 
         qdiff = []
         for q in qvals:
-            qdiff.append(q-qval_SM)
+            qdiff.append(q-qmin)
 
         ############################################################################
         # Start plotting
@@ -229,7 +232,7 @@ for WCname in WCnames:
         ROOT.gStyle.SetPadTickY(1)
 
         likelihoods["combined"].GetXaxis().SetLimits(-10, 10)
-        if WCname=="cHq3Re11": likelihoods["combined"].GetXaxis().SetLimits(-0.2, 0.2)
+        if "cHq3Re11" in WCname: likelihoods["combined"].GetXaxis().SetLimits(-0.2, 0.2)
         likelihoods["combined"].GetHistogram().SetMinimum(0.)
         likelihoods["combined"].GetHistogram().SetMaximum(20)
         likelihoods["combined"].SetLineColor(ROOT.kBlack)
@@ -252,6 +255,12 @@ for WCname in WCnames:
             ROOT.TLine(-10, 1,    10, 1),
             ROOT.TLine(-10, 3.84, 10, 3.84),
         ]
+        if "cHq3Re11" in WCname:
+            linesCL = [
+                ROOT.TLine(-0.2, 1,    0.2, 1),
+                ROOT.TLine(-0.2, 3.84, 0.2, 3.84),
+            ]
+
         for line in linesCL:
             line.SetLineColor(13)
             line.SetLineStyle(2)

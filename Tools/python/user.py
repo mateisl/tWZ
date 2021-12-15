@@ -16,10 +16,10 @@ if os.environ["USER"] in ["robert.schoefbeck"]:
     postprocessing_output_directory = "/scratch-cbe/users/robert.schoefbeck/tWZ/nanoTuples"
     postprocessing_tmp_directory    = "/scratch/hephy/cms/robert.schoefbeck/tWZ/tmp/"
     plot_directory                  = "/mnt/hephy/cms/robert.schoefbeck/www/tWZ/plots"
-    cache_dir                       = "/mnt/hephy/cms/robert.schoefbeck/tWZ/caches"
+    cache_dir                       = "/groups/hephy/cms/robert.schoefbeck/tWZ/caches"
     # Analysis result files
-    analysis_results                = "/mnt/hephy/cms/robert.schoefbeck/tWZ/results/v1"
-    mva_directory                   = "/mnt/hephy/cms/robert.schoefbeck/tWZ/MVA"
+    analysis_results                = "/groups/hephy/cms/robert.schoefbeck/tWZ/results/v1"
+    mva_directory                   = "/groups/hephy/cms/robert.schoefbeck/tWZ/MVA"
     cern_proxy_certificate          = "/users/robert.schoefbeck/.private/.proxy"
 
 if os.environ["USER"] in ["rosmarie.schoefbeck"]:

@@ -57,7 +57,7 @@ def removeNegative(hist):
     return hist
 
 def setupHist(hist):
-    bins = [0, 60, 120, 240, 500, 1000]
+    bins = [0, 60, 120, 240, 1000]
     hist = hist.Rebin(len(bins)-1, "h", array.array('d',bins))
     hist = removeNegative(hist)
     return hist
@@ -73,9 +73,9 @@ print 'Reading Histogram:', histname
 
 # Directories
 dirs = {
-    "ZZ":  "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepVL-minDLmass12-onZ1-onZ2-nLeptons4/",
-    "WZ":  "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepT-minDLmass12-onZ1-deepjet0-met60/",
-    "ttZ": "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepT-minDLmass12-onZ1-njet4p-deepjet1p/",
+    "ZZ":  "/groups/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepVL-minDLmass12-onZ1-onZ2-nLeptons4/",
+    "WZ":  "/groups/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepT-minDLmass12-onZ1-deepjet0-met60/",
+    "ttZ": "/groups/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepT-minDLmass12-onZ1-njet4p-deepjet1p/",
 }
 
 # Define backgrounds
@@ -111,12 +111,12 @@ if not args.twoD:
 elif args.twoD:
     minval1  = -4.0
     maxval1  = 4.0
-    minval2  = -0.2
-    maxval2  = 0.2
+    minval2  = -4.0
+    maxval2  = 4.0
     Npoints1 = 21
     Npoints2 = 21
-    WC1 = 'cHq1Re11'
-    WC2 = 'cHq3Re11'
+    WC1 = 'cHq1Re1122'
+    WC2 = 'cHq1Re33'
     for i in range(Npoints1):
         value1 = minval1 + ((maxval1-minval1)/(Npoints1-1))*i
         for j in range(Npoints2):
@@ -147,9 +147,9 @@ if not args.plotOnly:
     for signalpoint in signalnames:
         print '--------------------------------------------------------'
         print 'Working on', signalpoint
-        outname = '/mnt/hephy/cms/dennis.schwarz/www/tWZ/limits/CombineInput_'+goodnames[signalpoint]+'.root'
+        outname = '/groups/hephy/cms/dennis.schwarz/www/tWZ/limits/CombineInput_'+goodnames[signalpoint]+'.root'
         if args.twoD:
-            outname = '/mnt/hephy/cms/dennis.schwarz/www/tWZ/limits/CombineInput_2D_'+goodnames[signalpoint]+'.root'
+            outname = '/groups/hephy/cms/dennis.schwarz/www/tWZ/limits/CombineInput_2D_'+goodnames[signalpoint]+'.root'
         outfile = ROOT.TFile(outname, 'recreate')
         outfile.cd()
         for region in regions:
@@ -164,7 +164,7 @@ if not args.plotOnly:
                     name = histname+"__"+process+"__"+signalpoint
 
                 hist = file.Get(name)
-                # hist = setupHist(hist)
+                hist = setupHist(hist)
                 hist.Write(process)
                 # Systematics
                 for sys in sysnames:
@@ -177,8 +177,8 @@ if not args.plotOnly:
                     outfile.cd(region+"__"+histname)
                     histUP   = fileUP.Get(name)
                     histDOWN = fileDOWN.Get(name)
-                    # histUP   = setupHist(histUP)
-                    # histDOWN = setupHist(histDOWN)
+                    histUP   = setupHist(histUP)
+                    histDOWN = setupHist(histDOWN)
                     histUP.Write(process+"__"+sys+"Up")
                     histDOWN.Write(process+"__"+sys+"Down")
 
@@ -197,7 +197,7 @@ if not args.plotOnly:
             for signal in signals:
                 hist = file.Get(histname+"__"+signal+"__"+SMpointName)
                 observed.Add(hist)
-            # observed = setupHist(observed)
+            observed = setupHist(observed)
             observed = setPseudoDataErrors(observed)
             observed.Write("data_obs")
         outfile.cd()

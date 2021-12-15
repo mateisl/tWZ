@@ -7,8 +7,8 @@ output=submitScript_twoD.sh
 
 rm -f ${output}
 
-WC1=cHq1Re11
-WC2=cHq3Re11
+WC1=cHq1Re1122
+WC2=cHq1Re33
 
 echo 'Combining combine cards...'
 cd ${dir}

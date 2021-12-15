@@ -231,20 +231,21 @@ for i_sample, sample in enumerate(samples_eft):
 if args.twoD:
     minval1  = -4.0
     maxval1  = 4.0
-    minval2  = -0.2
-    maxval2  = 0.2
+    minval2  = -4.0
+    maxval2  = 4.0
     Npoints1 = 21
     Npoints2 = 21
-    WC1 = 'cHq1Re11'
-    WC2 = 'cHq3Re11'
+    WC1  = 'cHq1Re1122'
+    WC1a = 'cHq1Re11'
+    WC1b = 'cHq1Re22'
+    WC2  = 'cHq1Re33'
     params = []
     for i in range(Npoints1):
         value1 = minval1 + ((maxval1-minval1)/(Npoints1-1))*i
         for j in range(Npoints2):
             value2 = minval2 + ((maxval2-minval2)/(Npoints2-1))*j
             for i_sample, sample in enumerate(samples_eft):
-                params.append({'legendText':'%s=%3.4f, %s=%3.4f'%(WC1,value1,WC2,value2), 'color':ROOT.kRed,  'WC':{WC1:value1, WC2:value2} , 'sample': sample, 'i_sample': i_sample})
-
+                params.append({'legendText':'%s=%3.4f, %s=%3.4f'%(WC1,value1,WC2,value2), 'color':ROOT.kRed,  'WC':{WC1a:value1, WC1b:value1, WC2:value2} , 'sample': sample, 'i_sample': i_sample})
 ####
 
 for i_param, param in enumerate(params):

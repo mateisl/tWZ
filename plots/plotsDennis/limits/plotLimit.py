@@ -59,10 +59,19 @@ def findXBoundaries(graph, minval, maxval, ymax):
 ################################################################################
 ################################################################################
 ################################################################################
+import argparse
+argParser = argparse.ArgumentParser(description = "Argument parser")
+argParser.add_argument('--noTWZ',            action='store_true', default=False, help='Keep tWZ at SM point?')
+args = argParser.parse_args()
 
 dir = "/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data/"
 prefix = "higgsCombine.part3E_"
 suffix = ".MultiDimFit.mH120.root"
+outdir = plot_directory+"/Limits/"
+if args.noTWZ:
+    dir = "/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data_noTWZ/"
+    outdir = plot_directory+"/Limits_noTWZ/"
+    
 
 WCnames = ["cHq1Re11", "cHq1Re22", "cHq1Re33", "cHq3Re11", "cHq3Re22", "cHq3Re33"]
 
@@ -73,7 +82,7 @@ channels = {
 "combined": "combined"
 }
 
-
+outfile = ROOT.TFile(outdir+"Likelihoods.root", "RECREATE")
 for WCname in WCnames:
     likelihoods = {}
     for ch in channels:
@@ -222,7 +231,10 @@ for WCname in WCnames:
         leg.Draw()
 
         ROOT.gPad.RedrawAxis()
-        c.Print(os.path.join(plot_directory, "Limit_"+channels[ch]+"_"+WCname+".pdf"))
+        c.Print(os.path.join(outdir, "Limit_"+channels[ch]+"_"+WCname+".pdf"))
+        outfile.cd()
+        graph.Write("Likelihood__"+channels[ch]+"__"+WCname)
+        
     ############################################################################
     # Compare Likelihoods of different channels
     if likelihoods.has_key('combined') and likelihoods.has_key('ttZ') and likelihoods.has_key('ZZ') and likelihoods.has_key('WZ'):
@@ -275,8 +287,9 @@ for WCname in WCnames:
         leg.Draw()
 
         ROOT.gPad.RedrawAxis()
-        c.Print(os.path.join(plot_directory, "Limit_comparison_"+WCname+".pdf"))
+        c.Print(os.path.join(outdir, "Limit_comparison_"+WCname+".pdf"))
     else:
         print 'Comparison plot is not created since not all regions are filled.'
 
+outfile.Close()
 Analysis.Tools.syncer.sync()

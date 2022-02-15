@@ -213,7 +213,7 @@ for WCname in WCnames:
         leg.Draw()
 
         ROOT.gPad.RedrawAxis()
-        c.Print(os.path.join(plot_directory, "Limit_statonly_"+channels[ch]+"_"+WCname+".pdf"))
+        c.Print(os.path.join(plot_directory+"/Limits/", "Limit_statonly_"+channels[ch]+"_"+WCname+".pdf"))
     ############################################################################
     # Compare Likelihoods of different channels
     if likelihoods.has_key('combined') and likelihoods.has_key('ttZ') and likelihoods.has_key('ZZ') and likelihoods.has_key('WZ'):
@@ -259,7 +259,7 @@ for WCname in WCnames:
         leg.Draw()
 
         ROOT.gPad.RedrawAxis()
-        c.Print(os.path.join(plot_directory, "Limit_statonly_comparison_"+WCname+".pdf"))
+        c.Print(os.path.join(plot_directory+"/Limits/", "Limit_statonly_comparison_"+WCname+".pdf"))
     else:
         print 'Comparison plot is not created since not all regions are filled.'
 

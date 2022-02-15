@@ -1,6 +1,7 @@
 #!/bin/bash
 npoints=50
 dir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data
+submitdir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/submitScripts
 
 output=submitScript.sh
 
@@ -20,7 +21,8 @@ done
 cd ..
 
 # Now write a python file for each region and WCname
-echo 'Write python files...'
+cd ${submitdir}
+echo "Write python files in ${submitdir}"
 for WCname in cHq1Re11 cHq1Re22 cHq1Re33 cHq3Re11 cHq3Re22 cHq3Re33
 do
   for region in 1 2 3 combined
@@ -41,3 +43,4 @@ do
     done
   done
 done
+cd ..

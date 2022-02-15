@@ -152,7 +152,7 @@ for ch in channels:
     leg.Draw()
 
     ROOT.gPad.RedrawAxis()
-    c.Print(os.path.join(plot_directory, "Limit_2D_"+channels[ch]+"_"+WC1+"_"+WC2+".pdf"))
+    c.Print(os.path.join(plot_directory+"/Limits/", "Limit_2D_"+channels[ch]+"_"+WC1+"_"+WC2+".pdf"))
 
 
 Analysis.Tools.syncer.sync()

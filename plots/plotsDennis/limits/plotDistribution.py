@@ -67,10 +67,9 @@ colors = {
 
 signal_colors = [ROOT.kAzure+7, ROOT.kRed-2, ROOT.kGreen+2, 798, 13, 15]
 
-def plotDistribution(prefix, region, histname, xtitle, backgrounds, signals, WCname, SMpoint, EFTpoints, value_to_number, systs):
-    dir = "/mnt/hephy/cms/dennis.schwarz/www/tWZ/limits/"
+def plotDistribution(dir, prefix, region, histname, xtitle, backgrounds, signals, WCname, SMpoint, EFTpoints, value_to_number, systs):
     filename_SM = "CombineInput_cHq1Re11_"+str(value_to_number[WCname][SMpoint])+".root"
-    file = ROOT.TFile(dir+filename_SM)
+    file = ROOT.TFile(dir+"/"+filename_SM)
     leg = ROOT.TLegend(.55, .4, .9, .85)
     leg.SetBorderSize(0)
 
@@ -152,7 +151,7 @@ def plotDistribution(prefix, region, histname, xtitle, backgrounds, signals, WCn
     filesEFT = []
     for i, EFTpoint in enumerate(EFTpoints):
         filename_EFT = "CombineInput_"+WCname+"_"+str(value_to_number[WCname][EFTpoint])+".root"
-        filesEFT.append(ROOT.TFile(dir+filename_EFT))
+        filesEFT.append(ROOT.TFile(dir+"/"+filename_EFT))
         h_EFTsignals.append(h_totalbkg.Clone())
     for i, EFTpoint in enumerate(EFTpoints):
         for signal in signals:
@@ -278,8 +277,8 @@ def plotDistribution(prefix, region, histname, xtitle, backgrounds, signals, WCn
         for ratio in EFTratios:
             ratio.Draw("HIST SAME")
         ROOT.gPad.RedrawAxis()
-    plotname = os.path.join(plot_directory, region+"__"+histname+"__"+WCname+".pdf")
-    if prefix: plotname = os.path.join(plot_directory, prefix+"__"+region+"__"+histname+".pdf")
+    plotname = os.path.join(plot_directory, "/CombineInput/", region+"__"+histname+"__"+WCname+".pdf")
+    if prefix: plotname = os.path.join(plot_directory, "/CombineInput/", prefix+"__"+region+"__"+histname+".pdf")
     c.Print(plotname)
     file.Close()
     for f in filesEFT: f.Close()

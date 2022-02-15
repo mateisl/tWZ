@@ -2,6 +2,7 @@
 npoints1=20 # put one less here because of bash loop logic
 npoints2=20
 dir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data_twoD/
+submitdir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/submitScripts
 
 output=submitScript_twoD.sh
 
@@ -24,10 +25,11 @@ done
 cd ..
 
 # Now write a python file for each region and WCname
-echo 'Write python files...'
+cd ${submitdir}
+echo "Write python files in ${submitdir}"
 for region in 1 2 3 combined
 do
-  pythonoutput=${WC1}_${WC2}__${region}.py
+  pythonoutput=twoD__${WC1}_${WC2}__${region}.py
   echo "   - ${pythonoutput}"
   echo "python ${pythonoutput}" >> ${output}
   rm -f ${pythonoutput}
@@ -45,3 +47,4 @@ do
     done
   done
 done
+cd ..

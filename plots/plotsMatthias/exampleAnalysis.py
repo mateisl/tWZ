@@ -139,6 +139,9 @@ read_variables = [
     "l3_pt/F", "l3_eta/F" , "l3_phi/F",
     "Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O]",
     "Electron[pt/F,eta/F,phi/F,pdgId/I,mvaFall17V2Iso_WP80/O]",
+    "Lep1SF/F", "Lep1SF_up/F", "Lep1SF_down/F",
+    "Lep2SF/F", "Lep2SF_up/F", "Lep2SF_down/F",
+    "Lep3SF/F", "Lep3SF_up/F", "Lep3SF_down/F",
     
 ]
 
@@ -182,6 +185,21 @@ plots.append(Plot(
     attribute = lambda event, sample: 0.5,
     binning=[1, 0., 1.],
 ))
+
+plots.append(Plot(
+    name = "Lepton1_SF",
+    texX = 'Lepton1 SF', texY = 'Number of Events',
+    attribute = lambda event, sample: event.Lep1SF,
+    binning=[50, 0.95, 1.05],
+))
+
+plots.append(Plot(
+    name = "Lepton1_SF_up",
+    texX = 'Lepton1 SF up', texY = 'Number of Events',
+    attribute = lambda event, sample: event.Lep1SF_up,
+    binning=[50, 0.95, 1.05],
+))
+
 
 plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 

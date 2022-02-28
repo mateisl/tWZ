@@ -142,7 +142,6 @@ read_variables = [
     "Lep1SF/F", "Lep1SF_up/F", "Lep1SF_down/F",
     "Lep2SF/F", "Lep2SF_up/F", "Lep2SF_down/F",
     "Lep3SF/F", "Lep3SF_up/F", "Lep3SF_down/F",
-    
 ]
 
 ################################################################################

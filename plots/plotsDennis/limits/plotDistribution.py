@@ -277,8 +277,12 @@ def plotDistribution(dir, prefix, region, histname, xtitle, backgrounds, signals
         for ratio in EFTratios:
             ratio.Draw("HIST SAME")
         ROOT.gPad.RedrawAxis()
-    plotname = os.path.join(plot_directory, "/CombineInput/", region+"__"+histname+"__"+WCname+".pdf")
-    if prefix: plotname = os.path.join(plot_directory, "/CombineInput/", prefix+"__"+region+"__"+histname+".pdf")
+    plotname = os.path.join(plot_directory+"/CombineInput/", region+"__"+histname+"__"+WCname+".pdf")
+    if prefix: 
+        if "SM" in prefix:
+            plotname = os.path.join(plot_directory+"/CombineInput/", prefix+"__"+region+"__"+histname+".pdf")
+        else:
+            plotname = os.path.join(plot_directory+"/CombineInput/", prefix+"__"+region+"__"+histname+"__"+WCname+".pdf")
     c.Print(plotname)
     file.Close()
     for f in filesEFT: f.Close()

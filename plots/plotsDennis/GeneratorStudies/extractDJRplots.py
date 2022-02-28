@@ -3,17 +3,16 @@
 import ROOT, os
 import Analysis.Tools.syncer
 from tWZ.Tools.user                      import plot_directory
-
-
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--mode', action='store', default='01')
+argParser.add_argument('--process', action='store', default='ttZ')
 argParser.add_argument('--latex', action='store_true', default=False)
 args = argParser.parse_args()
 
 filedir = "/users/dennis.schwarz/CMSSW_10_6_20/src/tWZ01j_LHE/"
 
-files = [
+files_ttZ = [
     ("djr_ttZ_q10_30.root", "DJR_ttZ_q10_30","xqcut=10, qCut=30"),
     ("djr_ttZ_q20_25.root", "DJR_ttZ_q20_25","xqcut=20, qCut=25"),
     ("djr_ttZ_q20_30.root", "DJR_ttZ_q20_30","xqcut=20, qCut=30"),
@@ -27,19 +26,36 @@ files = [
     ("djr_ttZ_q30_55.root", "DJR_ttZ_q30_55","xqcut=30, qCut=55"),
     ("djr_ttZ_q30_60.root", "DJR_ttZ_q30_60","xqcut=30, qCut=60"),
     ("djr_ttZ_q30_65.root", "DJR_ttZ_q30_65","xqcut=30, qCut=65"),
-    # ("djr_q10_15.root", "DJR_xqcut10_qcut15","xqcut=10, qCut=15"),
-    # ("djr_q10_20.root", "DJR_xqcut10_qcut20","xqcut=10, qCut=20"),
-    # ("djr_q10_30.root", "DJR_xqcut10_qcut30","xqcut=10, qCut=30"),
-    # ("djr_q10_30_noEtaMax.root", "DJR_xqcut10_qcut30_noEtaMax","xqcut=10, EtaMax = -1"),
-    # ("djr_q10_40.root", "DJR_xqcut10_qcut40","xqcut=10, qCut=40"),
-    # ("djr_q20_25.root", "DJR_xqcut20_qcut25","xqcut=20, qCut=25"),
-    # ("djr_q20_30.root", "DJR_xqcut20_qcut30","xqcut=20, qCut=30"),
-    # ("djr_q20_40.root", "DJR_xqcut20_qcut40","xqcut=20, qCut=40"),
-    # ("djr_q20_Mad.root", "DJR_xqcut20_setMad","xqcut=20, setMad=on"),
 ]
 
+files_WZ = [
+    ("djr_WZ_q10_20.root", "DJR_WZ_q10_20","xqcut=10, qCut=20"),
+    ("djr_WZ_q10_25.root", "DJR_WZ_q10_25","xqcut=10, qCut=25"),
+    ("djr_WZ_q10_30.root", "DJR_WZ_q10_30","xqcut=10, qCut=30"),
+    ("djr_WZ_q20_25.root", "DJR_WZ_q20_25","xqcut=20, qCut=25"),
+    ("djr_WZ_q20_30.root", "DJR_WZ_q20_30","xqcut=20, qCut=30"),
+    # ("djr_WZ_q20_30_noEFT.root", "DJR_WZ_q20_30_noEFT","xqcut=20, qCut=30, noEFT"),
+    ("djr_WZ_q20_35.root", "DJR_WZ_q20_35","xqcut=20, qCut=35"),
+    ("djr_WZ_q20_40.root", "DJR_WZ_q20_40","xqcut=20, qCut=40"),
+    ("djr_WZ_q20_45.root", "DJR_WZ_q20_45","xqcut=20, qCut=45"),
+    ("djr_WZ_q20_50.root", "DJR_WZ_q20_50","xqcut=20, qCut=50"),
+]
+
+files_ZZ = [
+    ("djr_ZZ_q20_25.root", "DJR_ZZ_q20_25","xqcut=20, qCut=25"),
+    ("djr_ZZ_q20_30.root", "DJR_ZZ_q20_30","xqcut=20, qCut=30"),
+    ("djr_ZZ_q20_35.root", "DJR_ZZ_q20_35","xqcut=20, qCut=35"),
+    ("djr_ZZ_q20_40.root", "DJR_ZZ_q20_40","xqcut=20, qCut=40"),
+    ("djr_ZZ_q20_45.root", "DJR_ZZ_q20_45","xqcut=20, qCut=45"),
+    ("djr_ZZ_q20_50.root", "DJR_ZZ_q20_50","xqcut=20, qCut=50"),
+]
+
+files = files_ttZ
+if args.process=="WZ": files = files_WZ
+elif args.process=="ZZ": files = files_ZZ
+
 dir = os.path.join(plot_directory, "DJR")
-texname = dir+"/DJR"+args.mode+".tex"
+texname = dir+"/DJR"+args.mode+"_"+args.process+".tex"
 outfile = open(texname,"w")
 if args.latex:
     outfile.write("\\documentclass[aspectratio=169]{beamer}\n")
@@ -52,7 +68,6 @@ if args.latex:
 
 for (filename, name, legend) in files:
     file = ROOT.TFile(filedir+"/"+filename)
-    # canvas = ROOT.TCanvas()
     canvas = file.Get("djr"+args.mode)
     infotext = ROOT.TLatex(3.5, 24, legend)
     infotext.SetNDC()
@@ -78,3 +93,5 @@ for (filename, name, legend) in files:
 if args.latex:
     outfile.write("\\end{document}")
     outfile.close()
+
+Analysis.Tools.syncer.sync()

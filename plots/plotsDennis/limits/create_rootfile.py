@@ -57,8 +57,7 @@ def removeNegative(hist):
             hist.SetBinContent(bin, 0.0)
     return hist
 
-def setupHist(hist):
-    bins = [0, 60, 120, 240, 1000]
+def setupHist(hist, bins):
     hist = hist.Rebin(len(bins)-1, "h", array.array('d',bins))
     hist = removeNegative(hist)
     return hist
@@ -67,6 +66,10 @@ def setupHist(hist):
 ### Setup
 regions = ["WZ", "ZZ", "ttZ"]
 print 'Reading regions:', regions
+
+
+# binning 
+bins  = [0, 60, 120, 180, 240, 300, 400, 1000]
 
 # histname
 histname = "Z1_pt"
@@ -170,7 +173,7 @@ if not args.plotOnly:
                 elif process in signals:
                     name = histname+"__"+process+"__"+signalpoint
                 hist = file.Get(name)
-                hist = setupHist(hist)
+                hist = setupHist(hist, bins)
                 hist.Write(process)
                 # Systematics
                 for sys in sysnames:
@@ -183,8 +186,8 @@ if not args.plotOnly:
                     outfile.cd(region+"__"+histname)
                     histUP   = fileUP.Get(name)
                     histDOWN = fileDOWN.Get(name)
-                    histUP   = setupHist(histUP)
-                    histDOWN = setupHist(histDOWN)
+                    histUP   = setupHist(histUP, bins)
+                    histDOWN = setupHist(histDOWN, bins)
                     histUP.Write(process+"__"+sys+"Up")
                     histDOWN.Write(process+"__"+sys+"Down")
 
@@ -203,7 +206,7 @@ if not args.plotOnly:
             for signal in signals:
                 hist = file.Get(histname+"__"+signal+"__"+SMpointName)
                 observed.Add(hist)
-            observed = setupHist(observed)
+            observed = setupHist(observed, bins)
             observed = setPseudoDataErrors(observed)
             observed.Write("data_obs")
         outfile.cd()

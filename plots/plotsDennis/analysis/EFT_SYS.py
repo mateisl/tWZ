@@ -18,6 +18,10 @@ from math                                import sqrt, cos, sin, pi, atan2, cosh,
 # RootTools
 from RootTools.core.standard             import *
 
+# MyRootTools
+from MyRootTools.ttbarReconstruction.ttbarReco  import ttbarReco
+
+
 # tWZ
 from tWZ.Tools.user                      import plot_directory
 from tWZ.Tools.cutInterpreter            import cutInterpreter
@@ -50,6 +54,7 @@ argParser.add_argument('--selection',      action='store', default='trilepVL-min
 argParser.add_argument('--sys',            action='store', default='central')
 argParser.add_argument('--nicePlots',      action='store_true', default=False)
 argParser.add_argument('--twoD',           action='store_true', default=False)
+argParser.add_argument('--doTTbarReco',    action='store_true', default=False)
 args = argParser.parse_args()
 
 ################################################################################
@@ -489,67 +494,67 @@ def getDiBosonAngles(sample, event):
     event.phi = getphi(lep1, lep2, boson)
 sequence.append( getDiBosonAngles )
 
-def getZorigin(event, sample):
-    pdgIds = []
-    mothersFound = []
-    productionModeWZ = 0
-    if sample.name != "data":
-        for i in range(event.nGenPart):
-            if i == 2 and abs(event.GenPart_pdgId[i])==24:
-                productionModeWZ=1
-            if event.GenPart_pdgId[i] == 23:
-                i_mother = event.GenPart_genPartIdxMother[i]
-                Id_mother = event.GenPart_pdgId[i_mother]
-                # If mother is still a Z, go further back until pdgId != 23
-                if Id_mother == 23:
-                    foundMother = False
-                    while not foundMother:
-                        i_tmp = i_mother
-                        i_mother = event.GenPart_genPartIdxMother[i_tmp]
-                        Id_mother = event.GenPart_pdgId[i_mother]
-                        if Id_mother != 23:
-                            foundMother = True
-                if i_mother not in mothersFound:
-                    pdgIds.append(Id_mother)
-                    mothersFound.append(i_mother)
-    event.MotherIds = pdgIds
-    event.Nmothers = len(pdgIds)
-    event.productionModeWZ = productionModeWZ
-    MotherList = []
-    # 0 = other
-    # 1,2,3 = 1st, 2nd, 3rd Generation Quarks
-    # 4 = W/Z/Higgs, 5 = Gluon, 6 = Lepton
-    for id in pdgIds:
-        if abs(id)==1 or abs(id)==2: # 1st gen
-            MotherList.append(1)
-        elif abs(id)==3 or abs(id)==4: # 2nd gen
-            MotherList.append(2)
-        elif abs(id)==5 or abs(id)==6: #3rd gen
-            MotherList.append(3)
-        elif abs(id)>=11 and abs(id)<=16: # lepton
-            MotherList.append(6)
-        elif abs(id)==9 or abs(id)==21: # gluon
-            MotherList.append(5)
-        elif abs(id)>=22 and abs(id)<=25: # W/Z/H
-            MotherList.append(4)
-        else:
-            MotherList.append(0)
-    event.MotherIdList = MotherList
-
-    production = -1
-    if sample.name != "data":
-        ID1 = abs(event.GenPart_pdgId[0])
-        ID2 = abs(event.GenPart_pdgId[1])
-        if   ID1 in [1,2] and ID2 in [1,2]: production = 1
-        elif ID1 in [3,4] and ID2 in [3,4]: production = 2
-        elif ID1 in [5,6] and ID2 in [5,6]: production = 3
-        elif (ID1==21 and ID2 in [1,2]) or (ID2==21 and ID1 in [1,2]): production = 4
-        elif (ID1==21 and ID2 in [3,4]) or (ID2==21 and ID1 in [3,4]): production = 5
-        elif (ID1==21 and ID2 in [5,6]) or (ID2==21 and ID1 in [5,6]): production = 6
-        elif ID1==21 and ID2==21: production = 7
-        else: production = 0
-    event.productionMode = production
-sequence.append(getZorigin)
+# def getZorigin(event, sample):
+#     pdgIds = []
+#     mothersFound = []
+#     productionModeWZ = 0
+#     if sample.name != "data":
+#         for i in range(event.nGenPart):
+#             if i == 2 and abs(event.GenPart_pdgId[i])==24:
+#                 productionModeWZ=1
+#             if event.GenPart_pdgId[i] == 23:
+#                 i_mother = event.GenPart_genPartIdxMother[i]
+#                 Id_mother = event.GenPart_pdgId[i_mother]
+#                 # If mother is still a Z, go further back until pdgId != 23
+#                 if Id_mother == 23:
+#                     foundMother = False
+#                     while not foundMother:
+#                         i_tmp = i_mother
+#                         i_mother = event.GenPart_genPartIdxMother[i_tmp]
+#                         Id_mother = event.GenPart_pdgId[i_mother]
+#                         if Id_mother != 23:
+#                             foundMother = True
+#                 if i_mother not in mothersFound:
+#                     pdgIds.append(Id_mother)
+#                     mothersFound.append(i_mother)
+#     event.MotherIds = pdgIds
+#     event.Nmothers = len(pdgIds)
+#     event.productionModeWZ = productionModeWZ
+#     MotherList = []
+#     # 0 = other
+#     # 1,2,3 = 1st, 2nd, 3rd Generation Quarks
+#     # 4 = W/Z/Higgs, 5 = Gluon, 6 = Lepton
+#     for id in pdgIds:
+#         if abs(id)==1 or abs(id)==2: # 1st gen
+#             MotherList.append(1)
+#         elif abs(id)==3 or abs(id)==4: # 2nd gen
+#             MotherList.append(2)
+#         elif abs(id)==5 or abs(id)==6: #3rd gen
+#             MotherList.append(3)
+#         elif abs(id)>=11 and abs(id)<=16: # lepton
+#             MotherList.append(6)
+#         elif abs(id)==9 or abs(id)==21: # gluon
+#             MotherList.append(5)
+#         elif abs(id)>=22 and abs(id)<=25: # W/Z/H
+#             MotherList.append(4)
+#         else:
+#             MotherList.append(0)
+#     event.MotherIdList = MotherList
+# 
+#     production = -1
+#     if sample.name != "data":
+#         ID1 = abs(event.GenPart_pdgId[0])
+#         ID2 = abs(event.GenPart_pdgId[1])
+#         if   ID1 in [1,2] and ID2 in [1,2]: production = 1
+#         elif ID1 in [3,4] and ID2 in [3,4]: production = 2
+#         elif ID1 in [5,6] and ID2 in [5,6]: production = 3
+#         elif (ID1==21 and ID2 in [1,2]) or (ID2==21 and ID1 in [1,2]): production = 4
+#         elif (ID1==21 and ID2 in [3,4]) or (ID2==21 and ID1 in [3,4]): production = 5
+#         elif (ID1==21 and ID2 in [5,6]) or (ID2==21 and ID1 in [5,6]): production = 6
+#         elif ID1==21 and ID2==21: production = 7
+#         else: production = 0
+#     event.productionMode = production
+# sequence.append(getZorigin)
 
 def getM3l( event, sample ):
     l = []
@@ -558,6 +563,40 @@ def getM3l( event, sample ):
         l[i].SetPtEtaPhiM(event.lep_pt[i], event.lep_eta[i], event.lep_phi[i],0)
     event.m3l = (l[0] + l[1] + l[2]).M()
 sequence.append( getM3l )
+
+
+def getTTbarReco( event, sample ):
+    event.mtophad = float('nan')
+    event.mtoplep = float('nan')
+    event.minimax = float('nan')
+    event.chi2 = float('nan')
+    
+    if args.doTTbarReco and event.nJetGood>=4:
+        lepton = ROOT.TLorentzVector()
+        met    = ROOT.TLorentzVector()
+        lepton.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
+        met.SetPtEtaPhiM(event.met_pt, 0, event.met_phi, 0)
+        jets = []
+        Njetsmax = 4
+        if event.nJetGood < Njetsmax:
+            Njetsmax = event.nJetGood
+        for i in range(Njetsmax):
+            jet = ROOT.TLorentzVector()
+            jetidx = event.JetGood_index[i]
+            jet.SetPtEtaPhiM(event.Jet_pt[jetidx], event.Jet_eta[jetidx], event.Jet_phi[jetidx], event.Jet_mass[jetidx])
+            jets.append(jet)
+        reco = ttbarReco(lepton, met, jets)
+        reco.reconstruct()
+        best_hypothesis = reco.best_hypothesis
+        minimax = reco.minimax
+        if best_hypothesis:
+            event.mtophad = best_hypothesis['toplep'].M()
+            event.mtoplep = best_hypothesis['tophad'].M()
+            event.chi2 = best_hypothesis['chi2']
+        if minimax:
+            event.minimax = minimax
+sequence.append( getTTbarReco )
+
 ################################################################################
 # Read variables
 
@@ -747,7 +786,16 @@ for i_mode, mode in enumerate(allModes):
         attribute = lambda event, sample:event.m3l,
         binning=[25,0,500],
     ))
-
+    
+        
+    plots.append(Plot(
+        name = "minimax",
+        texX = 'minimax', texY = 'Number of Events',
+        attribute = lambda event, sample: event.minimax,
+        binning=[40,0,600],
+        addOverFlowBin='upper',
+    ))
+        
     if args.nicePlots:
         plots.append(Plot(
             name = "Z1_pt_rebin2",
@@ -775,13 +823,6 @@ for i_mode, mode in enumerate(allModes):
             texX = 'Number of jets', texY = 'Number of Events',
             attribute = lambda event, sample: event.nJetGood,
             binning=[16, -0.5, 15.5],
-        ))
-
-        plots.append(Plot(
-            name = "M3l",
-            texX = 'M(3l) (GeV)', texY = 'Number of Events',
-            attribute = lambda event, sample:event.m3l,
-            binning=[25,0,500],
         ))
 
         plots.append(Plot(
@@ -820,39 +861,28 @@ for i_mode, mode in enumerate(allModes):
         ))
 
         plots.append(Plot(
-            name = "Z_mother",
-            texX = 'pdgId of Z mother', texY = 'Number of Events',
-            attribute = lambda event, sample: event.MotherIds,
-            binning=[51,-25,25],
+            name = "m_toplep",
+            texX = 'm_{lep. top}', texY = 'Number of Events',
+            attribute = lambda event, sample: event.mtoplep,
+            binning=[40,0,400],
+            addOverFlowBin='upper',
         ))
-
+        
         plots.append(Plot(
-            name = "Z_mother_grouped",
-            texX = 'Z mother Group', texY = 'Number of Events',
-            attribute = lambda event, sample: event.MotherIdList,
-            binning=[7,-0.5,6.5],
+            name = "m_tophad",
+            texX = 'm_{had. top}', texY = 'Number of Events',
+            attribute = lambda event, sample: event.mtophad,
+            binning=[40,0,400],
+            addOverFlowBin='upper',
         ))
-
+        
         plots.append(Plot(
-            name = "N_Z_mother",
-            texX = 'Number of Z mothers', texY = 'Number of Events',
-            attribute = lambda event, sample: event.Nmothers,
-            binning=[6, -0.5, 5.5],
-        ))
-
-        plots.append(Plot(
-            name = "ProductionMode",
-            texX = 'production mode', texY = 'Number of Events',
-            attribute = lambda event, sample: event.productionMode,
-            binning=[8, -0.5, 7.5],
-        ))
-
-        plots.append(Plot(
-            name = "ProductionModeWZ",
-            texX = 'production mode of WZ', texY = 'Number of Events',
-            attribute = lambda event, sample: event.productionModeWZ,
-            binning=[2, -0.5, 1.5],
-        ))
+            name = "chi2",
+            texX = '#chi^{2}', texY = 'Number of Events',
+            attribute = lambda event, sample: event.chi2,
+            binning=[40,0,1000],
+            addOverFlowBin='upper',
+        ))        
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 
@@ -955,6 +985,7 @@ for plot in allPlots['all']:
 if args.nicePlots:
     drawPlots(allPlots['all'], "all", dataMCScale)
 
+plots_root = ["Z1_pt", "M3l", "minimax"]
 if not args.nicePlots:
     # Write Result Hist in root file
     plot_dir = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, "all", args.selection)
@@ -968,7 +999,7 @@ if not args.nicePlots:
     outfile = ROOT.TFile(outfilename, 'recreate')
     outfile.cd()
     for plot in allPlots['all']:
-        if plot.name == "Z1_pt" or plot.name == "M3l":
+        if plot.name in plots_root:
             for idx, histo_list in enumerate(plot.histos):
                 for j, h in enumerate(histo_list):
                     histname = h.GetName()

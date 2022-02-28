@@ -82,6 +82,7 @@ channels = {
 "combined": "combined"
 }
 
+txtfile = open(outdir+"Limits.txt","w")
 outfile = ROOT.TFile(outdir+"Likelihoods.root", "RECREATE")
 for WCname in WCnames:
     likelihoods = {}
@@ -235,6 +236,13 @@ for WCname in WCnames:
         outfile.cd()
         graph.Write("Likelihood__"+channels[ch]+"__"+WCname)
         
+        lo68 = str(min(CL68vals)) if CL68vals else "NaN"
+        hi68 = str(max(CL68vals)) if CL68vals else "NaN"
+        lo95 = str(min(CL95vals)) if CL95vals else "NaN"
+        hi95 = str(max(CL95vals)) if CL95vals else "NaN"
+        txtfile.write(channels[ch]+" "+WCname+" (68%): ["+lo68+","+hi68+"], (95%): ["+lo95+","+hi95+"]\n")
+        
+        
     ############################################################################
     # Compare Likelihoods of different channels
     if likelihoods.has_key('combined') and likelihoods.has_key('ttZ') and likelihoods.has_key('ZZ') and likelihoods.has_key('WZ'):
@@ -292,4 +300,5 @@ for WCname in WCnames:
         print 'Comparison plot is not created since not all regions are filled.'
 
 outfile.Close()
+txtfile.close()
 Analysis.Tools.syncer.sync()

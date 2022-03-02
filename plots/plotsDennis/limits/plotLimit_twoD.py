@@ -15,8 +15,8 @@ dir = "/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/da
 prefix = "higgsCombine.part3E_"
 suffix = ".MultiDimFit.mH120.root"
 
-WC1 = "cHq1Re11"
-WC2 = "cHq3Re11"
+WC1 = "cHq1Re1122"
+WC2 = "cHq1Re33"
 
 channels = {
 "1": "ZZ",
@@ -35,8 +35,8 @@ for ch in channels:
     qvals = []
     minval1 = -4.0
     maxval1 = 4.0
-    minval2 = -0.2
-    maxval2 = 0.2
+    minval2 = -4.0
+    maxval2 = 4.0
     WC1vals = []
     WC2vals = []
     for i in range(Npoints1):
@@ -107,7 +107,7 @@ for ch in channels:
     hist.GetYaxis().SetTitle(WC2)
     hist.GetZaxis().SetTitle("-2 #Delta ln L")
 
-    hist.GetYaxis().SetRangeUser(-0.2, 0.2)
+    hist.GetYaxis().SetRangeUser(-4.0, 4.0)
     hist.GetZaxis().SetTitleOffset(1.3)
 
 
@@ -152,7 +152,7 @@ for ch in channels:
     leg.Draw()
 
     ROOT.gPad.RedrawAxis()
-    c.Print(os.path.join(plot_directory, "Limit_2D_"+channels[ch]+"_"+WC1+"_"+WC2+".pdf"))
+    c.Print(os.path.join(plot_directory+"/Limits/", "Limit_2D_"+channels[ch]+"_"+WC1+"_"+WC2+".pdf"))
 
 
 Analysis.Tools.syncer.sync()

@@ -34,6 +34,9 @@ special_cuts = {
     "onZ2"   : "abs(Z2_mass-91.2)<10",
     "offZ1"    : "(abs(Z1_mass-91.2)>10)",
     "offZ2"  : "(!(abs(Z2_mass-91.2)<20))",
+    "trilep": "l1_pt>40&&l2_pt>20&&l3_pt>10",
+    "triMuon": "Sum$(lep_pt>40&&abs(lep_eta)<2.4&&lep_mediumId&&abs(lep_pdgId)==13)>=1 && Sum$(lep_pt>20&&abs(lep_eta)<2.4&&lep_mediumId&&abs(lep_pdgId)==13)>=2 && Sum$(lep_pt>10&&abs(lep_eta)<2.4&&lep_mediumId&&abs(lep_pdgId)==13)==3",
+    "vetoElec": "Sum$(lep_pt>10&&abs(lep_eta)<2.4&&abs(lep_pdgId)==11)==0",
   }
 
 continous_variables = [ ('ht','Sum$(JetGood_pt*(JetGood_pt>30&&abs(JetGood_eta)<2.4))'), ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1mass", "Z1_mass"), ("minDLmass", "minDLmass"), ("mT", "mT")]

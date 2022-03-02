@@ -4,6 +4,10 @@ from tWZ.Tools.helpers import getObjFromFile
 from Analysis.Tools.u_float import u_float
 from math import sqrt
 
+# 2016 Lumi Ratios
+lumiRatio2016_BCDEF = 19.695422959 / 35.921875595
+lumiRatio2016_GH    = 16.226452636 / 35.921875595
+
 ## maps for electrons ##
 maps_ele = {\
     2016: {\
@@ -85,4 +89,3 @@ class leptonSF:
 
         # Get the final scale-factor
         return sf.val+sf.sigma*sigma
-

@@ -10,6 +10,7 @@ python EFT_SYS.py  --noData --selection=trilepVL-minDLmass12-onZ1-onZ2-nLeptons4
 python EFT_SYS.py  --noData --selection=trilepVL-minDLmass12-onZ1-onZ2-nLeptons4 --twoD --sys=PU_DOWN
 python EFT_SYS.py  --noData --selection=trilepVL-minDLmass12-onZ1-onZ2-nLeptons4 --twoD --sys=JES_UP
 python EFT_SYS.py  --noData --selection=trilepVL-minDLmass12-onZ1-onZ2-nLeptons4 --twoD --sys=JES_DOWN
+
 # ttZ
 python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --twoD
 python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --twoD --sys=BTag_b_UP

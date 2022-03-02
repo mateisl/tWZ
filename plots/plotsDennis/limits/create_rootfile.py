@@ -11,7 +11,8 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--plotOnly',         action='store_true', default=False, help='only plot without re-creating root file?')
 argParser.add_argument('--noPlots',          action='store_true', default=False, help='No plots?')
-argParser.add_argument('--twoD',             action='store_true', default=False, help='No plots?')
+argParser.add_argument('--twoD',             action='store_true', default=False, help='2D limits?')
+argParser.add_argument('--noTWZ',            action='store_true', default=False, help='Keep tWZ at SM point?')
 args = argParser.parse_args()
 
 ################################################################################
@@ -56,8 +57,7 @@ def removeNegative(hist):
             hist.SetBinContent(bin, 0.0)
     return hist
 
-def setupHist(hist):
-    bins = [0, 60, 120, 240, 500, 1000]
+def setupHist(hist, bins):
     hist = hist.Rebin(len(bins)-1, "h", array.array('d',bins))
     hist = removeNegative(hist)
     return hist
@@ -67,21 +67,31 @@ def setupHist(hist):
 regions = ["WZ", "ZZ", "ttZ"]
 print 'Reading regions:', regions
 
+
+# binning 
+bins  = [0, 60, 120, 180, 240, 300, 400, 1000]
+
 # histname
 histname = "Z1_pt"
 print 'Reading Histogram:', histname
 
 # Directories
 dirs = {
-    "ZZ":  "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepVL-minDLmass12-onZ1-onZ2-nLeptons4/",
-    "WZ":  "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepT-minDLmass12-onZ1-deepjet0-met60/",
-    "ttZ": "/mnt/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepT-minDLmass12-onZ1-njet4p-deepjet1p/",
+    "ZZ":  "/groups/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepVL-minDLmass12-onZ1-onZ2-nLeptons4/",
+    "WZ":  "/groups/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepT-minDLmass12-onZ1-deepjet0-met60/",
+    "ttZ": "/groups/hephy/cms/dennis.schwarz/www/tWZ/plots/analysisPlots/EFT_SYS_v1_noData/Run2018/all/trilepT-minDLmass12-onZ1-njet3p-deepjet1p/",
 }
+outdir = "/groups/hephy/cms/dennis.schwarz/www/tWZ/CombineInput/"
+if args.noTWZ:
+    outdir = "/groups/hephy/cms/dennis.schwarz/www/tWZ/CombineInput_noTWZ"
 
 # Define backgrounds
 processes = ["ttZ", "WZ", "ZZ", "tWZ", "ttX", "tZq", "triBoson", "nonprompt"]
-backgrounds = ["tWZ", "ttX", "tZq", "triBoson", "nonprompt"]
-signals = ["ttZ", "WZ", "ZZ"]
+backgrounds = ["ttX", "tZq", "triBoson", "nonprompt"]
+signals = ["ttZ", "tWZ", "WZ", "ZZ"]
+if args.noTWZ:
+    backgrounds = ["tWZ","ttX", "tZq", "triBoson", "nonprompt"]
+    signals = ["ttZ", "WZ", "ZZ"]
 
 # Define Signal points
 signalnames = []
@@ -111,12 +121,12 @@ if not args.twoD:
 elif args.twoD:
     minval1  = -4.0
     maxval1  = 4.0
-    minval2  = -0.2
-    maxval2  = 0.2
+    minval2  = -4.0
+    maxval2  = 4.0
     Npoints1 = 21
     Npoints2 = 21
-    WC1 = 'cHq1Re11'
-    WC2 = 'cHq3Re11'
+    WC1 = 'cHq1Re1122'
+    WC2 = 'cHq1Re33'
     for i in range(Npoints1):
         value1 = minval1 + ((maxval1-minval1)/(Npoints1-1))*i
         for j in range(Npoints2):
@@ -147,9 +157,9 @@ if not args.plotOnly:
     for signalpoint in signalnames:
         print '--------------------------------------------------------'
         print 'Working on', signalpoint
-        outname = '/mnt/hephy/cms/dennis.schwarz/www/tWZ/limits/CombineInput_'+goodnames[signalpoint]+'.root'
+        outname = outdir+'/CombineInput_'+goodnames[signalpoint]+'.root'
         if args.twoD:
-            outname = '/mnt/hephy/cms/dennis.schwarz/www/tWZ/limits/CombineInput_2D_'+goodnames[signalpoint]+'.root'
+            outname = outdir+'/CombineInput_2D_'+goodnames[signalpoint]+'.root'
         outfile = ROOT.TFile(outname, 'recreate')
         outfile.cd()
         for region in regions:
@@ -162,9 +172,8 @@ if not args.plotOnly:
                     name = histname+"__"+process
                 elif process in signals:
                     name = histname+"__"+process+"__"+signalpoint
-
                 hist = file.Get(name)
-                # hist = setupHist(hist)
+                hist = setupHist(hist, bins)
                 hist.Write(process)
                 # Systematics
                 for sys in sysnames:
@@ -177,8 +186,8 @@ if not args.plotOnly:
                     outfile.cd(region+"__"+histname)
                     histUP   = fileUP.Get(name)
                     histDOWN = fileDOWN.Get(name)
-                    # histUP   = setupHist(histUP)
-                    # histDOWN = setupHist(histDOWN)
+                    histUP   = setupHist(histUP, bins)
+                    histDOWN = setupHist(histDOWN, bins)
                     histUP.Write(process+"__"+sys+"Up")
                     histDOWN.Write(process+"__"+sys+"Down")
 
@@ -197,7 +206,7 @@ if not args.plotOnly:
             for signal in signals:
                 hist = file.Get(histname+"__"+signal+"__"+SMpointName)
                 observed.Add(hist)
-            # observed = setupHist(observed)
+            observed = setupHist(observed, bins)
             observed = setPseudoDataErrors(observed)
             observed.Write("data_obs")
         outfile.cd()
@@ -214,8 +223,14 @@ if not args.noPlots and not args.twoD:
             SMpoint = 0
             EFTpoints = [-2, 2]
             if 'cHq3Re11' in WCname: EFTpoints = [-0.200, 0.200]
-            plotDistribution(None, region, 'Z1_pt', 'Z #it{p}_{T}', backgrounds, signals, WCname, SMpoint, EFTpoints, value_to_number, sysnames)
+            if args.noTWZ:
+                plotDistribution(outdir,"noTWZ", region, 'Z1_pt', 'Z #it{p}_{T}', backgrounds, signals, WCname, SMpoint, EFTpoints, value_to_number, sysnames)
+            else:
+                plotDistribution(outdir,None, region, 'Z1_pt', 'Z #it{p}_{T}', backgrounds, signals, WCname, SMpoint, EFTpoints, value_to_number, sysnames)
 
-        plotDistribution("SM", region, 'Z1_pt', 'Z #it{p}_{T}', backgrounds+signals_at_SM, [], WCname, SMpoint, [], value_to_number, sysnames)
-
+        if args.noTWZ:
+            plotDistribution(outdir,"noTWZ__SM", region, 'Z1_pt', 'Z #it{p}_{T}', backgrounds+signals_at_SM, [], WCname, SMpoint, [], value_to_number, sysnames)
+        else:
+            plotDistribution(outdir,"SM", region, 'Z1_pt', 'Z #it{p}_{T}', backgrounds+signals_at_SM, [], WCname, SMpoint, [], value_to_number, sysnames)
+            
     Analysis.Tools.syncer.sync()

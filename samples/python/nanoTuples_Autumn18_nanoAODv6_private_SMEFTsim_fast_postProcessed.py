@@ -19,13 +19,13 @@ dirs = {}
 
 dirs['WZ']               = ["WZTo3L1Nu_fast"]
 WZ = Sample.fromDirectory(name="WZ", treeName="Events", isData=False, color=color.WZ, texName="WZ", directory=make_dirs( dirs['WZ']))
-WZ.reweight_pkl = "/eos/vbc/user/robert.schoefbeck/gridpacks/flavor/vec/WZTo3L1Nu-vec_reweight_card.pkl" 
+WZ.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/flavor/vec/WZTo3L1Nu-vec_reweight_card.pkl" 
 
 dirs['ZZ']               = ["ZZ_fast"]
 ZZ = Sample.fromDirectory(name="ZZ", treeName="Events", isData=False, color=color.ZZ, texName="ZZ", directory=make_dirs( dirs['ZZ']))
-ZZ.reweight_pkl = "/eos/vbc/user/robert.schoefbeck/gridpacks/flavor/vec/ZZ-vec_reweight_card.pkl" 
+ZZ.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/flavor/vec/ZZ-vec_reweight_card.pkl" 
 
 dirs['ttZ01j']             = ["ttZ01j_fast"]
 ttZ01j         = Sample.fromDirectory(name="ttZ01j",      treeName="Events", isData=False, color=color.TTZ, texName="t#bar{t}Z", directory=make_dirs( dirs['ttZ01j']))
-ttZ01j.reweight_pkl = "/eos/vbc/user/robert.schoefbeck/gridpacks/flavor/vec/ttZ01j-vec_reweight_card.pkl" 
+ttZ01j.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/flavor/vec/ttZ01j-vec_reweight_card.pkl" 
 

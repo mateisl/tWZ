@@ -1,9 +1,9 @@
 #!/bin/bash
 npoints=50
-dir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data
+dir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data_noTWZ/
 submitdir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/submitScripts
 
-output=submitScript.sh
+output=submitScript_noTWZ.sh
 
 rm -f ${output}
 
@@ -27,7 +27,7 @@ for WCname in cHq1Re11 cHq1Re22 cHq1Re33 cHq3Re11 cHq3Re22 cHq3Re33
 do
   for region in 1 2 3 4 combined
   do
-    pythonoutput=${WCname}__${region}.py
+    pythonoutput=noTWZ__${WCname}__${region}.py
     echo "   - ${pythonoutput}"
     echo "python ${pythonoutput}" >> ${output}
     rm -f ${pythonoutput}

@@ -1,15 +1,15 @@
 #!/bin/bash
 npoints1=20 # put one less here because of bash loop logic
 npoints2=20
-dir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data_twoD/
+dir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data_twoD_triplet/
 submitdir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/submitScripts
 
-output=submitScript_twoD.sh
+output=submitScript_twoD_triplet.sh
 
 rm -f ${output}
 
-WC1=cHq1Re1122
-WC2=cHq1Re33
+WC1=cHq3Re1122
+WC2=cHq3Re33
 
 echo 'Combining combine cards...'
 cd ${dir}
@@ -29,7 +29,7 @@ cd ${submitdir}
 echo "Write python files in ${submitdir}"
 for region in 1 2 3 4 combined
 do
-  pythonoutput=twoD__${WC1}_${WC2}__${region}.py
+  pythonoutput=twoD_triplet__${WC1}_${WC2}__${region}.py
   echo "   - ${pythonoutput}"
   echo "python ${pythonoutput}" >> ${output}
   rm -f ${pythonoutput}

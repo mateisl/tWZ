@@ -28,6 +28,7 @@ from tWZ.Tools.cutInterpreter            import cutInterpreter
 from tWZ.Tools.objectSelection           import cbEleIdFlagGetter, vidNestedWPBitMapNamingList
 from tWZ.Tools.objectSelection           import lepString
 from tWZ.Tools.helpers                   import getCollection, cosThetaStarNew, getTheta, gettheta, getphi
+from tWZ.Tools.leptonSF_topMVA           import leptonSF_topMVA
 
 # Analysis
 from Analysis.Tools.helpers              import deltaPhi, deltaR
@@ -54,6 +55,7 @@ argParser.add_argument('--selection',      action='store', default='trilepVL-min
 argParser.add_argument('--sys',            action='store', default='central')
 argParser.add_argument('--nicePlots',      action='store_true', default=False)
 argParser.add_argument('--twoD',           action='store_true', default=False)
+argParser.add_argument('--triplet',        action='store_true', default=False)
 argParser.add_argument('--doTTbarReco',    action='store_true', default=False)
 args = argParser.parse_args()
 
@@ -72,7 +74,7 @@ variations = [
     "BTag_b_UP", "BTag_b_DOWN",
     "BTag_l_UP", "BTag_l_DOWN",
     "PU_UP", "PU_DOWN",
-    "JES_UP", "JES_DOWN"
+    "JES_UP", "JES_DOWN",
 ]
 
 jet_variations = {
@@ -247,6 +249,13 @@ if args.twoD:
     WC1a = 'cHq1Re11'
     WC1b = 'cHq1Re22'
     WC2  = 'cHq1Re33'
+    if args.triplet:
+        WC1  = 'cHq3Re1122'
+        WC1a = 'cHq3Re11'
+        WC1b = 'cHq3Re22'
+        WC2  = 'cHq3Re33'
+        minval1 = -0.2
+        minval1 = 0.2
     params = []
     for i in range(Npoints1):
         value1 = minval1 + ((maxval1-minval1)/(Npoints1-1))*i
@@ -305,6 +314,16 @@ if args.small:
         param['sample'].normalization = 1.
         param['sample'].reduceFiles( to = 1 )
         param['sample'].scale /= sample.normalization
+        
+################################################################################
+# Lepton SF
+LeptonWP = "tight"
+if "trilepVL" in args.selection:
+    LeptonWP = "VL"
+leptonSF16 = leptonSF_topMVA(2016, LeptonWP)
+leptonSF17 = leptonSF_topMVA(2017, LeptonWP)
+leptonSF18 = leptonSF_topMVA(2018, LeptonWP)
+
 ################################################################################
 # Text on the plots
 tex = ROOT.TLatex()
@@ -416,6 +435,35 @@ def getWlep( event ):
 ################################################################################
 # Define sequences
 sequence       = []
+
+def getLeptonSF(sample, event):
+    if sample.name == "data":
+        return 
+    SF = 1    
+    # Search for variation
+    sigma = 0
+    if args.sys == "LepID_UP":
+        sigma = 1
+    elif args.sys == "LepID_DOWN":
+        sigma = -1
+    # Go through the 3 leptons and multiply SF
+    idx1 = event.l1_index
+    idx2 = event.l2_index
+    idx3 = event.l3_index
+    for i in [idx1, idx2, idx3]:
+        pdgId = event.lep_pdgId[i]
+        eta = event.lep_eta[i]
+        if abs(pdgId)==11:
+            eta+=event.Electron_deltaEtaSC[event.lep_eleIndex[i]]
+        pt = event.lep_pt[i]
+        if event.year == 2016:
+            SF *= leptonSF16.getSF(pdgId, pt, eta, "sys", sigma )
+        elif event.year == 2017:
+            SF *= leptonSF17.getSF(pdgId, pt, eta, "sys", sigma )
+        elif event.year == 2018:
+            SF *= leptonSF18.getSF(pdgId, pt, eta, "sys", sigma )
+    event.reweightLeptonMVA = SF
+sequence.append( getLeptonSF )
 
 def getMlb(sample, event):
     lepton = ROOT.TLorentzVector()
@@ -577,7 +625,7 @@ def getTTbarReco( event, sample ):
         lepton.SetPtEtaPhiM(event.lep_pt[event.nonZ1_l1_index], event.lep_eta[event.nonZ1_l1_index], event.lep_phi[event.nonZ1_l1_index], 0)
         met.SetPtEtaPhiM(event.met_pt, 0, event.met_phi, 0)
         jets = []
-        Njetsmax = 4
+        Njetsmax = 6
         if event.nJetGood < Njetsmax:
             Njetsmax = event.nJetGood
         for i in range(Njetsmax):
@@ -611,7 +659,7 @@ read_variables = [
     "Z1_l1_index/I", "Z1_l2_index/I", "nonZ1_l1_index/I", "nonZ1_l2_index/I",
     "Z1_phi/F", "Z1_pt/F", "Z1_mass/F", "Z1_cosThetaStar/F", "Z1_eta/F", "Z1_lldPhi/F", "Z1_lldR/F",
     "Muon[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,segmentComp/F,nStations/I,nTrackerLayers/I,mediumId/O,tightId/O,isPFcand/B,isTracker/B,isGlobal/B]",
-    "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
+    "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTOP/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I,deltaEtaSC/F]",
 ]
 
 if "nLeptons4" in args.selection:
@@ -621,7 +669,7 @@ if "nLeptons4" in args.selection:
     read_variables.append("Z2_mass/F")
 
 read_variables_MC = [
-    "weight/F", 'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightTrigger/F',
+    "weight/F", 'reweightBTag_SF/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightTrigger/F',
     "genZ1_pt/F", "genZ1_eta/F", "genZ1_phi/F",
     "Muon[genPartFlav/I]",
     VectorTreeVariable.fromString( "GenPart[pt/F,mass/F,phi/F,eta/F,pdgId/I,genPartIdxMother/I,status/I,statusFlags/I]", nMax=1000),
@@ -706,7 +754,7 @@ for i_mode, mode in enumerate(allModes):
         read_variables_MC += new_variables
         read_variables    += new_variables
 
-    weightnames = ['weight', 'reweightBTag_SF', 'reweightPU', 'reweightL1Prefire' , 'reweightTrigger'] # 'reweightLeptonSF'
+    weightnames = ['weight', 'reweightBTag_SF', 'reweightPU', 'reweightL1Prefire' , 'reweightTrigger', 'reweightLeptonMVA']
     sys_weights = {
         "BTag_b_UP"     : ('reweightBTag_SF','reweightBTag_SF_b_Up'),
         "BTag_b_DOWN"   : ('reweightBTag_SF','reweightBTag_SF_b_Down'),
@@ -718,6 +766,7 @@ for i_mode, mode in enumerate(allModes):
         'LepID_DOWN'    : ('reweightLeptonSF','reweightLeptonSFDown'),
         'PU_UP'         : ('reweightPU','reweightPUUp'),
         'PU_DOWN'       : ('reweightPU','reweightPUDown'),
+        # For lepton SF this is set in the sequence
     }
 
     if args.sys in sys_weights:
@@ -787,14 +836,14 @@ for i_mode, mode in enumerate(allModes):
         binning=[25,0,500],
     ))
     
-        
-    plots.append(Plot(
-        name = "minimax",
-        texX = 'minimax', texY = 'Number of Events',
-        attribute = lambda event, sample: event.minimax,
-        binning=[40,0,600],
-        addOverFlowBin='upper',
-    ))
+    if args.doTTbarReco:
+        plots.append(Plot(
+            name = "minimax",
+            texX = 'minimax', texY = 'Number of Events',
+            attribute = lambda event, sample: event.minimax,
+            binning=[40,0,600],
+            addOverFlowBin='upper',
+        ))
         
     if args.nicePlots:
         plots.append(Plot(
@@ -860,29 +909,30 @@ for i_mode, mode in enumerate(allModes):
             binning=[20, -pi, pi],
         ))
 
-        plots.append(Plot(
-            name = "m_toplep",
-            texX = 'm_{lep. top}', texY = 'Number of Events',
-            attribute = lambda event, sample: event.mtoplep,
-            binning=[40,0,400],
-            addOverFlowBin='upper',
-        ))
-        
-        plots.append(Plot(
-            name = "m_tophad",
-            texX = 'm_{had. top}', texY = 'Number of Events',
-            attribute = lambda event, sample: event.mtophad,
-            binning=[40,0,400],
-            addOverFlowBin='upper',
-        ))
-        
-        plots.append(Plot(
-            name = "chi2",
-            texX = '#chi^{2}', texY = 'Number of Events',
-            attribute = lambda event, sample: event.chi2,
-            binning=[40,0,1000],
-            addOverFlowBin='upper',
-        ))        
+        if args.doTTbarReco:
+            plots.append(Plot(
+                name = "m_toplep",
+                texX = 'm_{lep. top}', texY = 'Number of Events',
+                attribute = lambda event, sample: event.mtoplep,
+                binning=[40,0,400],
+                addOverFlowBin='upper',
+            ))
+            
+            plots.append(Plot(
+                name = "m_tophad",
+                texX = 'm_{had. top}', texY = 'Number of Events',
+                attribute = lambda event, sample: event.mtophad,
+                binning=[40,0,400],
+                addOverFlowBin='upper',
+            ))
+            
+            plots.append(Plot(
+                name = "chi2",
+                texX = '#chi^{2}', texY = 'Number of Events',
+                attribute = lambda event, sample: event.chi2,
+                binning=[40,0,1000],
+                addOverFlowBin='upper',
+            ))        
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 
@@ -985,7 +1035,7 @@ for plot in allPlots['all']:
 if args.nicePlots:
     drawPlots(allPlots['all'], "all", dataMCScale)
 
-plots_root = ["Z1_pt", "M3l", "minimax"]
+plots_root = ["Z1_pt", "M3l"]
 if not args.nicePlots:
     # Write Result Hist in root file
     plot_dir = os.path.join(plot_directory, 'analysisPlots', args.plot_directory, args.era, "all", args.selection)
@@ -995,7 +1045,10 @@ if not args.nicePlots:
         except:
             print 'Could not crete', plot_dir
     outfilename = plot_dir+'/Results.root'
-    if args.twoD: outfilename = plot_dir+'/Results_twoD.root'
+    if args.twoD: 
+        outfilename = plot_dir+'/Results_twoD.root'
+        if args.triplet:
+            outfilename = plot_dir+'/Results_twoD_triplet.root'
     outfile = ROOT.TFile(outfilename, 'recreate')
     outfile.cd()
     for plot in allPlots['all']:
@@ -1019,9 +1072,15 @@ if not args.nicePlots:
                     n_noneft = len(noneftidxs)
                     if idx not in noneftidxs:
                         h.Write(plot.name+"__"+process+"__"+params[idx-n_noneft]['legendText'])
-                        if "=0.0000" in params[idx-n_noneft]['legendText']:
-                            h_SM = h.Clone()
-                            h_SM.Write(plot.name+"__"+process)
+                        if args.twoD:
+                            string = params[idx-n_noneft]['legendText']
+                            if string.count('=0.0000') == 2:
+                                h_SM = h.Clone()
+                                h_SM.Write(plot.name+"__"+process)
+                        else:
+                            if "=0.0000" in params[idx-n_noneft]['legendText']:
+                                h_SM = h.Clone()
+                                h_SM.Write(plot.name+"__"+process)
                     else:
                         h.Write(plot.name+"__"+process)
     outfile.Close()

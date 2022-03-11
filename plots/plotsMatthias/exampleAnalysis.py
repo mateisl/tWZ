@@ -116,7 +116,7 @@ def buildZ( event, sample ):
 
     mZ = 91.2
     Z1 = lepton1+lepton2
-    Z2 = lepton2+lepton3
+    Z2 = lepton1+lepton3
     Z3 = lepton2+lepton3
     Zmass = float('nan')
     mindiff = 1000
@@ -128,6 +128,7 @@ def buildZ( event, sample ):
     event.Zmass = Zmass
 
 sequence.append( buildZ )
+
 
 ################################################################################
 # Read variables

@@ -5,24 +5,43 @@ import ctypes
 import array
 import Analysis.Tools.syncer
 from tWZ.Tools.user                      import plot_directory
+import argparse
 
+WCnames = {
+    "cHq1Re33"     : "C_{#varphi Q}^{(1)}",
+    "cHq1Re1122"   : "C_{#varphi q}^{(1)}",
+    "cHq3Re33"     : "C_{#varphi Q}^{(1)}",
+    "cHq3Re1122"   : "C_{#varphi q}^{(3)}",
+}
 
 ################################################################################
 ################################################################################
 ################################################################################
+
+argParser = argparse.ArgumentParser(description = "Argument parser")
+argParser.add_argument('--triplet',          action='store_true', default=False)
+args = argParser.parse_args()
+
 
 dir = "/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data_twoD/"
+if args.triplet:
+    dir = "/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data_twoD_triplet/"
+    
 prefix = "higgsCombine.part3E_"
 suffix = ".MultiDimFit.mH120.root"
 
 WC1 = "cHq1Re1122"
 WC2 = "cHq1Re33"
+if args.triplet:
+    WC1 = "cHq3Re1122"
+    WC2 = "cHq3Re33"
 
 channels = {
-"1": "ZZ",
-"2": "WZ",
-"3": "ttZ",
-"combined": "combined"
+    "1": "ZZ",
+    "2": "WZ",
+    "3": "ttZ1",
+    "4": "ttZ2",
+    "combined": "combined"
 }
 
 
@@ -39,6 +58,9 @@ for ch in channels:
     maxval2 = 4.0
     WC1vals = []
     WC2vals = []
+    if args.triplet:
+        minval1 = -0.2
+        maxval1 = 0.2
     for i in range(Npoints1):
         value1 = minval1 + ((maxval1-minval1)/(Npoints1-1))*i
         for j in range(Npoints2):
@@ -73,7 +95,9 @@ for ch in channels:
     ROOT.gStyle.SetPadTickX(1)
     ROOT.gStyle.SetPadTickY(1)
     ROOT.gPad.SetRightMargin(0.2)
-    ROOT.gPad.SetLeftMargin(0.1)
+    ROOT.gPad.SetLeftMargin(0.12)
+    ROOT.gPad.SetBottomMargin(0.12)
+    
 
 
     ############################################################################
@@ -103,11 +127,26 @@ for ch in channels:
     # Start plotting
     hist.Draw("colz")
     hist.SetTitle("")
-    hist.GetXaxis().SetTitle(WC1)
-    hist.GetYaxis().SetTitle(WC2)
+    if WC1 in WCnames.keys():
+        WC1name = WCnames[WC1]
+    else:
+        WC1name = WC1
+    if WC2 in WCnames.keys():
+        WC2name = WCnames[WC2]
+    else:
+        WC2name = WC2    
+    hist.GetXaxis().SetTitle(WC1name)
+    hist.GetYaxis().SetTitle(WC2name)
     hist.GetZaxis().SetTitle("-2 #Delta ln L")
 
-    hist.GetYaxis().SetRangeUser(-4.0, 4.0)
+    titlesize = 0.05
+    hist.GetXaxis().SetTitleSize(titlesize)
+    hist.GetYaxis().SetTitleSize(titlesize)
+    hist.GetZaxis().SetTitleSize(titlesize)
+
+    hist.GetXaxis().SetRangeUser(minval1, maxval1)
+    hist.GetYaxis().SetRangeUser(minval2, maxval2)
+        
     hist.GetZaxis().SetTitleOffset(1.3)
 
 
@@ -144,7 +183,7 @@ for ch in channels:
 
     ############################################################################
     # Legend
-    leg = ROOT.TLegend(.5, .6, .75, .85)
+    leg = ROOT.TLegend(.52, .62, .77, .87)
     leg.AddEntry( BFpoint, "Best fit","p")
     leg.AddEntry( SMpoint, "SM","p")
     leg.AddEntry( cont_p1.At(0), "68%s CL"%"%", "l")
@@ -152,7 +191,41 @@ for ch in channels:
     leg.Draw()
 
     ROOT.gPad.RedrawAxis()
-    c.Print(os.path.join(plot_directory+"/Limits/", "Limit_2D_"+channels[ch]+"_"+WC1+"_"+WC2+".pdf"))
+    
+    ############################################################################
+    # CMS logos
+    cmstext = ROOT.TLatex(3.5, 24, "CMS")
+    cmstext.SetNDC()
+    cmstext.SetTextAlign(13)
+    cmstext.SetTextFont(62)
+    cmstext.SetTextSize(0.056)
+    cmstext.SetX(0.12)
+    cmstext.SetY(0.945)
+    cmstext.Draw()
+
+    prelimtext = ROOT.TLatex(3.5, 24, "Work in progress")
+    prelimtext.SetNDC()
+    prelimtext.SetTextAlign(13)
+    prelimtext.SetX(0.225)
+    prelimtext.SetY(0.93)
+    prelimtext.SetTextFont(52)
+    prelimtext.SetTextSize(0.035)
+    prelimtext.Draw()
+
+    lumi = "60 fb^{-1} (13 TeV)"
+    lumitext = ROOT.TLatex(3.5, 24, lumi)
+    lumitext.SetNDC()
+    lumitext.SetTextAlign(33)
+    lumitext.SetTextFont(42)
+    lumitext.SetX(0.8)
+    lumitext.SetY(0.943)
+    lumitext.SetTextSize(0.04)
+    lumitext.Draw()
+
+    outname = os.path.join(plot_directory+"/Limits/", "Limit_2D_"+channels[ch]+"_"+WC1+"_"+WC2+".pdf")
+    if args.triplet:
+        outname = os.path.join(plot_directory+"/Limits/", "Limit_2D_triplet_"+channels[ch]+"_"+WC1+"_"+WC2+".pdf")
+    c.Print(outname)
 
 
 Analysis.Tools.syncer.sync()

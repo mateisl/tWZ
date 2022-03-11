@@ -78,7 +78,8 @@ WCnames = ["cHq1Re11", "cHq1Re22", "cHq1Re33", "cHq3Re11", "cHq3Re22", "cHq3Re33
 channels = {
 "1": "ZZ",
 "2": "WZ",
-"3": "ttZ",
+"3": "ttZ1",
+"4": "ttZ2",
 "combined": "combined"
 }
 
@@ -245,7 +246,7 @@ for WCname in WCnames:
         
     ############################################################################
     # Compare Likelihoods of different channels
-    if likelihoods.has_key('combined') and likelihoods.has_key('ttZ') and likelihoods.has_key('ZZ') and likelihoods.has_key('WZ'):
+    if likelihoods.has_key('combined') and likelihoods.has_key('ttZ1') and likelihoods.has_key('ttZ2') and likelihoods.has_key('ZZ') and likelihoods.has_key('WZ'):
         c=ROOT.TCanvas()
         ROOT.gStyle.SetLegendBorderSize(0)
         ROOT.gStyle.SetPadTickX(1)
@@ -261,9 +262,12 @@ for WCname in WCnames:
         likelihoods["combined"].SetTitle('')
         likelihoods["combined"].GetXaxis().SetTitle(WCname)
         likelihoods["combined"].GetYaxis().SetTitle('-2 #Delta ln L')
-        likelihoods["ttZ"].SetLineWidth(2)
-        likelihoods["ttZ"].SetLineColor(ROOT.kAzure+4)
-        likelihoods["ttZ"].Draw('L SAME')
+        likelihoods["ttZ1"].SetLineWidth(2)
+        likelihoods["ttZ1"].SetLineColor(ROOT.kAzure+4)
+        likelihoods["ttZ1"].Draw('L SAME')
+        likelihoods["ttZ2"].SetLineWidth(2)
+        likelihoods["ttZ2"].SetLineColor(ROOT.kBlue)
+        likelihoods["ttZ2"].Draw('L SAME')
         likelihoods["ZZ"].SetLineWidth(2)
         likelihoods["ZZ"].SetLineColor(ROOT.kGreen+3)
         likelihoods["ZZ"].Draw('L SAME')
@@ -289,7 +293,8 @@ for WCname in WCnames:
 
         leg = ROOT.TLegend(.5, .6, .85, .85)
         leg.AddEntry(likelihoods["combined"], "Combination", "l")
-        leg.AddEntry(likelihoods["ttZ"], "ttZ", "l")
+        leg.AddEntry(likelihoods["ttZ1"], "ttZ 3 jets", "l")
+        leg.AddEntry(likelihoods["ttZ2"], "ttZ >= 4 jets", "l")
         leg.AddEntry(likelihoods["ZZ"], "ZZ", "l")
         leg.AddEntry(likelihoods["WZ"], "WZ", "l")
         leg.Draw()

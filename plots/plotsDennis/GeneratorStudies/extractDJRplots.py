@@ -42,6 +42,9 @@ files_WZ = [
 ]
 
 files_ZZ = [
+    ("djr_ZZ_q10_20.root", "DJR_ZZ_q10_20","xqcut=10, qCut=20"),
+    ("djr_ZZ_q10_25.root", "DJR_ZZ_q10_25","xqcut=10, qCut=25"),
+    ("djr_ZZ_q10_30.root", "DJR_ZZ_q10_30","xqcut=10, qCut=30"),
     ("djr_ZZ_q20_25.root", "DJR_ZZ_q20_25","xqcut=20, qCut=25"),
     ("djr_ZZ_q20_30.root", "DJR_ZZ_q20_30","xqcut=20, qCut=30"),
     ("djr_ZZ_q20_35.root", "DJR_ZZ_q20_35","xqcut=20, qCut=35"),

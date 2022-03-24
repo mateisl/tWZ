@@ -5,7 +5,13 @@ submitdir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards
 
 output=submitScript.sh
 
-rm -f ${output}
+if [ -d "$submitdir" ]; then
+    echo "[ERROR] $submitdir already exists, delete work dir before executing this script"
+    return
+else
+    echo "Creating submit directory $submitdir..."
+    mkdir $submitdir  
+fi
 
 # First combine regions to a final card and name region 'combined'
 echo 'Combining combine cards...'

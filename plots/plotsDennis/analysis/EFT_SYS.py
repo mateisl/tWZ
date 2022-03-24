@@ -183,6 +183,7 @@ elif args.era == "RunII":
 # WeightInfo
 eftweights = []
 for sample in samples_eft:
+    print "Reading weight function for", sample.name
     w = WeightInfo(sample.reweight_pkl)
     w.set_order(2)
     eftweights.append(w)
@@ -244,7 +245,7 @@ if args.twoD:
     minval2  = -4.0
     maxval2  = 4.0
     Npoints1 = 21
-    Npoints2 = 21
+    Npoints2 = 21 
     WC1  = 'cHq1Re1122'
     WC1a = 'cHq1Re11'
     WC1b = 'cHq1Re22'
@@ -255,7 +256,7 @@ if args.twoD:
         WC1b = 'cHq3Re22'
         WC2  = 'cHq3Re33'
         minval1 = -0.2
-        minval1 = 0.2
+        maxval1 = 0.2
     params = []
     for i in range(Npoints1):
         value1 = minval1 + ((maxval1-minval1)/(Npoints1-1))*i
@@ -464,6 +465,10 @@ def getLeptonSF(sample, event):
             SF *= leptonSF18.getSF(pdgId, pt, eta, "sys", sigma )
     event.reweightLeptonMVA = SF
 sequence.append( getLeptonSF )
+
+# def getSYSweight(sample, event):
+#     print event.LHEScaleWeight[0], event.LHEScaleWeight[4], event.LHEScaleWeight[8]
+# sequence.append( getSYSweight )
 
 def getMlb(sample, event):
     lepton = ROOT.TLorentzVector()
@@ -674,6 +679,7 @@ read_variables_MC = [
     "Muon[genPartFlav/I]",
     VectorTreeVariable.fromString( "GenPart[pt/F,mass/F,phi/F,eta/F,pdgId/I,genPartIdxMother/I,status/I,statusFlags/I]", nMax=1000),
     'nGenPart/I',
+    # 'LHEScaleWeight/F',
 ]
 
 read_variables_eft = [

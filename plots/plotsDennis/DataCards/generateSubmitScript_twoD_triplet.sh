@@ -2,11 +2,17 @@
 npoints1=20 # put one less here because of bash loop logic
 npoints2=20
 dir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data_twoD_triplet/
-submitdir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/submitScripts
+submitdir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/submitScripts_twoD_triplet
 
-output=submitScript_twoD_triplet.sh
+output=submitScript.sh
 
-rm -f ${output}
+if [ -d "$submitdir" ]; then
+    echo "[ERROR] $submitdir already exists, delete work dir before executing this script"
+    return
+else
+    echo "Creating submit directory $submitdir..."
+    mkdir $submitdir  
+fi
 
 WC1=cHq3Re1122
 WC2=cHq3Re33

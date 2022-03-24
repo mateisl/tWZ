@@ -8,10 +8,10 @@ from tWZ.Tools.user                      import plot_directory
 import argparse
 
 WCnames = {
-    "cHq1Re33"     : "C_{#varphi Q}^{(1)}",
-    "cHq1Re1122"   : "C_{#varphi q}^{(1)}",
-    "cHq3Re33"     : "C_{#varphi Q}^{(1)}",
-    "cHq3Re1122"   : "C_{#varphi q}^{(3)}",
+    "cHq1Re33"     : "C_{#varphi q}^{(1)(33)}",
+    "cHq1Re1122"   : "C_{#varphi q}^{(1)(11+22)}",
+    "cHq3Re33"     : "C_{#varphi q}^{(3)(33)}",
+    "cHq3Re1122"   : "C_{#varphi q}^{(3)(11+22)}",
 }
 
 ################################################################################
@@ -68,7 +68,7 @@ for ch in channels:
             file = ROOT.TFile(dir+prefix+str(i)+"_"+str(j)+"_"+ch+"_"+WC1+"_"+WC2+suffix)
             tree = file.Get("limit")
             if tree.GetEntry(0)<=0:
-                print 'EMPTY TREE, leave q unchanged...'
+                print 'EMPTY TREE, leave q unchanged...', value1, value2
                 qvals.append(q)
                 WC1vals.append(value1)
                 WC2vals.append(value2)
@@ -77,6 +77,7 @@ for ch in channels:
                 qvals.append(q)
                 WC1vals.append(value1)
                 WC2vals.append(value2)
+                # print value1, value2, q
                 if q<minqval:
                     minqval = q
                     minq_point1 = value1
@@ -85,6 +86,9 @@ for ch in channels:
     qdiff = []
     for q in qvals:
         qdiff.append(q-minqval)
+        
+
+    
 
     graph = ROOT.TGraph2D( Npoints1*Npoints2, array.array('d',WC1vals), array.array('d',WC2vals), array.array('d',qdiff) )
 
@@ -102,8 +106,8 @@ for ch in channels:
 
     ############################################################################
     # Convert to 2D hist and
-    nxbins = Npoints1*2
-    nybins = Npoints2*2
+    nxbins = Npoints1
+    nybins = Npoints2
     hist = graph.GetHistogram().Clone()
     graph.SetNpx( nxbins )
     graph.SetNpy( nybins )

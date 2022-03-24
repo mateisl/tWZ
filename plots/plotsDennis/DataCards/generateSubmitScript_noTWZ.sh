@@ -1,11 +1,17 @@
 #!/bin/bash
 npoints=50
 dir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/data_noTWZ/
-submitdir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/submitScripts
+submitdir=/users/dennis.schwarz/CMSSW_10_6_0/src/tWZ/plots/plotsDennis/DataCards/submitScripts_noTWZ
 
-output=submitScript_noTWZ.sh
+output=submitScript.sh
 
-rm -f ${output}
+if [ -d "$submitdir" ]; then
+    echo "[ERROR] $submitdir already exists, delete work dir before executing this script"
+    return
+else
+    echo "Creating submit directory $submitdir..."
+    mkdir $submitdir  
+fi
 
 # First combine regions to a final card and name region 'combined'
 echo 'Combining combine cards...'

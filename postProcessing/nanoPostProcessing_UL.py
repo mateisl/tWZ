@@ -21,16 +21,16 @@ import tWZ.Tools.user as user
 
 # Tools for systematics
 from tWZ.Tools.helpers             import closestOSDLMassToMZ, deltaR, deltaPhi, bestDRMatchInCollection, nonEmptyFile, getSortedZCandidates, cosThetaStar, m3, getMinDLMass
-from tWZ.Tools.objectSelection     import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons, isBJet, getGoodPhotons, getGenPartsAll, getJets, getPhotons, filterGenPhotons, genPhotonSelector, genLepFromZ, mvaTopWP
-from tWZ.Tools.objectSelection     import getGenZs, getGenPhoton
+from tWZ.Tools.objectSelection     import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons, isBJet, getGenPartsAll, getJets, genLepFromZ, mvaTopWP
+from tWZ.Tools.objectSelection     import getGenZs
 
-from tWZ.Tools.overlapRemovalTTG   import photonFromTopDecay, hasMesonMother, getParentIds, isIsolatedPhoton, getPhotonCategory
+from tWZ.Tools.overlapRemovalTTG   import hasMesonMother, getParentIds
 from tWZ.Tools.triggerEfficiency   import triggerEfficiency
 from tWZ.Tools.leptonSF            import leptonSF as leptonSF_
 from tWZ.Tools.mcTools import pdgToName, GenSearch, B_mesons, D_mesons, B_mesons_abs, D_mesons_abs
 genSearch = GenSearch()
 
-from Analysis.Tools.metFilters               import getFilterCut
+from tWZ.Tools.metFiltersUL               import getFilterCut
 from Analysis.Tools.puProfileDirDB           import puProfile
 from Analysis.Tools.LeptonTrackingEfficiency import LeptonTrackingEfficiency
 from Analysis.Tools.helpers                  import checkRootFile, deepCheckRootFile, deepCheckWeight, dRCleaning
@@ -59,7 +59,6 @@ def get_parser():
     argParser.add_argument('--overwriteJEC',action='store',                               default=None,                                 help="Overwrite JEC?" )
     argParser.add_argument('--overwrite',   action='store_true',                                                                        help="Overwrite existing output files, bool flag set to True  if used" )
     argParser.add_argument('--small',       action='store_true',                                                                        help="Run the file on a small sample (for test purpose), bool flag set to True if used" )
-    argParser.add_argument('--flagTTGamma', action='store_true',                                                                        help="Is ttgamma?" )
     argParser.add_argument('--flagTTBar',   action='store_true',                                                                        help="Is ttbar?" )
     argParser.add_argument('--doCRReweighting',             action='store_true',                                                        help="color reconnection reweighting?")
     argParser.add_argument('--triggerSelection',            action='store_true',                                                        help="Trigger selection?" )
@@ -79,7 +78,7 @@ def get_parser():
 
 options = get_parser().parse_args()
 
-if year not in [ 'UL2016', 'UL2016_preVFP', 'UL2017', 'UL2018' ]:
+if options.year not in [ 'UL2016', 'UL2016_preVFP', 'UL2017', 'UL2018' ]:
     raise Exception("Year %s not known"%year)
 yearint = 2018 
 if "2016" in options.year: 
@@ -117,7 +116,6 @@ isTriLep        = options.skim.lower().count('trilep') > 0
 isSingleLep     = options.skim.lower().count('singlelep') > 0
 isSmall         = options.skim.lower().count('small') > 0
 isInclusive     = options.skim.lower().count('inclusive') > 0
-isPhoton        = options.skim.lower().count('photon')
 
 # Skim condition
 skimConds = []
@@ -131,9 +129,6 @@ elif isTriLep:
     skimConds.append( "Sum$(Electron_pt>20&&abs(Electron_eta)&&Electron_pfRelIso03_all<0.4) + Sum$(Muon_pt>20&&abs(Muon_eta)<2.5&&Muon_pfRelIso03_all<0.4)>=2 && Sum$(Electron_pt>10&&abs(Electron_eta)<2.5)+Sum$(Muon_pt>10&&abs(Muon_eta)<2.5)>=3" )
 elif isSingleLep:
     skimConds.append( "Sum$(Electron_pt>20&&abs(Electron_eta)<2.5) + Sum$(Muon_pt>20&&abs(Muon_eta)<2.5)>=1" )
-
-if isPhoton:
-    skimConds.append( "Sum$(Photon_pt>20)>=1" )
 
 if isInclusive:
     skimConds.append('(1)')
@@ -153,7 +148,7 @@ if options.year == "UL2016":
     # allSamples = mcSamples + dataSamples
     allSamples = mcSamples
 elif options.year == "UL2016_preVFP": #AODAPV samples
-    # THIS HAS YET TO BE IMPLEMENTED
+    from Samples.nanoAOD.UL16_nanoAODAPVv9         import allSamples as mcSamples
     # allSamples = mcSamples + dataSamples
     allSamples = mcSamples
 elif options.year == "UL2017":
@@ -185,8 +180,7 @@ assert isMC or len(samples)==1, "Don't concatenate data samples"
 xSection = samples[0].xSection if isMC else None
 
 # apply MET filter
-## TODO: CHECK THIS
-skimConds.append( getFilterCut(yearint, isData=isData, ignoreJSON=True, skipWeight=True) )
+skimConds.append( getFilterCut(options.year, isData=isData, ignoreJSON=True, skipWeight=True, skipECalFilter=True) )
 
 triggerEff          = triggerEfficiency(yearint)
 
@@ -216,14 +210,6 @@ if options.reduceSizeBy > 1:
     sample.name += "_redBy%s"%options.reduceSizeBy
     sample.normalization = sample.getYieldFromDraw(weightString="genWeight")['val']
     logger.info("New normalization: %s", sample.normalization)
-
-################################################################################
-# PU reweighting
-if isMC and hasattr(r, "Pileup_nTrueInt"):
-from Analysis.Tools.puWeightsUL			import getPUReweight
-    event.reweightPU     = getPUReweight( r.Pileup_nTrueInt, year=options.year, weight="nominal") 
-    event.reweightPUDown = getPUReweight( r.Pileup_nTrueInt, year=options.year, weight="down" )
-    event.reweightPUUp   = getPUReweight( r.Pileup_nTrueInt, year=options.year, weight="up" )
 
 ################################################################################
 options.skim = options.skim + '_small' if options.small else options.skim
@@ -299,7 +285,7 @@ btagEff = BTagEfficiency( fastSim = False, year=yearint, tagger=b_tagger )
 
 ################################################################################
 # tmp_output_directory
-tmp_output_directory  = os.path.join( user.postprocessing_tmp_directory, "%s_%i_%s_%s_%s"%(options.processingEra, options.year, options.skim, sample.name, str(uuid.uuid3(uuid.NAMESPACE_OID, sample.name))))
+tmp_output_directory  = os.path.join( user.postprocessing_tmp_directory, "%s_%s_%s_%s_%s"%(options.processingEra, options.year, options.skim, sample.name, str(uuid.uuid3(uuid.NAMESPACE_OID, sample.name))))
 if os.path.exists(tmp_output_directory) and options.overwrite:
     if options.nJobs > 1:
         logger.warning( "NOT removing directory %s because nJobs = %i", tmp_output_directory, options.nJobs )
@@ -417,7 +403,7 @@ if options.year == "2017":
     branchKeepStrings_DATAMC += [ "METFixEE2017_*" ]
 
 #branches to be kept for MC samples only
-branchKeepStrings_MC = [ "Generator_*", "GenPart_*", "nGenPart", "genWeight", "Pileup_nTrueInt","GenMET_*", "nISR", "nGenJet", "GenJet_*", "genTtbarId"]
+branchKeepStrings_MC = [ "Generator_*", "GenPart_*", "nGenPart", "genWeight", "Pileup_nTrueInt","GenMET_*", "nGenJet", "GenJet_*", "genTtbarId"]
 #branchKeepStrings_MC.extend([ "*LHEScaleWeight", "*LHEPdfWeight", "LHEWeight_originalXWGTUP"])
 
 #branches to be kept for data only
@@ -460,9 +446,6 @@ else:
         read_variables += map(TreeVariable.fromString, [ 'MET_pt_jesTotalUp/F', 'MET_pt_jesTotalDown/F', 'MET_pt_jerUp/F', 'MET_pt_jerDown/F', 'MET_pt_unclustEnDown/F', 'MET_pt_unclustEnUp/F', 'MET_phi_jesTotalUp/F', 'MET_phi_jesTotalDown/F', 'MET_phi_jerUp/F', 'MET_phi_jerDown/F', 'MET_phi_unclustEnDown/F', 'MET_phi_unclustEnUp/F', 'MET_pt_jer/F', 'MET_phi_jer/F'])
 if isMC:
     read_variables += map(TreeVariable.fromString, [ 'GenMET_pt/F', 'GenMET_phi/F' ])
-
-read_variables += [ TreeVariable.fromString('nPhoton/I'),
-                    VectorTreeVariable.fromString('Photon[pt/F,eta/F,phi/F,mass/F,cutBased/I,pdgId/I]') if (options.year == "2016") else VectorTreeVariable.fromString('Photon[pt/F,eta/F,phi/F,mass/F,cutBasedBitmap/I,pdgId/I]') ]
 
 new_variables = [ 'weight/F', 'year/I']
 
@@ -522,9 +505,6 @@ if isTriLep or isDiLep:
          ] )
 if isTriLep:
     new_variables.extend( ['l3_pt/F', 'l3_mvaTOP/F', 'l3_mvaTOPWP/I', 'l3_eta/F', 'l3_phi/F', 'l3_pdgId/I', 'l3_index/I', 'l3_jetPtRelv2/F', 'l3_jetPtRatiov2/F', 'l3_miniRelIso/F', 'l3_relIso03/F', 'l3_dxy/F', 'l3_dz/F', 'l3_mIsoWP/I', 'l3_eleIndex/I', 'l3_muIndex/I' ] )
-new_variables.extend( ['nPhotonGood/I','photon_pt/F','photon_eta/F','photon_phi/F','photon_idCutBased/I'] )
-if isMC: new_variables.extend( ['photon_genPt/F', 'photon_genEta/F', 'genZ_mass/F'] )
-new_variables.extend( ['photonJetdR/F','photonLepdR/F'] )
 
 if addReweights:
 #    sample.chain.SetAlias("nLHEReweighting",       "nLHEReweightingWeight")
@@ -564,18 +544,6 @@ if not options.skipNanoTools:
 
     logger.info("Preparing nanoAOD postprocessing")
     logger.info("Will put files into directory %s", tmp_output_directory)
-    # year specific JECs
-    if options.year == 2016:
-        JER                 = "Summer16_25nsV1_MC"          if not sample.isData else "Summer16_25nsV1_DATA"
-        JERera              = "Summer16_25nsV1"
-
-    elif options.year == 2017:
-        JER                 = "Fall17_V3_MC"                if not sample.isData else "Fall17_V3_DATA"
-        JERera              = "Fall17_V3"
-
-    elif options.year == 2018:
-        JER                 = "Autumn18_V1_MC"              if not sample.isData else "Autumn18_V1_DATA"
-        JERera              = "Autumn18_V1"
 
     if options.overwriteJEC is not None:
         JEC = options.overwriteJEC
@@ -601,10 +569,19 @@ if not options.skipNanoTools:
         runPeriod = runString[-1]
 
     logger.info("Starting nanoAOD postprocessing")
+    year = "2018"
+    if "2016" in options.year:
+        year = "2016"
+    elif "2017" in options.year:
+        year = "2017"
+    elif "2018" in options.year:
+        year = "2018"
+    logger.info("For FASTSIM no UL tags available for JEC, use old tags for now, FIX IT once FastSim UL Tags are available!!!")
+    logger.info("Using dataYear = %s" %(year))
     for f in sample.files:
         JMECorrector = createJMECorrector(
             isMC        = (not sample.isData),
-            dataYear    = options.year,
+            dataYear    = year,
             runPeriod   = runPeriod,
             jesUncert   = "Total",
             jetType     = "AK4PFchs",
@@ -639,12 +616,9 @@ reader = sample.treeReader( \
 eleSelector_ = eleSelector( "mvaTOPVL", year = options.year )
 muSelector_  = muonSelector("mvaTOPVL", year = options.year )
 
-genPhotonSel_TTG_OR = genPhotonSelector( 'overlapTTGamma' )
-
-mothers = {"D":0, "B":0}
-grannies_D = {}
-grannies_B = {}
-
+################################################################################
+# FILL EVENT INFO HERE
+################################################################################
 def filler( event ):
     # shortcut
     r = reader.event
@@ -655,33 +629,10 @@ def filler( event ):
 
     if isMC:
 
-        ## overlap removal by lukas ##
         # GEN Particles
         gPart = getGenPartsAll(r)
         # GEN Jets
         gJets = getJets( r, jetVars=['pt','eta','phi','mass','partonFlavour','hadronFlavour','index'], jetColl="GenJet" )
-
-        # Overlap removal flags for ttgamma/ttbar and Zgamma/DY
-        GenPhoton                  = filterGenPhotons( gPart, status='last' )
-
-        # OR ttgamma/tt, DY/ZG, WG/WJets
-        GenIsoPhoton               = filter( lambda g: isIsolatedPhoton( g, gPart, coneSize=0.2,  ptCut=5, excludedPdgIds=[12,-12,14,-14,16,-16] ), GenPhoton    )
-        GenIsoPhotonNoMeson        = filter( lambda g: not hasMesonMother( getParentIds( g, gPart ) ), GenIsoPhoton )
-
-        # OR singleT/tG
-        GenIsoPhotonSingleT        = filter( lambda g: isIsolatedPhoton( g, gPart, coneSize=0.05, ptCut=5, excludedPdgIds=[12,-12,14,-14,16,-16] ), GenPhoton    )
-        GenIsoPhotonNoMesonSingleT = filter( lambda g: not hasMesonMother( getParentIds( g, gPart ) ), GenIsoPhotonSingleT )
-        GenIsoPhotonNoMesonSingleT = filter( lambda g: not photonFromTopDecay( getParentIds( g, gPart ) ), GenIsoPhotonNoMesonSingleT )
-
-        event.isTTGamma = len( filter( lambda g: genPhotonSel_TTG_OR(g), GenIsoPhotonNoMeson        ) ) > 0
-        #event.isZWGamma = len( filter( lambda g: genPhotonSel_ZG_OR(g),  GenIsoPhotonNoMeson        ) ) > 0
-        #event.isTGamma = len( filter( lambda g: genPhotonSel_T_OR(g), GenIsoPhotonNoMesonSingleT ) ) > 0
-
-        # new OR flag: Apply overlap removal directly in pp to better handle the plots
-        if options.flagTTGamma:
-            event.overlapRemoval = event.isTTGamma #good TTgamma event
-        elif options.flagTTBar:
-            event.overlapRemoval = not event.isTTGamma #good TTbar event
 
         genLepsFromZ    = genLepFromZ(gPart)
         genZs           = getSortedZCandidates(genLepsFromZ)
@@ -707,10 +658,20 @@ def filler( event ):
         # store decision to use after filler has been executed
         event.jsonPassed_ = event.jsonPassed
 
+    ################################################################################
+    # PU reweighting
+    if isMC and hasattr(r, "Pileup_nTrueInt"):
+        from Analysis.Tools.puWeightsUL			import getPUReweight
+        event.reweightPU     = getPUReweight( r.Pileup_nTrueInt, year=options.year, weight="nominal") 
+        event.reweightPUDown = getPUReweight( r.Pileup_nTrueInt, year=options.year, weight="down" )
+        event.reweightPUUp   = getPUReweight( r.Pileup_nTrueInt, year=options.year, weight="up" )
+
+    ################################################################################
     # top pt reweighting
     if isMC:
         event.reweightTopPt     = topPtReweightingFunc(getTopPtsForReweighting(r)) * topScaleF if doTopPtReweighting else 1.
 
+    ################################################################################
     # Trigger Decision
     if options.triggerSelection and isTriLep:
         event.triggerDecision = int(treeFormulas['triggerDecision']['TTreeFormula'].EvalInstance())
@@ -745,7 +706,6 @@ def filler( event ):
     #    p_C_nanoAOD.append( [ coeff[n] for n in xrange(hyperPoly.ndof) ] )
 
     allSlimmedJets      = getJets(r)
-    allSlimmedPhotons   = getPhotons(r, year=options.year)
     event.reweightL1Prefire, event.reweightL1PrefireUp, event.reweightL1PrefireDown = r.L1PreFiringWeight_Nom, r.L1PreFiringWeight_Up, r.L1PreFiringWeight_Dn
 
     # get leptons before jets in order to clean jets
@@ -775,28 +735,9 @@ def filler( event ):
 
     event.minDLmass = getMinDLMass(leptons)
 
-    # Photons
-    photons = getGoodPhotons(r, ptCut=20, idLevel="loose", isData=isData, year=options.year)
-    # filter photons close to leptons
-    photons = dRCleaning( photons, leptons, dR=0.4)
-
-    event.nPhotonGood = len(photons)
-    if event.nPhotonGood > 0:
-      event.photon_pt         = photons[0]['pt']
-      event.photon_eta        = photons[0]['eta']
-      event.photon_phi        = photons[0]['phi']
-      event.photon_idCutBased = photons[0]['cutBased'] if (options.year == 2016) else photons[0]['cutBasedBitmap']
-      if isMC:
-        genPhoton       = getGenPhoton(gPart)
-        event.photon_genPt  = genPhoton['pt']  if genPhoton is not None else float('nan')
-        event.photon_genEta = genPhoton['eta'] if genPhoton is not None else float('nan')
-
     # now get jets, cleaned against good leptons
     all_jets     = getJets(r, jetVars=jetVarNames)
     clean_jets,_ = cleanJetsAndLeptons( all_jets, leptons )
-    # clean against leading photon
-    if event.nPhotonGood > 0:
-        clean_jets   = filter( lambda j: deltaR( j, {'phi':event.photon_phi, 'eta':event.photon_eta} )>0.1, clean_jets )
     clean_jets_acc = filter(lambda j:abs(j['eta'])<2.4, clean_jets)
     jets         = filter(lambda j:j['pt']>30, clean_jets_acc)
     bJets        = filter(lambda j:isBJet(j, tagger=b_tagger, year=options.year) and abs(j['eta'])<=2.4    , jets)
@@ -843,9 +784,6 @@ def filler( event ):
     event.m3, _,_,_  = m3(jets)
 
     # we got all objects, so let's make dR
-    if event.nPhotonGood > 0:
-      event.photonLepdR = min(deltaR(photons[0], l) for l in leptons) if len(leptons) > 0 else 999
-      event.photonJetdR = min(deltaR(photons[0], j) for j in jets) if len(jets) > 0 else 999
 
     jets_sys      = {}
     bjets_sys     = {}

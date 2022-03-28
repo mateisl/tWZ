@@ -17,34 +17,34 @@ def isAnalysisJet(j, ptCut=30, absEtaCut=2.4, ptVar='pt', idVar='jetId', corrFac
 
 def isBJet(j, tagger = 'DeepCSV', year = 2016):
     if tagger == 'CSVv2':
-        if year == 2016:
+        if year in [2016, "UL2016", "UL2016_preVFP"]:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco
             return j['btagCSVV2'] > 0.8484
-        elif year == 2017 or year == 2018:
+        elif year in [2017, "UL2017"] or year in [2018, "UL2018"]:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
             return j['btagCSVV2'] > 0.8838
         else:
             raise (NotImplementedError, "Don't know what cut to use for year %s"%year)
     elif tagger == 'DeepCSV':
-        if year == 2016:
+        if year in [2016, "UL2016", "UL2016_preVFP"]:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco
             return j['btagDeepB'] > 0.6321
-        elif year == 2017:
+        elif year in [2017, "UL2017"]:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
             return j['btagDeepB'] > 0.4941
-        elif year == 2018:
+        elif year in [2018, "UL2018"]:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
             return j['btagDeepB'] > 0.4184
         else:
             raise (NotImplementedError, "Don't know what cut to use for year %s"%year)
     elif tagger == 'DeepFlavor' or tagger == 'DeepJet':
-        if year == 2016:
+        if year in [2016, "UL2016", "UL2016_preVFP"]:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
             return j['btagDeepFlavB'] > 0.3093
-        elif year == 2017:
+        elif year in [2017, "UL2017"]:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
             return j['btagDeepFlavB'] > 0.3033
-        elif year == 2018:
+        elif year in [2018, "UL2018"]:
             # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
             return j['btagDeepFlavB'] > 0.2770
         else:

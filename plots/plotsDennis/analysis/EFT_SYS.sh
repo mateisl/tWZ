@@ -14,83 +14,83 @@ python EFT_SYS.py  --noData --selection=trilepVL-minDLmass12-onZ1-onZ2-nLeptons4
 python EFT_SYS.py  --noData --selection=trilepVL-minDLmass12-onZ1-onZ2-nLeptons4 --sys=LepID_DOWN
 
 # ttZ 1
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=BTag_b_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=BTag_b_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=BTag_l_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=BTag_l_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=Trigger_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=Trigger_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=PU_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=PU_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=JES_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=JES_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=LepID_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-deepjet1p --sys=LepID_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=BTag_b_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=BTag_b_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=BTag_l_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=BTag_l_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=Trigger_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=Trigger_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=PU_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=PU_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=JES_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=JES_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=LepID_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet3-nBTag1p --sys=LepID_DOWN
 
 # ttZ 3
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=BTag_b_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=BTag_b_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=BTag_l_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=BTag_l_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=Trigger_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=Trigger_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=PU_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=PU_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=JES_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=JES_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=LepID_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-deepjet1p --sys=LepID_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=BTag_b_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=BTag_b_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=BTag_l_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=BTag_l_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=Trigger_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=Trigger_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=PU_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=PU_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=JES_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=JES_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=LepID_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-njet4p-nBTag1p --sys=LepID_DOWN
 
 # WZ
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=BTag_b_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=BTag_b_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=BTag_l_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=BTag_l_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=Trigger_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=Trigger_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=PU_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=PU_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=JES_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=JES_DOWN
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=LepID_UP
-python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-deepjet0-met60 --sys=LepID_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=BTag_b_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=BTag_b_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=BTag_l_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=BTag_l_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=Trigger_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=Trigger_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=PU_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=PU_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=JES_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=JES_DOWN
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=LepID_UP
+python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-onZ1-nBTag0-met60 --sys=LepID_DOWN
 
 # # WZ nonprompt control
-# python EFT_SYS.py  --selection=trilepVetoT-minDLmass12-onZ1-deepjet0-met60
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-deepjet0-met60 --sys=BTag_b_UP
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-deepjet0-met60 --sys=BTag_b_DOWN
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-deepjet0-met60 --sys=BTag_l_UP
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-deepjet0-met60 --sys=BTag_l_DOWN
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-deepjet0-met60 --sys=Trigger_UP
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-deepjet0-met60 --sys=Trigger_DOWN
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-deepjet0-met60 --sys=PU_UP
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-deepjet0-met60 --sys=PU_DOWN
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-deepjet0-met60 --sys=JES_UP
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-deepjet0-met60 --sys=JES_DOWN
+# python EFT_SYS.py  --selection=trilepVetoT-minDLmass12-onZ1-nBTag0-met60
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-nBTag0-met60 --sys=BTag_b_UP
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-nBTag0-met60 --sys=BTag_b_DOWN
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-nBTag0-met60 --sys=BTag_l_UP
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-nBTag0-met60 --sys=BTag_l_DOWN
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-nBTag0-met60 --sys=Trigger_UP
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-nBTag0-met60 --sys=Trigger_DOWN
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-nBTag0-met60 --sys=PU_UP
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-nBTag0-met60 --sys=PU_DOWN
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-nBTag0-met60 --sys=JES_UP
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-onZ1-nBTag0-met60 --sys=JES_DOWN
 # 
-# python EFT_SYS.py  --selection=trilepVetoT-minDLmass12-offZ1-deepjet0-met60
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-deepjet0-met60 --sys=BTag_b_UP
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-deepjet0-met60 --sys=BTag_b_DOWN
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-deepjet0-met60 --sys=BTag_l_UP
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-deepjet0-met60 --sys=BTag_l_DOWN
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-deepjet0-met60 --sys=Trigger_UP
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-deepjet0-met60 --sys=Trigger_DOWN
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-deepjet0-met60 --sys=PU_UP
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-deepjet0-met60 --sys=PU_DOWN
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-deepjet0-met60 --sys=JES_UP
-# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-deepjet0-met60 --sys=JES_DOWN
+# python EFT_SYS.py  --selection=trilepVetoT-minDLmass12-offZ1-nBTag0-met60
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-nBTag0-met60 --sys=BTag_b_UP
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-nBTag0-met60 --sys=BTag_b_DOWN
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-nBTag0-met60 --sys=BTag_l_UP
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-nBTag0-met60 --sys=BTag_l_DOWN
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-nBTag0-met60 --sys=Trigger_UP
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-nBTag0-met60 --sys=Trigger_DOWN
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-nBTag0-met60 --sys=PU_UP
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-nBTag0-met60 --sys=PU_DOWN
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-nBTag0-met60 --sys=JES_UP
+# python EFT_SYS.py  --noData --selection=trilepVetoT-minDLmass12-offZ1-nBTag0-met60 --sys=JES_DOWN
 # 
-# python EFT_SYS.py  --selection=trilepT-minDLmass12-offZ1-deepjet0-met60
-# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-deepjet0-met60 --sys=BTag_b_UP
-# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-deepjet0-met60 --sys=BTag_b_DOWN
-# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-deepjet0-met60 --sys=BTag_l_UP
-# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-deepjet0-met60 --sys=BTag_l_DOWN
-# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-deepjet0-met60 --sys=Trigger_UP
-# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-deepjet0-met60 --sys=Trigger_DOWN
-# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-deepjet0-met60 --sys=PU_UP
-# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-deepjet0-met60 --sys=PU_DOWN
-# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-deepjet0-met60 --sys=JES_UP
-# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-deepjet0-met60 --sys=JES_DOWN
+# python EFT_SYS.py  --selection=trilepT-minDLmass12-offZ1-nBTag0-met60
+# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-nBTag0-met60 --sys=BTag_b_UP
+# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-nBTag0-met60 --sys=BTag_b_DOWN
+# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-nBTag0-met60 --sys=BTag_l_UP
+# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-nBTag0-met60 --sys=BTag_l_DOWN
+# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-nBTag0-met60 --sys=Trigger_UP
+# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-nBTag0-met60 --sys=Trigger_DOWN
+# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-nBTag0-met60 --sys=PU_UP
+# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-nBTag0-met60 --sys=PU_DOWN
+# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-nBTag0-met60 --sys=JES_UP
+# python EFT_SYS.py  --noData --selection=trilepT-minDLmass12-offZ1-nBTag0-met60 --sys=JES_DOWN

@@ -32,9 +32,7 @@ genSearch = GenSearch()
 
 from Analysis.Tools.metFilters               import getFilterCut
 from Analysis.Tools.puProfileDirDB           import puProfile
-from Analysis.Tools.L1PrefireWeight          import L1PrefireWeight
 from Analysis.Tools.LeptonTrackingEfficiency import LeptonTrackingEfficiency
-from Analysis.Tools.isrWeight                import ISRweight
 from Analysis.Tools.helpers                  import checkRootFile, deepCheckRootFile, deepCheckWeight, dRCleaning
 from Analysis.Tools.leptonJetArbitration     import cleanJetsAndLeptons
 # central configuration
@@ -57,7 +55,7 @@ def get_parser():
     argParser.add_argument('--processingEra', action='store',       nargs='?',  type=str, default='postProcessed_80X_v22',              help="Name of the processing era" )
     argParser.add_argument('--skim',        action='store',         nargs='?',  type=str, default='trilep',                             help="Skim conditions to be applied for post-processing" )
     argParser.add_argument('--LHEHTCut',    action='store',         nargs='?',  type=int, default=-1,                                   help="LHE cut." )
-    argParser.add_argument('--year',        action='store',                     type=int,                                               help="Which year?" )
+    argParser.add_argument('--year',        action='store',                     type=str,                                               help="Which year?" )
     argParser.add_argument('--overwriteJEC',action='store',                               default=None,                                 help="Overwrite JEC?" )
     argParser.add_argument('--overwrite',   action='store_true',                                                                        help="Overwrite existing output files, bool flag set to True  if used" )
     argParser.add_argument('--small',       action='store_true',                                                                        help="Run the file on a small sample (for test purpose), bool flag set to True if used" )
@@ -80,6 +78,16 @@ def get_parser():
     return argParser
 
 options = get_parser().parse_args()
+
+if year not in [ 'UL2016', 'UL2016_preVFP', 'UL2017', 'UL2018' ]:
+    raise Exception("Year %s not known"%year)
+yearint = 2018 
+if "2016" in options.year: 
+    yearint = 2016 
+elif "2017" in options.year:
+    yearint = 2017 
+elif "2018" in options.year:
+    yearint = 2018
 
 # Logging
 import tWZ.Tools.logger as _logger
@@ -140,17 +148,19 @@ if options.small:
     options.job = 0
     options.nJobs = 10000 # set high to just run over 1 input file
 
-if options.year == 2016:
+if options.year == "UL2016":
     from Samples.nanoAOD.UL16_nanoAODv9         import allSamples as mcSamples
-    # from Samples.nanoAOD.Run2016_private_nanoAODv6          import allSamples as dataSamples
     # allSamples = mcSamples + dataSamples
     allSamples = mcSamples
-elif options.year == 2017:
+elif options.year == "UL2016_preVFP": #AODAPV samples
+    # THIS HAS YET TO BE IMPLEMENTED
+    # allSamples = mcSamples + dataSamples
+    allSamples = mcSamples
+elif options.year == "UL2017":
     from Samples.nanoAOD.UL17_nanoAODv9           import allSamples as mcSamples
-    # from Samples.nanoAOD.Run2017_private_nanoAODv6          import allSamples as dataSamples
     # allSamples = mcSamples + dataSamples
     allSamples = mcSamples
-elif options.year == 2018:
+elif options.year == "UL2018":
     from Samples.nanoAOD.UL18_nanoAODv9           import allSamples as mcSamples
     # allSamples = mcSamples + dataSamples
     allSamples = mcSamples
@@ -174,18 +184,13 @@ assert isMC or len(samples)==1, "Don't concatenate data samples"
 
 xSection = samples[0].xSection if isMC else None
 
-################################################################################
-################################################################################
-################################################################################
-
-L1PW = L1PrefireWeight(options.year)
-
 # apply MET filter
-skimConds.append( getFilterCut(options.year, isData=isData, ignoreJSON=True, skipWeight=True) )
+## TODO: CHECK THIS
+skimConds.append( getFilterCut(yearint, isData=isData, ignoreJSON=True, skipWeight=True) )
 
-triggerEff          = triggerEfficiency(options.year)
-isr                 = ISRweight()
+triggerEff          = triggerEfficiency(yearint)
 
+################################################################################
 #Samples: combine if more than one
 if len(samples)>1:
     sample_name =  samples[0].name+"_comb"
@@ -198,6 +203,8 @@ elif len(samples)==1:
 else:
     raise ValueError( "Need at least one sample. Got %r",samples )
 
+################################################################################
+# Reduce samples?
 if options.reduceSizeBy > 1:
     logger.info("Sample size will be reduced by a factor of %s", options.reduceSizeBy)
     logger.info("Recalculating the normalization of the sample. Before: %s", sample.normalization)
@@ -210,54 +217,34 @@ if options.reduceSizeBy > 1:
     sample.normalization = sample.getYieldFromDraw(weightString="genWeight")['val']
     logger.info("New normalization: %s", sample.normalization)
 
-if isMC:
-    from Analysis.Tools.puReweighting import getReweightingFunction
-    if options.year == 2016:
-        nTrueInt_puRW       = getReweightingFunction(data="PU_2016_35920_XSecCentral", mc="Summer16")
-        nTrueInt_puRWDown   = getReweightingFunction(data="PU_2016_35920_XSecDown",    mc="Summer16")
-        nTrueInt_puRWVDown  = getReweightingFunction(data="PU_2016_35920_XSecVDown",   mc="Summer16")
-        nTrueInt_puRWUp     = getReweightingFunction(data="PU_2016_35920_XSecUp",      mc="Summer16")
-        nTrueInt_puRWVUp    = getReweightingFunction(data="PU_2016_35920_XSecVUp",     mc="Summer16")
-        nTrueInt_puRWVVUp   = getReweightingFunction(data="PU_2016_35920_XSecVVUp",    mc="Summer16")
-    elif options.year == 2017:
-        # keep the weight name for now. Should we update to a more general one?
-        puProfiles = puProfile( source_sample = sampleForPU )
-        mcHist = puProfiles.cachedTemplate( selection="( 1 )", weight='genWeight', overwrite=False ) # use genWeight for amc@NLO samples. No problems encountered so far
-        nTrueInt_puRW       = getReweightingFunction(data="PU_2017_41530_XSecCentral",  mc=mcHist)
-        nTrueInt_puRWDown   = getReweightingFunction(data="PU_2017_41530_XSecDown",     mc=mcHist)
-        nTrueInt_puRWVDown  = getReweightingFunction(data="PU_2017_41530_XSecVDown",    mc=mcHist)
-        nTrueInt_puRWUp     = getReweightingFunction(data="PU_2017_41530_XSecUp",       mc=mcHist)
-        nTrueInt_puRWVUp    = getReweightingFunction(data="PU_2017_41530_XSecVUp",      mc=mcHist)
-        nTrueInt_puRWVVUp   = getReweightingFunction(data="PU_2017_41530_XSecVVUp",     mc=mcHist)
-    elif options.year == 2018:
-        # keep the weight name for now. Should we update to a more general one?
-        nTrueInt_puRW       = getReweightingFunction(data="PU_2018_59740_XSecCentral",  mc="Autumn18")
-        nTrueInt_puRWDown   = getReweightingFunction(data="PU_2018_59740_XSecDown",     mc="Autumn18")
-        nTrueInt_puRWVDown  = getReweightingFunction(data="PU_2018_59740_XSecVDown",    mc="Autumn18")
-        nTrueInt_puRWUp     = getReweightingFunction(data="PU_2018_59740_XSecUp",       mc="Autumn18")
-        nTrueInt_puRWVUp    = getReweightingFunction(data="PU_2018_59740_XSecVUp",      mc="Autumn18")
-        nTrueInt_puRWVVUp   = getReweightingFunction(data="PU_2018_59740_XSecVVUp",     mc="Autumn18")
+################################################################################
+# PU reweighting
+if isMC and hasattr(r, "Pileup_nTrueInt"):
+from Analysis.Tools.puWeightsUL			import getPUReweight
+    event.reweightPU     = getPUReweight( r.Pileup_nTrueInt, year=options.year, weight="nominal") 
+    event.reweightPUDown = getPUReweight( r.Pileup_nTrueInt, year=options.year, weight="down" )
+    event.reweightPUUp   = getPUReweight( r.Pileup_nTrueInt, year=options.year, weight="up" )
 
-## lepton SFs
-#leptonTrackingSF    = LeptonTrackingEfficiency(options.year)
-#leptonSF            = leptonSF_(options.year)
-
+################################################################################
 options.skim = options.skim + '_small' if options.small else options.skim
 
+################################################################################
 # LHE cut (DY samples)
 if options.LHEHTCut>0:
     sample.name+="_lheHT"+str(options.LHEHTCut)
     logger.info( "Adding upper LHE cut at %f", options.LHEHTCut )
     skimConds.append( "LHE_HTIncoming<%f"%options.LHEHTCut )
 
+################################################################################
 # final output directory
-storage_directory = os.path.join( options.targetDir, options.processingEra, str(options.year), options.skim, sample.name )
+storage_directory = os.path.join( options.targetDir, options.processingEra, options.year, options.skim, sample.name )
 try:    #Avoid trouble with race conditions in multithreading
     os.makedirs(storage_directory)
     logger.info( "Created output directory %s.", storage_directory )
 except:
     pass
 
+################################################################################
 # EFT reweighting
 addReweights = False
 if hasattr( sample, "reweight_pkl" ):
@@ -290,20 +277,27 @@ if hasattr( sample, "reweight_pkl" ):
 
     logger.info("Adding reweights. Expect to read %i base point weights.", weightInfo.nid)
 
+################################################################################
 ## sort the list of files?
 len_orig = len(sample.files)
 sample = sample.split( n=options.nJobs, nSub=options.job)
 logger.info( "fileBasedSplitting: Run over %i/%i files for job %i/%i."%(len(sample.files), len_orig, options.job, options.nJobs))
 logger.debug("fileBasedSplitting: Files to be run over:\n%s", "\n".join(sample.files) )
 
+################################################################################
 # systematic variations
 addSystematicVariations = (not isData) and (not options.skipSystematicVariations)
 
-# B tagging SF
-b_tagger = "DeepCSV"
-from Analysis.Tools.BTagEfficiency import BTagEfficiency
-btagEff = BTagEfficiency( fastSim = False, year=options.year, tagger=b_tagger )
+################################################################################
+# TODO FIX BTAG REWEIGHTING!!!!
 
+# B tagging SF
+# CHECK FOR UL FILES
+b_tagger = "DeepJet"
+from Analysis.Tools.BTagEfficiency import BTagEfficiency
+btagEff = BTagEfficiency( fastSim = False, year=yearint, tagger=b_tagger )
+
+################################################################################
 # tmp_output_directory
 tmp_output_directory  = os.path.join( user.postprocessing_tmp_directory, "%s_%i_%s_%s_%s"%(options.processingEra, options.year, options.skim, sample.name, str(uuid.uuid3(uuid.NAMESPACE_OID, sample.name))))
 if os.path.exists(tmp_output_directory) and options.overwrite:
@@ -360,6 +354,7 @@ sample.chain.SetBranchStatus("*",1)
 # this is the global selectionString
 selectionString = '&&'.join(skimConds)
 
+################################################################################
 # top pt reweighting
 from tWZ.Tools.topPtReweighting import getUnscaledTopPairPtReweightungFunction, getTopPtDrawString, getTopPtsForReweighting
 # Decision based on sample name -> whether TTJets or TTLep is in the sample name
@@ -387,6 +382,8 @@ else:
     topScaleF = 1
     logger.info( "Sample will NOT have top pt reweighting. topScaleF=%f",topScaleF )
 
+################################################################################
+# CR reweighting 
 if options.doCRReweighting:
     from tWZ.Tools.colorReconnectionReweighting import getCRWeight, getCRDrawString
     logger.info( "Sample will have CR reweighting." )
@@ -400,7 +397,8 @@ else:
     CRScaleF = 1
     logger.info( "Sample will NOT have CR reweighting. CRScaleF=%f",CRScaleF )
 
-#branches to be kept for data and MC
+################################################################################
+# branches to be kept for data and MC
 branchKeepStrings_DATAMC = [\
     "run", "luminosityBlock", "event", "fixedGridRhoFastjetAll", "PV_npvs", "PV_npvsGood",
     "MET_*",
@@ -410,10 +408,12 @@ branchKeepStrings_DATAMC = [\
     "nJet", "Jet_*",
     "nElectron", "Electron_*",
     "nMuon", "Muon_*",
+    "L1PreFiringWeight_*",
 ]
 branchKeepStrings_DATAMC += ["HLT_*", "PV_*"]
 
-if options.year == 2017:
+# NOT FOR UL?
+if options.year == "2017":
     branchKeepStrings_DATAMC += [ "METFixEE2017_*" ]
 
 #branches to be kept for MC samples only
@@ -450,7 +450,7 @@ lepVars         = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_a
 lepVarNames     = [x.split('/')[0] for x in lepVars]
 
 read_variables = map(TreeVariable.fromString, [ 'MET_pt/F', 'MET_phi/F', 'run/I', 'luminosityBlock/I', 'event/l', 'PV_npvs/I', 'PV_npvsGood/I'] )
-if options.year == 2017:
+if options.year == "2017":
     read_variables += map(TreeVariable.fromString, [ 'METFixEE2017_pt/F', 'METFixEE2017_phi/F', 'METFixEE2017_pt_nom/F', 'METFixEE2017_phi_nom/F'])
     if isMC:
         read_variables += map(TreeVariable.fromString, [ 'METFixEE2017_pt_jesTotalUp/F', 'METFixEE2017_pt_jesTotalDown/F', 'METFixEE2017_pt_jerUp/F', 'METFixEE2017_pt_jerDown/F', 'METFixEE2017_pt_unclustEnDown/F', 'METFixEE2017_pt_unclustEnUp/F', 'METFixEE2017_phi_jesTotalUp/F', 'METFixEE2017_phi_jesTotalDown/F', 'METFixEE2017_phi_jerUp/F', 'METFixEE2017_phi_jerDown/F', 'METFixEE2017_phi_unclustEnDown/F', 'METFixEE2017_phi_unclustEnUp/F', 'METFixEE2017_pt_jer/F', 'METFixEE2017_phi_jer/F'])
@@ -462,12 +462,16 @@ if isMC:
     read_variables += map(TreeVariable.fromString, [ 'GenMET_pt/F', 'GenMET_phi/F' ])
 
 read_variables += [ TreeVariable.fromString('nPhoton/I'),
-                    VectorTreeVariable.fromString('Photon[pt/F,eta/F,phi/F,mass/F,cutBased/I,pdgId/I]') if (options.year == 2016) else VectorTreeVariable.fromString('Photon[pt/F,eta/F,phi/F,mass/F,cutBasedBitmap/I,pdgId/I]') ]
+                    VectorTreeVariable.fromString('Photon[pt/F,eta/F,phi/F,mass/F,cutBased/I,pdgId/I]') if (options.year == "2016") else VectorTreeVariable.fromString('Photon[pt/F,eta/F,phi/F,mass/F,cutBasedBitmap/I,pdgId/I]') ]
 
 new_variables = [ 'weight/F', 'year/I']
 
 if options.triggerSelection and isTriLep:
     new_variables+= ['triggerDecision/I']
+
+read_variables.append( TreeVariable.fromString('L1PreFiringWeight_Dn/F') )
+read_variables.append( TreeVariable.fromString('L1PreFiringWeight_Nom/F') )
+read_variables.append( TreeVariable.fromString('L1PreFiringWeight_Up/F') )
 
 if isMC:
     read_variables += [ TreeVariable.fromString('Pileup_nTrueInt/F') ]
@@ -477,18 +481,15 @@ if isMC:
     read_variables.append( TreeVariable.fromString('genWeight/F') )
     read_variables.append( TreeVariable.fromString('nGenJet/I') )
     read_variables.append( VectorTreeVariable.fromString('GenJet[pt/F,eta/F,phi/F,partonFlavour/I,hadronFlavour/I]' ) )
-    new_variables.extend([ 'reweightTopPt/F', 'reweight_nISR/F', 'reweight_nISRUp/F', 'reweight_nISRDown/F', 'reweightPU/F','reweightPUUp/F','reweightPUDown/F', 'reweightPUVUp/F','reweightPUVVUp/F', 'reweightPUVDown/F', 'reweightL1Prefire/F', 'reweightL1PrefireUp/F', 'reweightL1PrefireDown/F'])
-#    if not options.skipGenLepMatching:
-#        new_variables.append( TreeVariable.fromString( 'nGenLep/I' ) )
-#        new_variables.append( 'GenLep[%s]'% ( ','.join(genLepVars) ) )
+    new_variables.extend([ 'reweightTopPt/F', 'reweightPU/F','reweightPUUp/F','reweightPUDown/F', 'reweightL1Prefire/F', 'reweightL1PrefireUp/F', 'reweightL1PrefireDown/F'])
     if options.doCRReweighting:
         new_variables.append('reweightCR/F')
 
 read_variables += [\
     TreeVariable.fromString('nElectron/I'),
-    VectorTreeVariable.fromString('Electron[pt/F,eta/F,phi/F,pdgId/I,cutBased/I,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,lostHits/b,mvaFall17V2Iso_WP80/O,mvaFall17V2Iso_WP90/O,convVeto/O,dxy/F,dz/F,charge/I,deltaEtaSC/F,vidNestedWPBitmap/I,mvaTOP/F]'),
+    VectorTreeVariable.fromString('Electron[pt/F,eta/F,phi/F,pdgId/I,cutBased/I,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,lostHits/b,mvaFall17V2Iso_WP80/O,mvaFall17V2Iso_WP90/O,convVeto/O,dxy/F,dz/F,charge/I,deltaEtaSC/F,vidNestedWPBitmap/I,mvaTTH/F]'),
     TreeVariable.fromString('nMuon/I'),
-    VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,dxy/F,dz/F,charge/I,mvaTOP/F]'),
+    VectorTreeVariable.fromString('Muon[pt/F,eta/F,phi/F,pdgId/I,mediumId/O,miniPFRelIso_all/F,pfRelIso03_all/F,sip3d/F,dxy/F,dz/F,charge/I,mvaTTH/F]'),
     TreeVariable.fromString('nJet/I'),
     VectorTreeVariable.fromString('Jet[%s]'% ( ','.join(jetVars) ) ) ]
 if addReweights:
@@ -560,9 +561,6 @@ if not options.skipNanoTools:
     from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop       import Module
 
     ## modules for nanoAOD postprocessor
-    #from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetUncertainties   import jetmetUncertaintiesProducer
-    #from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetRecalib            import jetRecalib
-    from PhysicsTools.NanoAODTools.postprocessing.modules.common.ISRcounter        import ISRcounter
 
     logger.info("Preparing nanoAOD postprocessing")
     logger.info("Will put files into directory %s", tmp_output_directory)
@@ -582,10 +580,10 @@ if not options.skipNanoTools:
     if options.overwriteJEC is not None:
         JEC = options.overwriteJEC
 
-    logger.info("Using JERs for MET significance: %s", JER)
+    logger.info("Using JERs for MET significance")
 
     from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetHelperRun2 import *
-    METBranchName = 'MET' if not options.year == 2017 else 'METFixEE2017'
+    METBranchName = 'MET' if not options.year == "2017" else 'METFixEE2017'
 
     # check if files are available (e.g. if dpm is broken this should result in an error)
     for f in sample.files:
@@ -615,9 +613,6 @@ if not options.skipNanoTools:
             applySmearing = False)
 
         modules = [ JMECorrector() ]
-
-        if not sample.isData:
-            modules.append( ISRcounter() )
 
         # need a hash to avoid data loss
         file_hash = str(hash(f))
@@ -655,7 +650,7 @@ def filler( event ):
     r = reader.event
     #workaround  = (r.run, r.luminosityBlock, r.event) # some fastsim files seem to have issues, apparently solved by this.
     event.isData = s.isData
-    event.year   = options.year
+    event.year   = yearint
     event.overlapRemoval = 1
 
     if isMC:
@@ -712,14 +707,6 @@ def filler( event ):
         # store decision to use after filler has been executed
         event.jsonPassed_ = event.jsonPassed
 
-    if isMC and hasattr(r, "Pileup_nTrueInt"):
-        event.reweightPU     = nTrueInt_puRW       ( r.Pileup_nTrueInt ) # is this correct?
-        event.reweightPUDown = nTrueInt_puRWDown   ( r.Pileup_nTrueInt )
-        event.reweightPUVDown= nTrueInt_puRWVDown  ( r.Pileup_nTrueInt )
-        event.reweightPUUp   = nTrueInt_puRWUp     ( r.Pileup_nTrueInt )
-        event.reweightPUVUp  = nTrueInt_puRWVUp    ( r.Pileup_nTrueInt )
-        event.reweightPUVVUp = nTrueInt_puRWVVUp   ( r.Pileup_nTrueInt )
-
     # top pt reweighting
     if isMC:
         event.reweightTopPt     = topPtReweightingFunc(getTopPtsForReweighting(r)) * topScaleF if doTopPtReweighting else 1.
@@ -759,10 +746,7 @@ def filler( event ):
 
     allSlimmedJets      = getJets(r)
     allSlimmedPhotons   = getPhotons(r, year=options.year)
-    if options.year == 2018:
-        event.reweightL1Prefire, event.reweightL1PrefireUp, event.reweightL1PrefireDown = 1., 1., 1.
-    else:
-        event.reweightL1Prefire, event.reweightL1PrefireUp, event.reweightL1PrefireDown = L1PW.getWeight(allSlimmedPhotons, allSlimmedJets)
+    event.reweightL1Prefire, event.reweightL1PrefireUp, event.reweightL1PrefireDown = r.L1PreFiringWeight_Nom, r.L1PreFiringWeight_Up, r.L1PreFiringWeight_Dn
 
     # get leptons before jets in order to clean jets
     electrons_pt10  = getGoodElectrons(r, ele_selector = eleSelector_)
@@ -783,6 +767,7 @@ def filler( event ):
 
     for iLep, lep in enumerate(leptons):
         lep['index']    = iLep
+        lep['mvaTOP']   = lep['mvaTTH']
         lep['mvaTOPWP'] = mvaTopWP(lep['mvaTOP'], lep['pdgId'])
 
     fill_vector_collection( event, "lep", lepVarNames, leptons)

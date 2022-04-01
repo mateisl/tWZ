@@ -4,7 +4,7 @@
 #
 # Standard imports and batch mode
 #
-import ROOT, os
+import ROOT, os, sys
 ROOT.gROOT.SetBatch(True)
 c1 = ROOT.TCanvas() # do this to avoid version conflict in png.h with keras import ...
 c1.Draw()
@@ -42,6 +42,7 @@ argParser.add_argument('--logLevel',       action='store',      default='INFO', 
 argParser.add_argument('--plot_directory', action='store', default='LeptonID')
 argParser.add_argument('--selection',      action='store', default='trilep')
 argParser.add_argument('--era',            action='store', type=str, default="Run2018")
+argParser.add_argument('--small',          action='store_true', help='Run only on a small subset of the data?', )
 args = argParser.parse_args()
 
 ################################################################################
@@ -58,6 +59,9 @@ from tWZ.samples.nanoTuples_RunII_nanoAODv6_private_postProcessed import *
 sample_directory = "/scratch-cbe/users/dennis.schwarz/LeptonID/nanoTuples/2018/"
 TTZ = Sample.fromDirectory(name="TTZ", treeName="Events", isData=False, color=ROOT.kAzure+4, texName="ttZ", directory=sample_directory+"TTZ")
 
+if args.small:
+    TTZ.reduceFiles(to=1)
+    args.plot_directory += "_small"
 mc = [TTZ]
 lumi_scale = 60
 
@@ -129,6 +133,18 @@ def buildZ( event, sample ):
 
 sequence.append( buildZ )
 
+################ make BIT prediction ##########################################
+
+# Boosting
+sys.path.insert(0,os.path.expandvars("$CMSSW_BASE/src/BIT"))
+from BoostedInformationTree import BoostedInformationTree
+#bit = BoostedInformationTree.load("v0.pkl")
+
+def make_BIT( event, sample ):
+
+    event.BIT = bit.predict(features)
+
+#sequence.append( make_BIT )
 
 ################################################################################
 # Read variables
@@ -199,6 +215,14 @@ plots.append(Plot(
     attribute = lambda event, sample: event.Lep1SF_up,
     binning=[50, 0.95, 1.05],
 ))
+
+
+#plots.append(Plot(
+#    name = "BIT",
+#    texX = 'BIT for leptons SF', texY = 'Number of Events',
+#    attribute = lambda event, sample: event.BIT,
+#    binning=[50, 0.95, 1.05],
+#))
 
 
 plotting.fill(plots, read_variables = read_variables, sequence = sequence)

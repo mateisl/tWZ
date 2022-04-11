@@ -107,44 +107,44 @@ def drawPlots(plots):
 # Define sequences
 sequence       = []
 
-def buildZ( event, sample ):
-    # This is how you can construct your own observables
-    # In this example I build a Z boson from two leptons
-    # I choose those two leptons that result in a mass close to mZ
-    lepton1  = ROOT.TLorentzVector()
-    lepton2  = ROOT.TLorentzVector()
-    lepton3  = ROOT.TLorentzVector()
-    lepton1.SetPtEtaPhiM(event.l1_pt, event.l1_eta, event.l1_phi, 0)
-    lepton2.SetPtEtaPhiM(event.l2_pt, event.l2_eta, event.l2_phi, 0)
-    lepton3.SetPtEtaPhiM(event.l3_pt, event.l3_eta, event.l3_phi, 0)
+# def buildZ( event, sample ):
+#     # This is how you can construct your own observables
+#     # In this example I build a Z boson from two leptons
+#     # I choose those two leptons that result in a mass close to mZ
+#     lepton1  = ROOT.TLorentzVector()
+#     lepton2  = ROOT.TLorentzVector()
+#     lepton3  = ROOT.TLorentzVector()
+#     lepton1.SetPtEtaPhiM(event.l1_pt, event.l1_eta, event.l1_phi, 0)
+#     lepton2.SetPtEtaPhiM(event.l2_pt, event.l2_eta, event.l2_phi, 0)
+#     lepton3.SetPtEtaPhiM(event.l3_pt, event.l3_eta, event.l3_phi, 0)
 
-    mZ = 91.2
-    Z1 = lepton1+lepton2
-    Z2 = lepton1+lepton3
-    Z3 = lepton2+lepton3
-    Zmass = float('nan')
-    mindiff = 1000
-    for Z_candidate in [Z1,Z2,Z3]:
-        if abs(Z_candidate.M()-mZ)<mindiff:
-            mindiff = abs(Z_candidate.M()-mZ)
-            Zmass = Z_candidate.M()
+#     mZ = 91.2
+#     Z1 = lepton1+lepton2
+#     Z2 = lepton1+lepton3
+#     Z3 = lepton2+lepton3
+#     Zmass = float('nan')
+#     mindiff = 1000
+#     for Z_candidate in [Z1,Z2,Z3]:
+#         if abs(Z_candidate.M()-mZ)<mindiff:
+#             mindiff = abs(Z_candidate.M()-mZ)
+#             Zmass = Z_candidate.M()
             
-    event.Zmass = Zmass
+#     event.Zmass = Zmass
 
-sequence.append( buildZ )
+# sequence.append( buildZ )
 
 ################ make BIT prediction ##########################################
 
 # Boosting
 sys.path.insert(0,os.path.expandvars("$CMSSW_BASE/src/BIT"))
 from BoostedInformationTree import BoostedInformationTree
-#bit = BoostedInformationTree.load("v0.pkl")
+bit = BoostedInformationTree.load("v0.pkl")
 
 def make_BIT( event, sample ):
 
-    event.BIT = bit.predict(features)
-
-#sequence.append( make_BIT )
+    event.BIT = bit.predict(np.array([event.l1_pt,event.l1_eta,event.l2_pt,event.l2_eta,event.l3_pt,event.l3_eta]))
+    #print(bit.predict(np.array([event.l1_pt,event.l1_eta,event.l2_pt,event.l2_eta,event.l3_pt,event.l3_eta])))
+sequence.append( make_BIT )
 
 ################################################################################
 # Read variables
@@ -162,7 +162,7 @@ read_variables = [
 ]
 
 ################################################################################
-# Set up plotting
+#Set up plotting
 weight_ = lambda event, sample: event.weight if sample.isData else event.weight*lumi_year[event.year]/1000.
 
 for sample in mc: 
@@ -176,53 +176,53 @@ stack = Stack(mc)
 # Use some defaults
 Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString = cutInterpreter.cutString(args.selection))
 
-################################################################################
-# Now define the plots
+# ################################################################################
+# # Now define the plots
 
 plots = []
 
-plots.append(Plot(
-    name = "Lepton1_pt",
-    texX = 'Leading lepton p_{T} [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.l1_pt,
-    binning=[40, 0., 200.],
-))
+# plots.append(Plot(
+#     name = "Lepton1_pt",
+#     texX = 'Leading lepton p_{T} [GeV]', texY = 'Number of Events',
+#     attribute = lambda event, sample: event.l1_pt,
+#     binning=[40, 0., 200.],
+# ))
+
+# plots.append(Plot(
+#     name = "Zmass",
+#     texX = 'm_{Z} [GeV]', texY = 'Number of Events',
+#     attribute = lambda event, sample: event.Zmass,
+#     binning=[40, 0., 200.],
+# ))
+
+# plots.append(Plot(
+#     name = "yield",
+#     texX = 'yield', texY = 'Number of Events',
+#     attribute = lambda event, sample: 0.5,
+#     binning=[1, 0., 1.],
+# ))
+
+# plots.append(Plot(
+#     name = "Lepton1_SF",
+#     texX = 'Lepton1 SF', texY = 'Number of Events',
+#     attribute = lambda event, sample: event.Lep1SF,
+#     binning=[50, 0.95, 1.05],
+# ))
+
+# plots.append(Plot(
+#     name = "Lepton1_SF_up",
+#     texX = 'Lepton1 SF up', texY = 'Number of Events',
+#     attribute = lambda event, sample: event.Lep1SF_up,
+#     binning=[50, 0.95, 1.05],
+# ))
+
 
 plots.append(Plot(
-    name = "Zmass",
-    texX = 'm_{Z} [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.Zmass,
-    binning=[40, 0., 200.],
+   name = "BIT_Test",
+   texX = 'BIT for leptons SF', texY = 'Number of Events',
+   attribute = lambda event, sample: event.BIT,
+   binning=[50, 0, 0.025],
 ))
-
-plots.append(Plot(
-    name = "yield",
-    texX = 'yield', texY = 'Number of Events',
-    attribute = lambda event, sample: 0.5,
-    binning=[1, 0., 1.],
-))
-
-plots.append(Plot(
-    name = "Lepton1_SF",
-    texX = 'Lepton1 SF', texY = 'Number of Events',
-    attribute = lambda event, sample: event.Lep1SF,
-    binning=[50, 0.95, 1.05],
-))
-
-plots.append(Plot(
-    name = "Lepton1_SF_up",
-    texX = 'Lepton1 SF up', texY = 'Number of Events',
-    attribute = lambda event, sample: event.Lep1SF_up,
-    binning=[50, 0.95, 1.05],
-))
-
-
-#plots.append(Plot(
-#    name = "BIT",
-#    texX = 'BIT for leptons SF', texY = 'Number of Events',
-#    attribute = lambda event, sample: event.BIT,
-#    binning=[50, 0.95, 1.05],
-#))
 
 
 plotting.fill(plots, read_variables = read_variables, sequence = sequence)

@@ -57,3 +57,14 @@ if os.environ["USER"] in ["dennis.schwarz"]:
     cern_proxy_certificate          = "/users/dennis.schwarz/.private/.proxy"
     combineReleaseLocation          = "/users/dennis.schwarz/CMSSW_10_6_0/src"
     limit_directory                 = "/groups/hephy/cms/dennis.schwarz/www/tWZ/limits"
+if os.environ["USER"] in ["matthias.eisl"]:
+    postprocessing_output_directory = "/scratch-cbe/users/matthias.eisl/tWZ/nanoTuples"
+    postprocessing_tmp_directory    = "/scratch/hephy/cms/matthias.eisl/tWZ/tmp/"
+    plot_directory                  = "/groups/hephy/cms/matthias.eisl/www/tWZ/plots"
+    cache_dir                       = "/groups/hephy/cms/matthias.eis/tWZ/caches"
+    # Analysis result files
+    analysis_results                = "/groups/hephy/cms/matthias.eisl/tWZ/results/v1"
+    mva_directory                   = "/groups/hephy/cms/matthias.eisl/tWZ/MVA"
+    cern_proxy_certificate          = "/users/matthias.eis/.private/.proxy"
+    combineReleaseLocation          = "/users/matthias.eisl/project-CMS-BIT/CMSSW_10_6_0/src"
+    limit_directory                 = "/groups/hephy/cms/matthias.eisl/www/tWZ/limits"
